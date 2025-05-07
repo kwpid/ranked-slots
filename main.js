@@ -112,6 +112,7 @@ const aiNames = [
       }
   }
   function savePlayerData() {
+      console.log("Saving player data:", playerData); // Debug log
       localStorage.setItem("playerData", JSON.stringify(playerData));
   }
   
@@ -128,6 +129,7 @@ const aiNames = [
               }
               savePlayerData();
           }
+          console.log("Loaded player data:", playerData); // Debug log
       }
   }
   function loadShop() {
@@ -380,14 +382,24 @@ const aiNames = [
   
   function checkForNewTitles() {
       const availableTitles = getAvailableTitles();
-      // Handle empty title case by using NONE
       const currentTitleName = playerData.title || "NONE";
-      const currentTitle = titles.find(t => t.title === currentTitleName);
+      
+      // Initialize unlockedTitles if it doesn't exist
+      if (!playerData.unlockedTitles) {
+          playerData.unlockedTitles = [];
+      }
       
       // Check if player has unlocked any new titles
       availableTitles.forEach(title => {
-          if (title && title.title && title.title !== "NONE" && title.title !== currentTitleName) {
+          if (title && title.title && 
+              title.title !== "NONE" && 
+              title.title !== currentTitleName &&
+              !playerData.unlockedTitles.includes(title.title)) {
               showTitleNotification(title);
+              playerData.unlockedTitles.push(title.title);
+              console.log("New title unlocked:", title.title); // Debug log
+              console.log("Current unlocked titles:", playerData.unlockedTitles); // Debug log
+              savePlayerData();
           }
       });
   }
@@ -468,10 +480,11 @@ const aiNames = [
       playerData.mmr += mmrChange;
       
       // Update stats and coins
+      let coinsEarned = 0; // Initialize coinsEarned
       if (playerWon) {
           playerData.wins++;
           // Add random coins between 10-15 for wins
-          const coinsEarned = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
+          coinsEarned = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
           playerData.coins += coinsEarned;
       } else {
           playerData.losses++;
