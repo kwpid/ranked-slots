@@ -370,11 +370,11 @@ const aiNames = [
   
   function checkForNewTitles() {
       const availableTitles = getAvailableTitles();
-      const currentTitle = titles.find(t => t.title === playerData.title);
+      const currentTitle = titles.find(t => t.title === playerData.title) || titles[0]; // Default to NONE if no title found
       
       // Check if player has unlocked any new titles
       availableTitles.forEach(title => {
-          if (title.title !== "NONE" && title.title !== currentTitle.title) {
+          if (title && title.title && title.title !== "NONE" && title.title !== currentTitle.title) {
               showTitleNotification(title);
           }
       });
@@ -444,6 +444,8 @@ const aiNames = [
   }
   
   function endGame(playerWon) {
+      if (!gameActive) return; // Prevent multiple calls
+      
       gameActive = false;
       clearInterval(spinInterval);
       clearInterval(countdownInterval);
@@ -489,6 +491,9 @@ const aiNames = [
           const coinsElement = document.getElementById("player-coins");
           coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
           coinsElement.style.color = "#ffcc00"; // Gold color for coins
+      } else {
+          const coinsElement = document.getElementById("player-coins");
+          coinsElement.textContent = ""; // Clear coins text for losses
       }
       
       // Update menu display
