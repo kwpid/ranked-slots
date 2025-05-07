@@ -68,8 +68,7 @@ const aiNames = [
       mmr: 600,
       peakMMR: 600,
       coins: 0,
-    inventory: [],
-    ownedTitles: ["NONE"] // Track all titles the player owns
+      ownedTitles: ["NONE"] // Track all titles the player owns
   };
   let aiData = {
       username: "",
@@ -1031,7 +1030,6 @@ const aiNames = [
       if (playerData.mmr >= 1864) {
           allPlayers.push({
               name: playerData.username,
-              title: playerData.title,
               mmr: playerData.mmr,
               isPlayer: true
           });
@@ -1052,7 +1050,6 @@ const aiNames = [
               <div class="leaderboard-rank">#${index + 1}</div>
               <div class="leaderboard-player">
                   <span class="leaderboard-username">${player.name}</span>
-                  <span class="leaderboard-title">${player.title}</span>
               </div>
               <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
           `;
