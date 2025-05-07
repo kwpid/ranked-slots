@@ -495,7 +495,7 @@ const aiNames = [
         { name: "mawykzy!", title: "S1 TOP CHAMPION", mmr: 2194 },
         { name: "Speed", title: "SALT MINE 3 MAIN EVENT QUALIFIER", mmr: 2167 },
         { name: ".", title: "SALT MINE 1 CONTENDER", mmr: 2218 },
-        { name: "koto", title: "RSCS S1 WORLDS CONTENTDER", mmr: 2310 },
+        { name: "koto", title: "RSCS S1 WORLDS CONTENDER", mmr: 2139 },
         { name: "dani", title: "RSCS S1 ELITE", mmr: 2139 },
         { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 2129 },
         { name: "dr.k", title: "S1 SUPERSLOT LEGEND TOURNAMENT WINNER", mmr: 1865 },
@@ -523,7 +523,7 @@ const aiNames = [
         { name: "vatsi", title: "SALT MINE 3 RUNNER-UP", mmr: 2154 },
         { name: "Xyzle", title: "RSCS S1 CHALLENGER", mmr: 2139 },
         { name: "ca$h", title: "RSCS S1 CHALLENGER", mmr: 2139 },
-        { name: "Darkmode", title: "RSCS S1 MAJOR CHAMPION", mmr: 2264 },
+        { name: "Darkmode", title: "RSCS S1 MAJOR CHAMPION", mmr: 2139 },
         { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
         { name: "LetsG0Brand0n", title: "RSCS S1 WORLDS CONTENDER", mmr: 1983 },
         { name: "VAWQK.", title: "S1 GRAND CHAMPION TOURNAMENT WINNER", mmr: 1911 },
@@ -552,7 +552,7 @@ const aiNames = [
         { name: "fl1p", title: "RSCS S1 CONTENDER", mmr: 1920 },
         { name: "Otto", title: "S1 SUPERSLOT LEGEND", mmr: 1964 },
         { name: "jetz", title: "S1 GRAND CHAMPION", mmr: 1954 },
-        { name: "Crisp", title: "RSCS S1 MAJOR CHAMPION", mmr: 2001 },
+        { name: "Crisp", title: "RSCS S1 MAJOR CHAMPION", mmr: 2139 },
         { name: "snailracer", title: "S1 GRAND CHAMPION", mmr: 2019 },
         { name: "Flickz", title: "RSCS S1 MAJOR CONTENDER", mmr: 2031 },
         { name: "tempo", title: "S1 SUPERSLOT LEGEND", mmr: 1902 },
@@ -580,7 +580,7 @@ const aiNames = [
         { name: "vvv", title: "S1 SUPERSLOT LEGEND", mmr: 1884 },
         { name: "critt", title: "S1 SUPERSLOT LEGEND", mmr: 1930 },
         { name: "darkandlost2009", title: "RSCS S1 MAJOR CONTENDER", mmr: 1989 },
-        { name: "pulse jubbo", title: "S1 GRAND CHAMPION", mmr: 1948 },
+        { name: "pulse jubbo", title: "S1 GRAND CHAMPION", mmr: 1917 },
         { name: "pl havicic", title: "RSCS S1 REGIONAL CHAMPION", mmr: 2006 },
         { name: "ryft.", title: "S1 SUPERSLOT LEGEND", mmr: 1895 },
         { name: "Lyric", title: "RSCS S1 CONTENDER", mmr: 1913 },
@@ -607,7 +607,6 @@ const aiNames = [
         { name: "Cipher", title: "S1 SUPERSLOT LEGEND", mmr: 1897 },
         { name: "nova", title: "RSCS S1 CHALLENGER", mmr: 1919 },
         { name: "juzz", title: "S1 GRAND CHAMPION", mmr: 1886 },
-        { name: "vortexx", title: "S1 GRAND CHAMPION", mmr: 1903 },
         { name: "officer", title: ".", mmr: 1869 },
         { name: "strike", title: "S1 SUPERSLOT LEGEND", mmr: 1878 },
         { name: "Titan", title: "S1 GRAND CHAMPION", mmr: 1925 },
@@ -621,9 +620,9 @@ const aiNames = [
         { name: "cheese.", title: "RSCS S1 CONTENDER", mmr: 1894 },
         { name: "frostbite", title: "S1 GRAND CHAMPION", mmr: 1907 },
         { name: "warthunderisbest", title: "S1 SUPERSLOT LEGEND", mmr: 1875 },
-        { name: "eecipe", title: "RSCS S1 CHALLENGER", mmr: 1888 },       
+        { name: "eecipe", title: "RSCS S1 CHALLENGER", mmr: 1888 },
         { name: "quantum", title: "S1 SUPERSLOT LEGEND", mmr: 1867 }
-    ] 
+    ]
 };
   
   function startMatch() {
@@ -632,7 +631,18 @@ const aiNames = [
       
       // Set player info
       document.getElementById("player-username").textContent = playerData.username;
-      document.getElementById("player-title").textContent = playerData.title;
+      const playerTitleElement = document.getElementById("player-title");
+      playerTitleElement.textContent = playerData.title;
+      // Apply title effects for player
+      const playerTitle = titles.find(t => t.title === playerData.title);
+      if (playerTitle) {
+          playerTitleElement.style.color = playerTitle.color;
+          if (playerTitle.glow) {
+              playerTitleElement.classList.add("glowing-title");
+          } else {
+              playerTitleElement.classList.remove("glowing-title");
+          }
+      }
       document.getElementById("player-rank").textContent = getRank(playerData.mmr);
       document.getElementById("player-mmr").textContent = playerData.mmr;
       
@@ -640,7 +650,11 @@ const aiNames = [
       if (playerData.mmr >= 1864) {
           // SuperSlot Legend rank - can face SSL AIs
           const selectedAI = specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
-          aiData = { ...selectedAI };
+          aiData = {
+              username: selectedAI.name,
+              title: selectedAI.title,
+              mmr: selectedAI.mmr
+          };
       } else {
           // Regular AI with random grey title (including Grand Champions)
           const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
@@ -652,7 +666,18 @@ const aiNames = [
       }
       
       document.getElementById("ai-username").textContent = aiData.username;
-      document.getElementById("ai-title").textContent = aiData.title;
+      const aiTitleElement = document.getElementById("ai-title");
+      aiTitleElement.textContent = aiData.title;
+      // Apply title effects for AI
+      const aiTitle = titles.find(t => t.title === aiData.title);
+      if (aiTitle) {
+          aiTitleElement.style.color = aiTitle.color;
+          if (aiTitle.glow) {
+              aiTitleElement.classList.add("glowing-title");
+          } else {
+              aiTitleElement.classList.remove("glowing-title");
+          }
+      }
       document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
       document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
       
