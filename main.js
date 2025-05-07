@@ -69,7 +69,7 @@ const aiNames = [
       peakMMR: 600,
       coins: 0,
     inventory: [],
-    unlockedTitles: []
+    ownedTitles: ["NONE"] // Track all titles the player owns
   };
   let aiData = {
       username: "",
@@ -120,12 +120,12 @@ const aiNames = [
       const savedData = localStorage.getItem("playerData");
       if (savedData) {
           playerData = JSON.parse(savedData);
-          // Initialize unlockedTitles if it doesn't exist
-          if (!playerData.unlockedTitles) {
-              playerData.unlockedTitles = [];
-              // Add current title to unlocked titles if it's not NONE
+          // Initialize ownedTitles if it doesn't exist
+          if (!playerData.ownedTitles) {
+              playerData.ownedTitles = ["NONE"];
+              // Add current title to owned titles if it's not NONE
               if (playerData.title && playerData.title !== "NONE") {
-                  playerData.unlockedTitles.push(playerData.title);
+                  playerData.ownedTitles.push(playerData.title);
               }
               savePlayerData();
           }
@@ -382,23 +382,14 @@ const aiNames = [
   
   function checkForNewTitles() {
       const availableTitles = getAvailableTitles();
-      const currentTitleName = playerData.title || "NONE";
-      
-      // Initialize unlockedTitles if it doesn't exist
-      if (!playerData.unlockedTitles) {
-          playerData.unlockedTitles = [];
-      }
       
       // Check if player has unlocked any new titles
       availableTitles.forEach(title => {
           if (title && title.title && 
               title.title !== "NONE" && 
-              title.title !== currentTitleName &&
-              !playerData.unlockedTitles.includes(title.title)) {
+              !playerData.ownedTitles.includes(title.title)) {
               showTitleNotification(title);
-              playerData.unlockedTitles.push(title.title);
-              console.log("New title unlocked:", title.title); // Debug log
-              console.log("Current unlocked titles:", playerData.unlockedTitles); // Debug log
+              playerData.ownedTitles.push(title.title);
               savePlayerData();
           }
       });
