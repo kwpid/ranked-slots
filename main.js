@@ -305,7 +305,6 @@ const aiNames = [
         glow: false,
         minMMR: 0,
         wlUsers: [],
-        sortOrder: 0 // Special sort order for NONE
     },
     {
         title: "S1 GRAND CHAMPION",
@@ -313,7 +312,6 @@ const aiNames = [
         glow: true,
         minMMR: null,
         wlUsers: ["kwpid"],
-        sortOrder: 1
     },
     {
         title: "OG",
@@ -321,7 +319,6 @@ const aiNames = [
         glow: false,
         minMMR: 100,
         wlUsers: [""],
-        sortOrder: 2
     }
 ];
   
