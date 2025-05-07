@@ -314,8 +314,7 @@
     font-size: 1.2em;
   }
       .glowing-title {
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7),
-      0 0 20px rgba(255, 255, 255, 0.6), 0 0 30px rgba(255, 255, 255, 0.5);
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
   }
       .button-container {
     display: flex;
@@ -570,7 +569,7 @@
 
 /* Glow effect for titles */
 .glowing-title {
-    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
 }
 
 .title-item .glow {
@@ -716,6 +715,39 @@
 /* Remove shop/inventory related styles */
 .shop-item, .inventory-item {
     display: none;
+}
+
+/* Player Stats in Leaderboard */
+.player-stats {
+    margin-top: 20px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-top: 2px solid #333;
+}
+
+.player-stats-header {
+    font-size: 1.2em;
+    color: #ffcc00;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.player-stats-content {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1em;
+}
+
+.player-stats-rank, .player-stats-mmr {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+/* World Rank Display */
+#world-rank {
+    margin-top: 5px;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
 }
     </style>
 </head>
