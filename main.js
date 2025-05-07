@@ -781,6 +781,37 @@ const aiNames = [
       return playerDots === 5 || aiDots === 5;
   }
   
+  function calculateMMRChange(playerMMR, opponentMMR, playerWon) {
+      // Constants for MMR calculation
+      const K = 32; // Base K-factor
+      const MMR_SCALE = 400; // Scale factor for MMR difference
+      const MIN_MMR_CHANGE = 8; // Minimum MMR change
+      const MAX_MMR_CHANGE = 50; // Maximum MMR change
+      
+      // Calculate expected score using logistic function
+      const expectedScore = 1 / (1 + Math.pow(10, (opponentMMR - playerMMR) / MMR_SCALE));
+      
+      // Calculate actual score (1 for win, 0 for loss)
+      const actualScore = playerWon ? 1 : 0;
+      
+      // Calculate base MMR change
+      let mmrChange = Math.round(K * (actualScore - expectedScore));
+      
+      // Apply scaling based on MMR difference
+      const mmrDiff = Math.abs(playerMMR - opponentMMR);
+      if (mmrDiff > 200) {
+          // Scale down MMR changes for large MMR differences
+          const scaleFactor = Math.max(0.5, 1 - (mmrDiff - 200) / 1000);
+          mmrChange = Math.round(mmrChange * scaleFactor);
+      }
+      
+      // Ensure MMR change stays within bounds
+      mmrChange = Math.max(MIN_MMR_CHANGE, Math.min(MAX_MMR_CHANGE, Math.abs(mmrChange)));
+      
+      // Return positive or negative based on win/loss
+      return playerWon ? mmrChange : -mmrChange;
+  }
+  
   function endGame(playerWon) {
       if (!gameActive) return; // Prevent multiple calls
       
@@ -788,17 +819,17 @@ const aiNames = [
       clearInterval(spinInterval);
       clearInterval(countdownInterval);
       
-      // Update MMR
+      // Calculate MMR change using the new system
       const oldMMR = playerData.mmr;
-      const mmrChange = playerWon ? 25 : -20;
+      const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
       playerData.mmr += mmrChange;
       
       // Update stats and coins
-      let coinsEarned = 0; // Initialize coinsEarned
+      let coinsEarned = 0;
       if (playerWon) {
           playerData.wins++;
           // Add random coins between 10-15 for wins
-          coinsEarned = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
+          coinsEarned = Math.floor(Math.random() * 6) + 10;
           playerData.coins += coinsEarned;
       } else {
           playerData.losses++;
@@ -829,10 +860,10 @@ const aiNames = [
       if (playerWon) {
           const coinsElement = document.getElementById("player-coins");
           coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
-          coinsElement.style.color = "#ffcc00"; // Gold color for coins
+          coinsElement.style.color = "#ffcc00";
       } else {
           const coinsElement = document.getElementById("player-coins");
-          coinsElement.textContent = ""; // Clear coins text for losses
+          coinsElement.textContent = "";
       }
       
       // Update menu display
