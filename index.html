@@ -656,6 +656,56 @@
 .popup:not(.hidden) {
     animation: popupAppear 0.3s ease-out forwards;
 }
+/* Leaderboard Styles */
+#leaderboard-list {
+    max-height: 500px;
+    overflow-y: auto;
+    margin: 20px 0;
+}
+
+.leaderboard-entry {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    transition: background-color 0.2s;
+}
+
+.leaderboard-entry:hover {
+    background-color: #2a2a2a;
+}
+
+.leaderboard-rank {
+    width: 40px;
+    font-weight: bold;
+    color: #ffcc00;
+}
+
+.leaderboard-player {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.leaderboard-username {
+    font-weight: bold;
+}
+
+.leaderboard-title {
+    color: #ffcc00;
+}
+
+.leaderboard-mmr {
+    width: 80px;
+    text-align: right;
+    color: #00ff00;
+}
+
+.leaderboard-entry.player-entry {
+    background-color: rgba(255, 204, 0, 0.1);
+    border-left: 3px solid #ffcc00;
+} 
     </style>
 </head>
 <body>
@@ -807,17 +857,25 @@
         </div>
         <div id="inventory-hero" class="tab-content">
             <p>Your owned heroes...</p>
-            <button class="button">Equip</button>
         </div>
         <div id="inventory-skin" class="tab-content hidden">
             <p>Your owned skins...</p>
-            <button class="button">Equip</button>
         </div>
         <div id="inventory-title" class="tab-content hidden">
             <p>Your owned titles...</p>
-            <button class="button">Equip</button>
         </div>
         <button class="close-button" onclick="closePopup('inventory-popup')">Close</button>
+    </div>
+</div>
+
+<!-- Leaderboard Popup -->
+<div id="leaderboard-popup" class="popup hidden">
+    <div class="popup-content">
+        <h2>Top 25 SuperSlot Legends</h2>
+        <div id="leaderboard-list">
+            <!-- Leaderboard entries will be populated here -->
+        </div>
+        <button class="close-button" onclick="closePopup('leaderboard-popup')">Close</button>
     </div>
 </div>
     <script src="main.js"></script>
