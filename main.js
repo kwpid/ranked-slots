@@ -62,13 +62,14 @@ const aiNames = [
   
   let playerData = {
       username: "Player",
-      title: "None",
+      title: "NONE",
       wins: 0,
       losses: 0,
       mmr: 600,
       peakMMR: 600,
       coins: 0,
     inventory: [],
+    unlockedTitles: []
   };
   let aiData = {
       username: "",
@@ -118,6 +119,15 @@ const aiNames = [
       const savedData = localStorage.getItem("playerData");
       if (savedData) {
           playerData = JSON.parse(savedData);
+          // Initialize unlockedTitles if it doesn't exist
+          if (!playerData.unlockedTitles) {
+              playerData.unlockedTitles = [];
+              // Add current title to unlocked titles if it's not NONE
+              if (playerData.title && playerData.title !== "NONE") {
+                  playerData.unlockedTitles.push(playerData.title);
+              }
+              savePlayerData();
+          }
       }
   }
   function loadShop() {
