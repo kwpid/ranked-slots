@@ -288,20 +288,30 @@ const aiNames = [
   
   const titles = [
     {
-      "title": "S1 GRAND CHAMPION",
-      "color": "red",
-      "glow": true,
-      "minMMR": null,
-      "wlUsers": ["kwpid"]
+        title: "NONE",
+        color: "grey",
+        glow: false,
+        minMMR: 0,
+        wlUsers: [],
+        sortOrder: 0 // Special sort order for NONE
     },
     {
-      "title": "OG",
-      "color": "grey",
-      "glow": false,
-      "minMMR": 100,
-      "wlUsers": [""]
+        title: "S1 GRAND CHAMPION",
+        color: "red",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"],
+        sortOrder: 1
     },
-  ]
+    {
+        title: "OG",
+        color: "grey",
+        glow: false,
+        minMMR: 100,
+        wlUsers: [""],
+        sortOrder: 2
+    }
+];
   
   
   
@@ -620,6 +630,31 @@ const aiNames = [
           if (title.wlUsers.includes(playerData.username)) return true;
           if (title.minMMR && playerData.mmr >= title.minMMR) return true;
           return false;
+      }).sort((a, b) => {
+          // NONE always first
+          if (a.title === "NONE") return -1;
+          if (b.title === "NONE") return 1;
+
+          // Season titles (S#) second
+          const aIsSeason = a.title.startsWith("S") && !isNaN(parseInt(a.title[1]));
+          const bIsSeason = b.title.startsWith("S") && !isNaN(parseInt(b.title[1]));
+          
+          if (aIsSeason && !bIsSeason) return -1;
+          if (!aIsSeason && bIsSeason) return 1;
+          
+          // If both are season titles, sort by season number
+          if (aIsSeason && bIsSeason) {
+              const aSeason = parseInt(a.title[1]);
+              const bSeason = parseInt(b.title[1]);
+              if (aSeason !== bSeason) return bSeason - aSeason; // Higher season first
+          }
+
+          // Grey titles last
+          if (a.color === "grey" && b.color !== "grey") return 1;
+          if (a.color !== "grey" && b.color === "grey") return -1;
+
+          // If both are same type, sort alphabetically
+          return a.title.localeCompare(b.title);
       });
   }
   
@@ -655,7 +690,11 @@ const aiNames = [
   }
   
   function equipTitle(title) {
-      playerData.title = title;
+      if (title === "NONE") {
+          playerData.title = ""; // Empty string means no title equipped
+      } else {
+          playerData.title = title;
+      }
       savePlayerData();
       updateTitleDisplay();
       closePopup("title-popup");
@@ -663,15 +702,21 @@ const aiNames = [
   
   function updateTitleDisplay() {
       const titleDisplay = document.getElementById("title-display");
-      const currentTitle = titles.find(t => t.title === playerData.title);
+      const currentTitle = titles.find(t => t.title === playerData.title) || titles[0]; // Default to NONE if no title found
       
       if (currentTitle) {
-          titleDisplay.textContent = currentTitle.title;
-          titleDisplay.style.color = currentTitle.color;
-          if (currentTitle.glow) {
-              titleDisplay.classList.add("glowing-title");
-          } else {
+          if (playerData.title === "") {
+              titleDisplay.textContent = "NONE";
+              titleDisplay.style.color = "grey";
               titleDisplay.classList.remove("glowing-title");
+          } else {
+              titleDisplay.textContent = currentTitle.title;
+              titleDisplay.style.color = currentTitle.color;
+              if (currentTitle.glow) {
+                  titleDisplay.classList.add("glowing-title");
+              } else {
+                  titleDisplay.classList.remove("glowing-title");
+              }
           }
       }
   }
@@ -691,6 +736,14 @@ const aiNames = [
           titleSpan.style.color = title.color;
           if (title.glow) {
               titleSpan.classList.add("glow");
+          }
+          
+          // Add a checkmark if this is the currently equipped title
+          if (title.title === playerData.title) {
+              const checkmark = document.createElement("span");
+              checkmark.textContent = " ✓";
+              checkmark.style.color = "#00ff00";
+              titleSpan.appendChild(checkmark);
           }
           
           titleElement.appendChild(titleSpan);
