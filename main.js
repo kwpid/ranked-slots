@@ -1066,8 +1066,9 @@ const aiNames = [
       // Find player's rank in the full list
       const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
 
-      // Add player stats at the bottom of the popup (outside the scrollable list)
+      // Add player stats above the close button
       const popupContent = document.querySelector("#leaderboard-popup .popup-content");
+      const closeButton = popupContent.querySelector(".close-button");
       
       // Remove existing player stats if they exist
       const existingStats = popupContent.querySelector(".player-stats");
@@ -1085,7 +1086,8 @@ const aiNames = [
           </div>
       `;
       
-      popupContent.appendChild(playerStats);
+      // Insert player stats before the close button
+      closeButton.parentNode.insertBefore(playerStats, closeButton);
   }
   
   function getRank(mmr) {
