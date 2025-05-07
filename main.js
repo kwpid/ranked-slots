@@ -443,9 +443,12 @@ const aiNames = [
       const mmrChange = playerWon ? 25 : -20;
       playerData.mmr += mmrChange;
       
-      // Update stats
+      // Update stats and coins
       if (playerWon) {
           playerData.wins++;
+          // Add random coins between 10-15 for wins
+          const coinsEarned = Math.floor(Math.random() * 6) + 10; // Random number between 10-15
+          playerData.coins += coinsEarned;
       } else {
           playerData.losses++;
       }
@@ -470,6 +473,16 @@ const aiNames = [
       document.getElementById("old-mmr").textContent = oldMMR;
       document.getElementById("new-mmr").textContent = playerData.mmr;
       document.getElementById("mmr-change").textContent = `MMR Change: ${mmrChange > 0 ? "+" : ""}${mmrChange}`;
+      
+      // Show coins earned if player won
+      if (playerWon) {
+          const coinsElement = document.getElementById("player-coins");
+          coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
+          coinsElement.style.color = "#ffcc00"; // Gold color for coins
+      }
+      
+      // Update menu display
+      updateMenu();
   }
   
   
@@ -614,15 +627,31 @@ const aiNames = [
       const popup = document.getElementById("notification-popup");
       const titleElement = document.getElementById("new-title");
       
+      // Set title text and style
       titleElement.textContent = title.title;
       titleElement.style.color = title.color;
+      
+      // Handle glow effect
       if (title.glow) {
           titleElement.classList.add("glowing-title");
       } else {
           titleElement.classList.remove("glowing-title");
       }
       
+      // Show popup with animation
       popup.classList.remove("hidden");
+      
+  
+      
+      // Add event listeners for buttons
+      document.getElementById("ok-button").onclick = () => {
+          popup.classList.add("hidden");
+      };
+      
+      document.getElementById("equip-now-button").onclick = () => {
+          equipTitle(title.title);
+          popup.classList.add("hidden");
+      };
   }
   
   function equipTitle(title) {

@@ -380,6 +380,253 @@
     cursor: pointer;
     border-radius: 5px;
 }
+
+/* Notification Popup Styles */
+#notification-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #333;
+}
+
+.notification-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#notification-popup h2 {
+    color: #ffcc00;
+    font-size: 24px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.title-preview {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px 0;
+    border: 1px solid #444;
+}
+
+#new-title {
+    font-size: 28px;
+    font-weight: bold;
+    display: block;
+    padding: 10px;
+}
+
+#notification-popup .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+#notification-popup .button {
+    min-width: 120px;
+    background: linear-gradient(135deg, #444 0%, #333 100%);
+    border: 1px solid #555;
+    padding: 12px 25px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+#notification-popup .button:hover {
+    background: linear-gradient(135deg, #555 0%, #444 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+#equip-now-button {
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
+    color: #000 !important;
+    border: none !important;
+}
+
+#equip-now-button:hover {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%) !important;
+}
+
+/* Animation for the notification popup */
+@keyframes notificationAppear {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+#notification-popup:not(.hidden) {
+    animation: notificationAppear 0.3s ease-out forwards;
+}
+
+/* Common button styles for all popups */
+.popup .button,
+.popup button {
+    min-width: 120px;
+    background: linear-gradient(135deg, #444 0%, #333 100%);
+    border: 1px solid #555;
+    padding: 12px 25px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.popup .button:hover,
+.popup button:hover {
+    background: linear-gradient(135deg, #555 0%, #444 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Glow effect for titles */
+.glowing-title {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+.title-item .glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+/* Update notification popup styles */
+#notification-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #333;
+}
+
+.notification-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#notification-popup h2 {
+    color: #ffcc00;
+    font-size: 24px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+}
+
+.title-preview {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+    margin: 10px 0;
+    border: 1px solid #444;
+}
+
+#new-title {
+    font-size: 28px;
+    font-weight: bold;
+    display: block;
+    padding: 10px;
+}
+
+#notification-popup .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+#equip-now-button {
+    background: linear-gradient(135deg, #ffcc00 0%, #ff9900 100%) !important;
+    color: #000 !important;
+    border: none !important;
+}
+
+#equip-now-button:hover {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%) !important;
+}
+
+/* Title popup specific styles */
+#title-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 2px solid #333;
+}
+
+.title-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.title-item:hover {
+    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.title-item span {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* Animation for popups */
+@keyframes popupAppear {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.popup:not(.hidden) {
+    animation: popupAppear 0.3s ease-out forwards;
+}
     </style>
 </head>
 <body>
@@ -487,10 +734,16 @@
 
 <!-- Notification Popup -->
 <div id="notification-popup" class="hidden">
-    <h2>NEW ITEM UNLOCKED:</h2>
-    <p id="new-title"></p>
-    <button id="ok-button">OK</button>
-    <button id="equip-now-button">Equip Now</button>
+    <div class="notification-content">
+        <h2>NEW TITLE UNLOCKED!</h2>
+        <div class="title-preview">
+            <span id="new-title"></span>
+        </div>
+        <div class="button-container">
+            <button id="ok-button" class="button">OK</button>
+            <button id="equip-now-button" class="button">EQUIP NOW</button>
+        </div>
+    </div>
 </div>
 <!-- Shop Popup -->
 <div id="shop-popup" class="popup hidden">
