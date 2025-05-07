@@ -661,14 +661,21 @@
     max-height: 500px;
     overflow-y: auto;
     margin: 20px 0;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
 }
 
 .leaderboard-entry {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 12px 15px;
     border-bottom: 1px solid #333;
     transition: background-color 0.2s;
+}
+
+.leaderboard-entry:last-child {
+    border-bottom: none;
 }
 
 .leaderboard-entry:hover {
@@ -676,36 +683,40 @@
 }
 
 .leaderboard-rank {
-    width: 40px;
+    width: 50px;
     font-weight: bold;
     color: #ffcc00;
+    font-size: 1.1em;
 }
 
 .leaderboard-player {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 .leaderboard-username {
     font-weight: bold;
-}
-
-.leaderboard-title {
-    color: #ffcc00;
+    font-size: 1.1em;
 }
 
 .leaderboard-mmr {
-    width: 80px;
+    width: 100px;
     text-align: right;
     color: #00ff00;
+    font-weight: bold;
+    font-size: 1.1em;
 }
 
 .leaderboard-entry.player-entry {
     background-color: rgba(255, 204, 0, 0.1);
     border-left: 3px solid #ffcc00;
-} 
+}
+
+/* Remove shop/inventory related styles */
+.shop-item, .inventory-item {
+    display: none;
+}
     </style>
 </head>
 <body>
@@ -731,8 +742,6 @@
     <button class="button" onclick="startQueue()">Queue</button>
 
     <div class="button-container">
-       <button class="button" onclick="openPopup('shop-popup')">Shop</button>
-        <button class="button" onclick="openPopup('inventory-popup')">Inventory</button>
         <button class="button" onclick="openPopup('title-popup'); loadTitlesPopup();">Titles</button>
     </div>
 </div>
@@ -822,49 +831,6 @@
             <button id="ok-button" class="button">OK</button>
             <button id="equip-now-button" class="button">EQUIP NOW</button>
         </div>
-    </div>
-</div>
-<!-- Shop Popup -->
-<div id="shop-popup" class="popup hidden">
-    <div class="popup-content">
-        <h2>Shop</h2>
-        <div class="tab-container">
-            <button class="tab-button active" onclick="switchTab('shop', 'hero')">Hero</button>
-            <button class="tab-button" onclick="switchTab('shop', 'skin')">Skin</button>
-            <button class="tab-button" onclick="switchTab('shop', 'title')">Title</button>
-        </div>
-        <div id="shop-hero" class="tab-content">
-            <p>Placeholder heroes for sale...</p>
-        </div>
-        <div id="shop-skin" class="tab-content hidden">
-            <p>Placeholder skins for sale...</p>
-        </div>
-        <div id="shop-title" class="tab-content hidden">
-            <p>Placeholder titles for sale...</p>
-        </div>
-        <button class="close-button" onclick="closePopup('shop-popup')">Close</button>
-    </div>
-</div>
-
-<!-- Inventory Popup -->
-<div id="inventory-popup" class="popup hidden">
-    <div class="popup-content">
-        <h2>Inventory</h2>
-        <div class="tab-container">
-            <button class="tab-button active" onclick="switchTab('inventory', 'hero')">Hero</button>
-            <button class="tab-button" onclick="switchTab('inventory', 'skin')">Skin</button>
-            <button class="tab-button" onclick="switchTab('inventory', 'title')">Title</button>
-        </div>
-        <div id="inventory-hero" class="tab-content">
-            <p>Your owned heroes...</p>
-        </div>
-        <div id="inventory-skin" class="tab-content hidden">
-            <p>Your owned skins...</p>
-        </div>
-        <div id="inventory-title" class="tab-content hidden">
-            <p>Your owned titles...</p>
-        </div>
-        <button class="close-button" onclick="closePopup('inventory-popup')">Close</button>
     </div>
 </div>
 
