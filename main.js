@@ -939,6 +939,27 @@ const aiNames = [
   }
   
   
+  function getPlayerWorldRank() {
+      // Get all SSL AIs and sort by MMR
+      const allPlayers = [...specialAIs.superSlotLegends];
+      
+      // Add player if they're SSL
+      if (playerData.mmr >= 1864) {
+          allPlayers.push({
+              name: playerData.username,
+              mmr: playerData.mmr,
+              isPlayer: true
+          });
+      }
+
+      // Sort by MMR (highest to lowest)
+      allPlayers.sort((a, b) => b.mmr - a.mmr);
+
+      // Find player's rank
+      const playerIndex = allPlayers.findIndex(p => p.name === playerData.username);
+      return playerIndex !== -1 ? playerIndex + 1 : null;
+  }
+
   function updateMenu() {
       document.getElementById("username-display").textContent = playerData.username;
     
@@ -948,13 +969,36 @@ const aiNames = [
       const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
       document.getElementById("winrate").textContent = `${winRate}%`;
       document.getElementById("peak-mmr").textContent = playerData.peakMMR;
-    document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
+      document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
       const rank = getRank(playerData.mmr);
       document.getElementById("current-rank").textContent = rank;
       document.getElementById("current-mmr").textContent = playerData.mmr;
       document.getElementById("rank-image").src = getRankImage(rank);
       document.getElementById("player-coins").textContent = playerData.coins;
-  
+
+      // Add world rank display if player is SSL
+      const worldRank = getPlayerWorldRank();
+      const mmrDisplay = document.getElementById("current-mmr");
+      if (worldRank !== null) {
+          // Create or update world rank span
+          let worldRankSpan = document.getElementById("world-rank");
+          if (!worldRankSpan) {
+              worldRankSpan = document.createElement("span");
+              worldRankSpan.id = "world-rank";
+              worldRankSpan.style.display = "block";
+              worldRankSpan.style.fontSize = "0.8em";
+              worldRankSpan.style.color = "#ffcc00";
+              mmrDisplay.parentNode.insertBefore(worldRankSpan, mmrDisplay.nextSibling);
+          }
+          worldRankSpan.textContent = `#${worldRank} WORLD`;
+      } else {
+          // Remove world rank span if it exists and player is not SSL
+          const worldRankSpan = document.getElementById("world-rank");
+          if (worldRankSpan) {
+              worldRankSpan.remove();
+          }
+      }
+
       // Add leaderboard button if not already present
       if (!document.getElementById("leaderboard-button")) {
           const menuButtons = document.querySelector("#menu-screen .button-container");
@@ -969,8 +1013,65 @@ const aiNames = [
           menuButtons.appendChild(leaderboardButton);
       }
 
-      savePlayerData(); // Save data whenever menu is updated
+      savePlayerData();
   }
+
+  function loadLeaderboard() {
+      const leaderboardList = document.getElementById("leaderboard-list");
+      leaderboardList.innerHTML = "";
+
+      // Get all SSL AIs and sort by MMR
+      const allPlayers = [...specialAIs.superSlotLegends];
+      
+      // Add player if they're SSL
+      if (playerData.mmr >= 1864) {
+          allPlayers.push({
+              name: playerData.username,
+              mmr: playerData.mmr,
+              isPlayer: true
+          });
+      }
+
+      // Sort by MMR (highest to lowest)
+      allPlayers.sort((a, b) => b.mmr - a.mmr);
+
+      // Take top 25
+      const top25 = allPlayers.slice(0, 25);
+
+      // Create leaderboard entries
+      top25.forEach((player, index) => {
+          const entry = document.createElement("div");
+          entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+          
+          entry.innerHTML = `
+              <div class="leaderboard-rank">#${index + 1}</div>
+              <div class="leaderboard-player">
+                  <span class="leaderboard-username">${player.name}</span>
+              </div>
+              <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+          `;
+          
+          leaderboardList.appendChild(entry);
+      });
+
+      // Add player stats at the bottom
+      const playerStats = document.createElement("div");
+      playerStats.className = "player-stats";
+      
+      // Find player's rank in the full list
+      const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+      
+      playerStats.innerHTML = `
+          <div class="player-stats-header">Your Stats</div>
+          <div class="player-stats-content">
+              <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+              <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+          </div>
+      `;
+      
+      leaderboardList.appendChild(playerStats);
+  }
+  
   function getRank(mmr) {
       const ranks = [
           { name: "Bronze I", min: 0, max: 173 },
@@ -1134,45 +1235,6 @@ const aiNames = [
           titleElement.onclick = () => equipTitle(title.title);
           
           titlesList.appendChild(titleElement);
-      });
-  }
-  
-  function loadLeaderboard() {
-      const leaderboardList = document.getElementById("leaderboard-list");
-      leaderboardList.innerHTML = "";
-
-      // Get all SSL AIs and sort by MMR
-      const allPlayers = [...specialAIs.superSlotLegends];
-      
-      // Add player if they're SSL
-      if (playerData.mmr >= 1864) {
-          allPlayers.push({
-              name: playerData.username,
-              mmr: playerData.mmr,
-              isPlayer: true
-          });
-      }
-
-      // Sort by MMR (highest to lowest)
-      allPlayers.sort((a, b) => b.mmr - a.mmr);
-
-      // Take top 25
-      const top25 = allPlayers.slice(0, 25);
-
-      // Create leaderboard entries
-      top25.forEach((player, index) => {
-          const entry = document.createElement("div");
-          entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-          
-          entry.innerHTML = `
-              <div class="leaderboard-rank">#${index + 1}</div>
-              <div class="leaderboard-player">
-                  <span class="leaderboard-username">${player.name}</span>
-              </div>
-              <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-          `;
-          
-          leaderboardList.appendChild(entry);
       });
   }
   
