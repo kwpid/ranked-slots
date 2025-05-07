@@ -370,11 +370,13 @@ const aiNames = [
   
   function checkForNewTitles() {
       const availableTitles = getAvailableTitles();
-      const currentTitle = titles.find(t => t.title === playerData.title) || titles[0]; // Default to NONE if no title found
+      // Handle empty title case by using NONE
+      const currentTitleName = playerData.title || "NONE";
+      const currentTitle = titles.find(t => t.title === currentTitleName);
       
       // Check if player has unlocked any new titles
       availableTitles.forEach(title => {
-          if (title && title.title && title.title !== "NONE" && title.title !== currentTitle.title) {
+          if (title && title.title && title.title !== "NONE" && title.title !== currentTitleName) {
               showTitleNotification(title);
           }
       });
@@ -696,7 +698,7 @@ const aiNames = [
   
   function equipTitle(title) {
       if (title === "NONE") {
-          playerData.title = ""; // Empty string means no title equipped
+          playerData.title = "NONE"; // Set to "NONE" instead of empty string
       } else {
           playerData.title = title;
       }
@@ -707,21 +709,16 @@ const aiNames = [
   
   function updateTitleDisplay() {
       const titleDisplay = document.getElementById("title-display");
-      const currentTitle = titles.find(t => t.title === playerData.title) || titles[0]; // Default to NONE if no title found
+      const currentTitleName = playerData.title || "NONE";
+      const currentTitle = titles.find(t => t.title === currentTitleName);
       
       if (currentTitle) {
-          if (playerData.title === "") {
-              titleDisplay.textContent = "NONE";
-              titleDisplay.style.color = "grey";
-              titleDisplay.classList.remove("glowing-title");
+          titleDisplay.textContent = currentTitle.title;
+          titleDisplay.style.color = currentTitle.color;
+          if (currentTitle.glow) {
+              titleDisplay.classList.add("glowing-title");
           } else {
-              titleDisplay.textContent = currentTitle.title;
-              titleDisplay.style.color = currentTitle.color;
-              if (currentTitle.glow) {
-                  titleDisplay.classList.add("glowing-title");
-              } else {
-                  titleDisplay.classList.remove("glowing-title");
-              }
+              titleDisplay.classList.remove("glowing-title");
           }
       }
   }
