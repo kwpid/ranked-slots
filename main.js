@@ -1008,29 +1008,6 @@ const aiNames = [
       document.getElementById("rank-image").src = getRankImage(rank);
       document.getElementById("player-coins").textContent = playerData.coins;
 
-      // Add world rank display if player is SSL
-      const worldRank = getPlayerWorldRank();
-      const mmrDisplay = document.getElementById("current-mmr");
-      if (worldRank !== null) {
-          // Create or update world rank span
-          let worldRankSpan = document.getElementById("world-rank");
-          if (!worldRankSpan) {
-              worldRankSpan = document.createElement("span");
-              worldRankSpan.id = "world-rank";
-              worldRankSpan.style.display = "block";
-              worldRankSpan.style.fontSize = "0.8em";
-              worldRankSpan.style.color = "#ffcc00";
-              mmrDisplay.parentNode.insertBefore(worldRankSpan, mmrDisplay.nextSibling);
-          }
-          worldRankSpan.textContent = `#${worldRank} WORLD`;
-      } else {
-          // Remove world rank span if it exists and player is not SSL
-          const worldRankSpan = document.getElementById("world-rank");
-          if (worldRankSpan) {
-              worldRankSpan.remove();
-          }
-      }
-
       // Add leaderboard button if not already present
       if (!document.getElementById("leaderboard-button")) {
           const menuButtons = document.querySelector("#menu-screen .button-container");
@@ -1086,13 +1063,20 @@ const aiNames = [
           leaderboardList.appendChild(entry);
       });
 
-      // Add player stats at the bottom
-      const playerStats = document.createElement("div");
-      playerStats.className = "player-stats";
-      
       // Find player's rank in the full list
       const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+
+      // Add player stats at the bottom of the popup (outside the scrollable list)
+      const popupContent = document.querySelector("#leaderboard-popup .popup-content");
       
+      // Remove existing player stats if they exist
+      const existingStats = popupContent.querySelector(".player-stats");
+      if (existingStats) {
+          existingStats.remove();
+      }
+
+      const playerStats = document.createElement("div");
+      playerStats.className = "player-stats";
       playerStats.innerHTML = `
           <div class="player-stats-header">Your Stats</div>
           <div class="player-stats-content">
@@ -1101,7 +1085,7 @@ const aiNames = [
           </div>
       `;
       
-      leaderboardList.appendChild(playerStats);
+      popupContent.appendChild(playerStats);
   }
   
   function getRank(mmr) {
