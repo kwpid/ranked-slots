@@ -1025,12 +1025,93 @@ const aiNames = [
       savePlayerData();
   }
 
+  // Firebase integration for AI MMR tracking
+  let superSlotLegends = [];
+  let leaderboardUpdateInterval;
+
+  async function initializeFirebaseDatabase() {
+      const db = window.firebaseDb;
+      const sslCollection = collection(db, 'superSlotLegends');
+      
+      // Check if collection is empty
+      const snapshot = await getDocs(sslCollection);
+      if (snapshot.empty) {
+          console.log("Initializing Firebase database with SSL data...");
+          
+          // Convert existing SSL data to Firebase format
+          const sslData = specialAIs.superSlotLegends.map(ai => ({
+              name: ai.name,
+              title: ai.title,
+              mmr: ai.mmr,
+              lastUpdated: new Date().toISOString()
+          }));
+
+          // Add each AI to Firestore
+          const batch = [];
+          for (const ai of sslData) {
+              const docRef = doc(sslCollection);
+              batch.push(setDoc(docRef, ai));
+          }
+
+          // Commit all documents in a single batch
+          await Promise.all(batch);
+          console.log("Firebase database initialized successfully!");
+      } else {
+          console.log("Firebase database already contains data.");
+      }
+  }
+
+  async function initializeFirebaseAI() {
+      const db = window.firebaseDb;
+      const sslCollection = collection(db, 'superSlotLegends');
+      
+      // Initialize database if needed
+      await initializeFirebaseDatabase();
+      
+      // Initial load of SSL data
+      const snapshot = await getDocs(sslCollection);
+      superSlotLegends = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+      }));
+
+      // Set up real-time listener for SSL updates
+      onSnapshot(sslCollection, (snapshot) => {
+          superSlotLegends = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+          }));
+          
+          // Update leaderboard if it's open
+          if (document.getElementById("leaderboard-popup").style.display === "flex") {
+              loadLeaderboard();
+          }
+      });
+
+      // Set up periodic leaderboard refresh
+      if (leaderboardUpdateInterval) {
+          clearInterval(leaderboardUpdateInterval);
+      }
+      leaderboardUpdateInterval = setInterval(() => {
+          if (document.getElementById("leaderboard-popup").style.display === "flex") {
+              loadLeaderboard();
+          }
+      }, 10 * 60 * 1000); // 10 minutes
+  }
+
+  async function updateAIMmr(aiId, newMmr) {
+      const db = window.firebaseDb;
+      const aiRef = doc(db, 'superSlotLegends', aiId);
+      await setDoc(aiRef, { mmr: newMmr }, { merge: true });
+  }
+
+  // Modify loadLeaderboard to use Firebase data
   function loadLeaderboard() {
       const leaderboardList = document.getElementById("leaderboard-list");
       leaderboardList.innerHTML = "";
 
-      // Get all SSL AIs and sort by MMR
-      const allPlayers = [...specialAIs.superSlotLegends];
+      // Get all SSL AIs from Firebase data
+      const allPlayers = [...superSlotLegends];
       
       // Add player if they're SSL
       if (playerData.mmr >= 1864) {
