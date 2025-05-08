@@ -212,19 +212,37 @@ const aiNames = [
       return items.filter((_, index) => index % 2 === seed);
   }
   // Load data on page load
-  window.onload = () => {
+  window.onload = async () => {
+      try {
+          // Wait for Firebase to be available
+          let attempts = 0;
+          while (!window.firebaseDb && attempts < 10) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              attempts++;
+          }
+
+          if (!window.firebaseDb) {
+              console.error("Firebase failed to initialize");
+          } else {
+              await initializeFirebaseAI();
+          }
+
+          // Continue with normal initialization
       loadPlayerData();
       updateMenu();
       loadShop();
-      updateTitleDisplay();
-      
-      // Add event listeners for title popup buttons
-      document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
-      document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
-      document.getElementById("equip-now-button").onclick = () => {
-          closePopup("notification-popup");
-          openPopup("title-popup");
-      };
+          updateTitleDisplay();
+
+          // Add event listeners for title popup buttons
+          document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
+          document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
+          document.getElementById("equip-now-button").onclick = () => {
+              closePopup("notification-popup");
+              openPopup("title-popup");
+          };
+      } catch (error) {
+          console.error("Error in window.onload:", error);
+      }
   };
   function editUsername() {
       const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
@@ -677,7 +695,7 @@ const aiNames = [
       }
       document.getElementById("player-rank").textContent = getRank(playerData.mmr);
       document.getElementById("player-mmr").textContent = playerData.mmr;
-      
+  
       // Set AI info based on player's MMR
       if (playerData.mmr >= 1864) {
           // SuperSlot Legend rank - can face SSL AIs
@@ -858,12 +876,12 @@ const aiNames = [
       
       // Update stats and coins
       let coinsEarned = 0;
-      if (playerWon) {
+  if (playerWon) {
           playerData.wins++;
           // Add random coins between 10-15 for wins
           coinsEarned = Math.floor(Math.random() * 6) + 10;
           playerData.coins += coinsEarned;
-      } else {
+  } else {
           playerData.losses++;
       }
       
@@ -943,29 +961,29 @@ const aiNames = [
       const baseRank = rank.split(" - ")[0];
   
       const rankImages = {
-        "Bronze I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/939597fb-c29f-4607-9a76-9a6c5f1edf48.image.png?v=1724334781837",
-        "Bronze II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/9965effe-4989-4504-9200-7f04b6b665a2.image.png?v=1724334793116",
-        "Bronze III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a274e890-4257-4cd9-a02a-56bc80be47d3.image.png?v=1724334816902",
-        "Silver I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/28b40287-5562-45ab-a236-5647e96f1d48.image.png?v=1724334852235",
-        "Silver II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/6caddf21-bee3-46c3-9d27-05823806cb67.image.png?v=1724334861872",
-        "Silver III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/faa8edc7-b482-4cc4-b5b0-ceed84627079.image.png?v=1724334871163",
-        "Gold I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/df499a57-8fc0-4524-bdd0-2fae76ec9301.image.png?v=1724334902060",
-        "Gold II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a0dedb5b-6bc3-4322-afbb-77cc07184fec.image.png?v=1724334909730",
-        "Gold III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/d3a3b2fc-6fcf-4bdc-85cc-8da4f40b2993.image.png?v=1724334914955",
-        "Platinum I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/2f23a5f7-efe3-45ee-9cb8-acd533b0d6c4.image.png?v=1724335263302",
-        "Platinum II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3103ab33-c432-43ff-93c3-69a08d1ca602.image.png?v=1724335271866",
-        "Platinum III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c0fa94d0-d195-42d1-92f1-cb082976bdff.image.png?v=1724335280781",
-        "Diamond I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/db671aad-2dd6-4328-897f-3f259be82fc5.image.png?v=1724335489836",
-        "Diamond II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/76c9b43e-d0f6-4b05-9f32-7243d522c5f1.image.png?v=1724335504082",
-        "Diamond III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/07082c63-cce6-4ff1-bff3-c3fceedf2e54.image.png?v=1724335508559",
-        "Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a10c88af-e70d-4891-99e7-57abf90002d5.image.png?v=1724335525065",
-        "Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3d397ae6-e026-45af-b4e3-180318bd415a.image.png?v=1724335551068",
-        "Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c28f3b1a-1396-4f24-aec7-f289695e5695.image.png?v=1724335556235",
-        "Grand Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/90ecba8a-55f9-457c-8834-2ec4ee1c97fe.image.png?v=1724335571459",
-        "Grand Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a90fa27e-2330-45d1-8b74-377fb4028842.image.png?v=1724335635668",
-        "Grand Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/30d7ef7b-605e-4830-aa4d-153e5f77d67b.image.png?v=1724335639506",
+          "Bronze I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/939597fb-c29f-4607-9a76-9a6c5f1edf48.image.png?v=1724334781837",
+          "Bronze II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/9965effe-4989-4504-9200-7f04b6b665a2.image.png?v=1724334793116",
+          "Bronze III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a274e890-4257-4cd9-a02a-56bc80be47d3.image.png?v=1724334816902",
+          "Silver I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/28b40287-5562-45ab-a236-5647e96f1d48.image.png?v=1724334852235",
+          "Silver II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/6caddf21-bee3-46c3-9d27-05823806cb67.image.png?v=1724334861872",
+          "Silver III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/faa8edc7-b482-4cc4-b5b0-ceed84627079.image.png?v=1724334871163",
+          "Gold I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/df499a57-8fc0-4524-bdd0-2fae76ec9301.image.png?v=1724334902060",
+          "Gold II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a0dedb5b-6bc3-4322-afbb-77cc07184fec.image.png?v=1724334909730",
+          "Gold III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/d3a3b2fc-6fcf-4bdc-85cc-8da4f40b2993.image.png?v=1724334914955",
+          "Platinum I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/2f23a5f7-efe3-45ee-9cb8-acd533b0d6c4.image.png?v=1724335263302",
+          "Platinum II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3103ab33-c432-43ff-93c3-69a08d1ca602.image.png?v=1724335271866",
+          "Platinum III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c0fa94d0-d195-42d1-92f1-cb082976bdff.image.png?v=1724335280781",
+          "Diamond I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/db671aad-2dd6-4328-897f-3f259be82fc5.image.png?v=1724335489836",
+          "Diamond II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/76c9b43e-d0f6-4b05-9f32-7243d522c5f1.image.png?v=1724335504082",
+          "Diamond III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/07082c63-cce6-4ff1-bff3-c3fceedf2e54.image.png?v=1724335508559",
+          "Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a10c88af-e70d-4891-99e7-57abf90002d5.image.png?v=1724335525065",
+          "Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3d397ae6-e026-45af-b4e3-180318bd415a.image.png?v=1724335551068",
+          "Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c28f3b1a-1396-4f24-aec7-f289695e5695.image.png?v=1724335556235",
+          "Grand Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/90ecba8a-55f9-457c-8834-2ec4ee1c97fe.image.png?v=1724335571459",
+          "Grand Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a90fa27e-2330-45d1-8b74-377fb4028842.image.png?v=1724335635668",
+          "Grand Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/30d7ef7b-605e-4830-aa4d-153e5f77d67b.image.png?v=1724335639506",
         "SuperSlot Legend": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/21405196-dbc9-4527-91e7-9a41abc6a698.image.png?v=1724335671471",
-    };
+      };
   
       return rankImages[baseRank] || rankImages["Unranked"];
   }
@@ -991,7 +1009,7 @@ const aiNames = [
       const playerIndex = allPlayers.findIndex(p => p.name === playerData.username);
       return playerIndex !== -1 ? playerIndex + 1 : null;
   }
-
+  
   function updateMenu() {
       document.getElementById("username-display").textContent = playerData.username;
     
@@ -1001,13 +1019,13 @@ const aiNames = [
       const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
       document.getElementById("winrate").textContent = `${winRate}%`;
       document.getElementById("peak-mmr").textContent = playerData.peakMMR;
-      document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
+    document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
       const rank = getRank(playerData.mmr);
       document.getElementById("current-rank").textContent = rank;
       document.getElementById("current-mmr").textContent = playerData.mmr;
       document.getElementById("rank-image").src = getRankImage(rank);
       document.getElementById("player-coins").textContent = playerData.coins;
-
+  
       // Add leaderboard button if not already present
       if (!document.getElementById("leaderboard-button")) {
           const menuButtons = document.querySelector("#menu-screen .button-container");
@@ -1028,81 +1046,156 @@ const aiNames = [
   // Firebase integration for AI MMR tracking
   let superSlotLegends = [];
   let leaderboardUpdateInterval;
+  let isFirebaseInitialized = false;
 
   async function initializeFirebaseDatabase() {
-      const db = window.firebaseDb;
-      const sslCollection = collection(db, 'superSlotLegends');
-      
-      // Check if collection is empty
-      const snapshot = await getDocs(sslCollection);
-      if (snapshot.empty) {
-          console.log("Initializing Firebase database with SSL data...");
-          
-          // Convert existing SSL data to Firebase format
-          const sslData = specialAIs.superSlotLegends.map(ai => ({
-              name: ai.name,
-              title: ai.title,
-              mmr: ai.mmr,
-              lastUpdated: new Date().toISOString()
-          }));
-
-          // Add each AI to Firestore
-          const batch = [];
-          for (const ai of sslData) {
-              const docRef = doc(sslCollection);
-              batch.push(setDoc(docRef, ai));
+      try {
+          const db = window.firebaseDb;
+          if (!db) {
+              console.error("Firebase not initialized yet");
+              return false;
           }
 
-          // Commit all documents in a single batch
-          await Promise.all(batch);
-          console.log("Firebase database initialized successfully!");
-      } else {
-          console.log("Firebase database already contains data.");
+          const sslCollection = collection(db, 'superSlotLegends');
+          
+          // Check if collection is empty
+          const snapshot = await getDocs(sslCollection);
+          if (snapshot.empty) {
+              console.log("Initializing Firebase database with SSL data...");
+              
+              // Convert existing SSL data to Firebase format with MMR constraints
+              const sslData = specialAIs.superSlotLegends.map(ai => ({
+                  name: ai.name,
+                  title: ai.title,
+                  mmr: Math.min(2435, Math.max(1864, ai.mmr)), // Ensure MMR is within bounds
+                  lastUpdated: new Date().toISOString()
+              }));
+
+              // Add each AI to Firestore
+              const batch = [];
+              for (const ai of sslData) {
+                  const docRef = doc(sslCollection);
+                  batch.push(setDoc(docRef, ai));
+              }
+
+              // Commit all documents in a single batch
+              await Promise.all(batch);
+              console.log("Firebase database initialized successfully!");
+          } else {
+              console.log("Firebase database already contains data.");
+          }
+          return true;
+      } catch (error) {
+          console.error("Error initializing Firebase database:", error);
+          return false;
       }
   }
 
   async function initializeFirebaseAI() {
-      const db = window.firebaseDb;
-      const sslCollection = collection(db, 'superSlotLegends');
-      
-      // Initialize database if needed
-      await initializeFirebaseDatabase();
-      
-      // Initial load of SSL data
-      const snapshot = await getDocs(sslCollection);
-      superSlotLegends = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-      }));
+      try {
+          if (isFirebaseInitialized) return;
 
-      // Set up real-time listener for SSL updates
-      onSnapshot(sslCollection, (snapshot) => {
+          const db = window.firebaseDb;
+          if (!db) {
+              console.error("Firebase not initialized yet");
+              return;
+          }
+
+          const sslCollection = collection(db, 'superSlotLegends');
+          
+          // Initialize database if needed
+          const initialized = await initializeFirebaseDatabase();
+          if (!initialized) return;
+          
+          // Initial load of SSL data
+          const snapshot = await getDocs(sslCollection);
           superSlotLegends = snapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data()
           }));
-          
-          // Update leaderboard if it's open
-          if (document.getElementById("leaderboard-popup").style.display === "flex") {
-              loadLeaderboard();
-          }
-      });
 
-      // Set up periodic leaderboard refresh
-      if (leaderboardUpdateInterval) {
-          clearInterval(leaderboardUpdateInterval);
-      }
-      leaderboardUpdateInterval = setInterval(() => {
-          if (document.getElementById("leaderboard-popup").style.display === "flex") {
-              loadLeaderboard();
+          // Set up real-time listener for SSL updates
+          onSnapshot(sslCollection, (snapshot) => {
+              superSlotLegends = snapshot.docs.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+              }));
+              
+              // Update leaderboard if it's open
+              if (document.getElementById("leaderboard-popup").style.display === "flex") {
+                  loadLeaderboard();
+              }
+          });
+
+          // Set up periodic leaderboard refresh
+          if (leaderboardUpdateInterval) {
+              clearInterval(leaderboardUpdateInterval);
           }
-      }, 10 * 60 * 1000); // 10 minutes
+          leaderboardUpdateInterval = setInterval(() => {
+              if (document.getElementById("leaderboard-popup").style.display === "flex") {
+                  loadLeaderboard();
+              }
+          }, 10 * 60 * 1000); // 10 minutes
+
+          // Start periodic AI MMR updates
+          startAIMmrUpdates();
+          
+          isFirebaseInitialized = true;
+      } catch (error) {
+          console.error("Error in initializeFirebaseAI:", error);
+      }
   }
 
   async function updateAIMmr(aiId, newMmr) {
       const db = window.firebaseDb;
       const aiRef = doc(db, 'superSlotLegends', aiId);
-      await setDoc(aiRef, { mmr: newMmr }, { merge: true });
+      
+      // Get current AI data
+      const aiDoc = await getDoc(aiRef);
+      const currentData = aiDoc.data();
+      
+      // Simulate offline AI (30% chance of no update)
+      if (Math.random() < 0.3) {
+          console.log(`AI ${currentData.name} is offline, no MMR update`);
+          return;
+      }
+
+      // Calculate MMR change (10-50 points)
+      const mmrChange = Math.floor(Math.random() * 41) + 10; // Random number between 10 and 50
+      
+      // Determine if AI wins or loses based on current MMR
+      let finalMmr;
+      if (currentData.mmr >= 2435) {
+          // At max MMR, can only lose or stay the same
+          finalMmr = Math.max(1864, currentData.mmr - mmrChange);
+      } else if (currentData.mmr <= 1864) {
+          // At min MMR, can only gain or stay the same
+          finalMmr = Math.min(2435, currentData.mmr + mmrChange);
+      } else {
+          // Randomly win or lose
+          finalMmr = Math.random() < 0.5 
+              ? Math.min(2435, currentData.mmr + mmrChange)
+              : Math.max(1864, currentData.mmr - mmrChange);
+      }
+
+      // Update AI data in Firebase
+      await setDoc(aiRef, { 
+          mmr: finalMmr,
+          lastUpdated: new Date().toISOString()
+      }, { merge: true });
+
+      console.log(`AI ${currentData.name} MMR updated: ${currentData.mmr} -> ${finalMmr}`);
+  }
+
+  // Add periodic MMR updates for AIs
+  function startAIMmrUpdates() {
+      // Update random AI every 5 minutes
+      setInterval(async () => {
+          if (superSlotLegends.length > 0) {
+              const randomAI = superSlotLegends[Math.floor(Math.random() * superSlotLegends.length)];
+              await updateAIMmr(randomAI.id, randomAI.mmr);
+          }
+      }, 5 * 60 * 1000); // 5 minutes
   }
 
   // Modify loadLeaderboard to use Firebase data
