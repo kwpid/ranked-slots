@@ -884,6 +884,32 @@
         <button class="close-button" onclick="closePopup('leaderboard-popup')">Close</button>
     </div>
 </div>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuAlOLXHWpO-bqTUw0SqIqL4WT-D0_T1o",
+            authDomain: "velocity-e7139.firebaseapp.com",
+            projectId: "velocity-e7139",
+            storageBucket: "velocity-e7139.firebasestorage.app",
+            messagingSenderId: "134656557995",
+            appId: "1:134656557995:web:09b345ad2e034fb7b448ee",
+            measurementId: "G-1JSWH6SWKB"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        // Make Firebase instances available globally
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAnalytics = analytics;
+    </script>
     <script src="main.js"></script>
 </body>
 </html>
