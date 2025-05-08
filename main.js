@@ -373,6 +373,13 @@ window.onload = () => {
         wlUsers: [""]
     },
     {
+        title: "RSCS S1 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
         title: "RSCS S1 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
@@ -381,6 +388,13 @@ window.onload = () => {
     },
     {
         title: "RSCS S1 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S1 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
@@ -401,6 +415,88 @@ window.onload = () => {
         wlUsers: [""]
     },
 
+     
+
+    // SEASON 2
+    {
+        title: "RSCS S2 CHALLENGER",
+        color: "#4da1f6",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S2 CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S2 ELITE",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 REGIONAL CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S2 REGIONAL FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 MAJOR CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 MAJOR CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 WORLDS CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 WORLD CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+
+      
 
 
     {
@@ -490,7 +586,7 @@ window.onload = () => {
         { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
         { name: "wez", title: "RSCS S1 WORLD CHAMPION", mmr: 2233 },
         { name: "brickbybrick", title: "RSCS S1 CHALLENGER", mmr: 1973 },
-        { name: "Rw9", title: "SALT MINE 1 CHAMPION", mmr: 2338 },
+        { name: "Rw9", title: "RSCS S2 ELITE", mmr: 2338 },
         { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1961 },
         { name: "mawykzy!", title: "S1 TOP CHAMPION", mmr: 2194 },
         { name: "Speed", title: "SALT MINE 3 MAIN EVENT QUALIFIER", mmr: 2167 },
@@ -506,13 +602,13 @@ window.onload = () => {
         { name: "rising.", title: "PRE-SEASON GRAND CHAMPION", mmr: 1948 },
         { name: "?", title: "RSCS ELITE", mmr: 2182 },
         { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 2123 },
-        { name: "f", title: "RSCS S1 MAJOR CONTENDER", mmr: 2257 },
-        { name: "Hawk!", title: "RSCS S1 CHALLENGER", mmr: 2309 },
-        { name: "newpo", title: "2-TIME CHALLENGER", mmr: 2248 },
+        { name: "f", title: "RSCS S2 MAJOR CHAMPION", mmr: 2257 },
+        { name: "Hawk!", title: "RSCS S2 WORLDS CONTENDER", mmr: 2309 },
+        { name: "newpo", title: "RSCS S2 REGIONAL CONTENDER", mmr: 2248 },
         { name: "zen", title: "RSCS MAJOR CHAMPION", mmr: 2289 },
         { name: "v", title: "RSCS S1 CHALLENGER", mmr: 2140 },
         { name: "a7md", title: "X3 S1 SUPERSLOT LEGEND TOURNAMENT WINNER", mmr: 1992 },
-        { name: "sieko", title: "S1 GRAND CHAMPION", mmr: 2111 },
+        { name: "sieko", title: "RSCS S2 WORLD CHAMPION", mmr: 2111 },
         { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1908 },
         { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1913 },
         { name: "toxin", title: "RSCS S1 MAJOR CONTENDER", mmr: 1981 },
@@ -521,7 +617,7 @@ window.onload = () => {
         { name: "Chronic", title: "S1 GRAND CHAMPION", mmr: 1873 },
         { name: "Flinch", title: "S1 GRAND CHAMPION", mmr: 2305 },
         { name: "vatsi", title: "SALT MINE 3 RUNNER-UP", mmr: 2154 },
-        { name: "Xyzle", title: "RSCS S1 CHALLENGER", mmr: 2139 },
+        { name: "Xyzle", title: "RSCS S2 WORLDS CONTENDER", mmr: 2139 },
         { name: "ca$h", title: "RSCS S1 CHALLENGER", mmr: 2139 },
         { name: "Darkmode", title: "RSCS S1 MAJOR CHAMPION", mmr: 2139 },
         { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
@@ -652,7 +748,8 @@ window.onload = () => {
     { name: "sypher", title: "S1 GRAND CHAMPION", mmr: 1949 },
     { name: "jyn", title: "RSCS S1 CHALLENGER", mmr: 1916 },
     { name: "qry", title: "NONE", mmr: 1967 },
-    { name: "neoo", title: "NONE", mmr: 1967 }
+    { name: "neoo", title: "NONE", mmr: 1967 },
+    { name: "kwpid", title: "NONE", mmr: 2067 }
     
     ]
 };
