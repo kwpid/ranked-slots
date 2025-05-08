@@ -1236,20 +1236,24 @@ window.onload = () => {
   
   
   function getAvailableTitles() {
-    const tierOrder = [
-    "WORLD CHAMPION",
-    "WORLDS CONTENDER",
-    "MAJOR CHAMPION",
-    "MAJOR FINALIST",
-    "MAJOR CONTENDER",
-    "REGIONAL CHAMPION",
-    "REGIONAL FINALIST",
-    "REGIONAL CONTENDER",
-    "ELITE",
-    "CONTENDER",
-    "CHALLENGER"
-];
+    const rscsOrder = [
+        "WORLD CHAMPION",
+        "WORLDS CONTENDER",
+        "MAJOR CHAMPION",
+        "MAJOR FINALIST",
+        "MAJOR CONTENDER",
+        "REGIONAL CHAMPION",
+        "REGIONAL FINALIST",
+        "REGIONAL CONTENDER",
+        "ELITE",
+        "CONTENDER",
+        "CHALLENGER"
+    ];
 
+    const rankedOrder = [
+        "SUPERSLOT LEGEND",
+        "GRAND CHAMPION"
+    ];
 
     return titles.filter(title => {
         if (title.title === "NONE") return true;
@@ -1257,37 +1261,53 @@ window.onload = () => {
         if (title.minMMR && playerData.mmr >= title.minMMR) return true;
         return false;
     }).sort((a, b) => {
-        // NONE always first
         if (a.title === "NONE") return -1;
         if (b.title === "NONE") return 1;
 
         const aIsRSCS = a.title.startsWith("RSCS");
         const bIsRSCS = b.title.startsWith("RSCS");
 
-        // RSCS titles come first
+        const aIsRanked = /^S\d+/.test(a.title) && rankedOrder.some(tier => a.title.includes(tier));
+        const bIsRanked = /^S\d+/.test(b.title) && rankedOrder.some(tier => b.title.includes(tier));
+
+        // RSCS first
         if (aIsRSCS && !bIsRSCS) return -1;
         if (!aIsRSCS && bIsRSCS) return 1;
 
+        // If both RSCS
         if (aIsRSCS && bIsRSCS) {
-            const aSeasonMatch = a.title.match(/S(\d+)/);
-            const bSeasonMatch = b.title.match(/S(\d+)/);
+            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
+            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
+            if (aSeason !== bSeason) return bSeason - aSeason;
 
-            const aSeason = aSeasonMatch ? parseInt(aSeasonMatch[1]) : 0;
-            const bSeason = bSeasonMatch ? parseInt(bSeasonMatch[1]) : 0;
-
-            if (aSeason !== bSeason) return bSeason - aSeason; // Newer seasons first
-
-            // Compare title tier
-            const aTier = tierOrder.findIndex(tier => a.title.includes(tier));
-            const bTier = tierOrder.findIndex(tier => b.title.includes(tier));
-
-            return aTier - bTier; // Lower index = lower tier
+            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
+            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
+            return aTier - bTier;
         }
 
-        // Fallback: alphabetical
+        // Ranked second
+        if (aIsRanked && !bIsRanked) return -1;
+        if (!aIsRanked && bIsRanked) return 1;
+
+        if (aIsRanked && bIsRanked) {
+            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
+            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
+            if (aSeason !== bSeason) return bSeason - aSeason;
+
+            const aRank = rankedOrder.findIndex(t => a.title.includes(t));
+            const bRank = rankedOrder.findIndex(t => b.title.includes(t));
+            return aRank - bRank;
+        }
+
+        // Grey titles last
+        if (a.color === "grey" && b.color !== "grey") return 1;
+        if (a.color !== "grey" && b.color === "grey") return -1;
+
+        // Fallback: alphabetically
         return a.title.localeCompare(b.title);
     });
 }
+
 
   
   function showTitleNotification(title) {
