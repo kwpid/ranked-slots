@@ -212,38 +212,20 @@ const aiNames = [
       return items.filter((_, index) => index % 2 === seed);
   }
   // Load data on page load
-  window.onload = async () => {
-      try {
-          // Wait for Firebase to be available
-          let attempts = 0;
-          while (!window.firebaseDb && attempts < 10) {
-              await new Promise(resolve => setTimeout(resolve, 500));
-              attempts++;
-          }
+window.onload = () => {
+    loadPlayerData();
+    updateMenu();
+    loadShop();
+    updateTitleDisplay();
 
-          if (!window.firebaseDb) {
-              console.error("Firebase failed to initialize");
-          } else {
-              await initializeFirebaseAI();
-          }
-
-          // Continue with normal initialization
-      loadPlayerData();
-      updateMenu();
-      loadShop();
-          updateTitleDisplay();
-
-          // Add event listeners for title popup buttons
-          document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
-          document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
-          document.getElementById("equip-now-button").onclick = () => {
-              closePopup("notification-popup");
-              openPopup("title-popup");
-          };
-      } catch (error) {
-          console.error("Error in window.onload:", error);
-      }
-  };
+    // Add event listeners for title popup buttons
+    document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
+    document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
+    document.getElementById("equip-now-button").onclick = () => {
+        closePopup("notification-popup");
+        openPopup("title-popup");
+    };
+};
   function editUsername() {
       const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
       if (newUsername && newUsername.length <= 20) {
@@ -1043,236 +1025,76 @@ const aiNames = [
       savePlayerData();
   }
 
-  // Firebase integration for AI MMR tracking
-  let superSlotLegends = [];
-  let leaderboardUpdateInterval;
-  let isFirebaseInitialized = false;
 
-  async function initializeFirebaseDatabase() {
-      try {
-          const db = window.firebaseDb;
-          if (!db) {
-              console.error("Firebase not initialized yet");
-              return false;
-          }
 
-          const sslCollection = collection(db, 'superSlotLegends');
-          
-          // Check if collection is empty
-          const snapshot = await getDocs(sslCollection);
-          if (snapshot.empty) {
-              console.log("Initializing Firebase database with SSL data...");
-              
-              // Convert existing SSL data to Firebase format with MMR constraints
-              const sslData = specialAIs.superSlotLegends.map(ai => ({
-                  name: ai.name,
-                  title: ai.title,
-                  mmr: Math.min(2435, Math.max(1864, ai.mmr)), // Ensure MMR is within bounds
-                  lastUpdated: new Date().toISOString()
-              }));
+  
 
-              // Add each AI to Firestore
-              const batch = [];
-              for (const ai of sslData) {
-                  const docRef = doc(sslCollection);
-                  batch.push(setDoc(docRef, ai));
-              }
+  
 
-              // Commit all documents in a single batch
-              await Promise.all(batch);
-              console.log("Firebase database initialized successfully!");
-          } else {
-              console.log("Firebase database already contains data.");
-          }
-          return true;
-      } catch (error) {
-          console.error("Error initializing Firebase database:", error);
-          return false;
-      }
-  }
-
-  async function initializeFirebaseAI() {
-      try {
-          if (isFirebaseInitialized) return;
-
-          const db = window.firebaseDb;
-          if (!db) {
-              console.error("Firebase not initialized yet");
-              return;
-          }
-
-          const sslCollection = collection(db, 'superSlotLegends');
-          
-          // Initialize database if needed
-          const initialized = await initializeFirebaseDatabase();
-          if (!initialized) return;
-          
-          // Initial load of SSL data
-          const snapshot = await getDocs(sslCollection);
-          superSlotLegends = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-          }));
-
-          // Set up real-time listener for SSL updates
-          onSnapshot(sslCollection, (snapshot) => {
-              superSlotLegends = snapshot.docs.map(doc => ({
-                  id: doc.id,
-                  ...doc.data()
-              }));
-              
-              // Update leaderboard if it's open
-              if (document.getElementById("leaderboard-popup").style.display === "flex") {
-                  loadLeaderboard();
-              }
-          });
-
-          // Set up periodic leaderboard refresh
-          if (leaderboardUpdateInterval) {
-              clearInterval(leaderboardUpdateInterval);
-          }
-          leaderboardUpdateInterval = setInterval(() => {
-              if (document.getElementById("leaderboard-popup").style.display === "flex") {
-                  loadLeaderboard();
-              }
-          }, 10 * 60 * 1000); // 10 minutes
-
-          // Start periodic AI MMR updates
-          startAIMmrUpdates();
-          
-          isFirebaseInitialized = true;
-      } catch (error) {
-          console.error("Error in initializeFirebaseAI:", error);
-      }
-  }
-
-  async function updateAIMmr(aiId, newMmr) {
-      const db = window.firebaseDb;
-      const aiRef = doc(db, 'superSlotLegends', aiId);
-      
-      // Get current AI data
-      const aiDoc = await getDoc(aiRef);
-      const currentData = aiDoc.data();
-      
-      // Simulate offline AI (30% chance of no update)
-      if (Math.random() < 0.3) {
-          console.log(`AI ${currentData.name} is offline, no MMR update`);
-          return;
-      }
-
-      // Calculate MMR change (10-50 points)
-      const mmrChange = Math.floor(Math.random() * 41) + 10; // Random number between 10 and 50
-      
-      // Determine if AI wins or loses based on current MMR
-      let finalMmr;
-      if (currentData.mmr >= 2435) {
-          // At max MMR, can only lose or stay the same
-          finalMmr = Math.max(1864, currentData.mmr - mmrChange);
-      } else if (currentData.mmr <= 1864) {
-          // At min MMR, can only gain or stay the same
-          finalMmr = Math.min(2435, currentData.mmr + mmrChange);
-      } else {
-          // Randomly win or lose
-          finalMmr = Math.random() < 0.5 
-              ? Math.min(2435, currentData.mmr + mmrChange)
-              : Math.max(1864, currentData.mmr - mmrChange);
-      }
-
-      // Update AI data in Firebase
-      await setDoc(aiRef, { 
-          mmr: finalMmr,
-          lastUpdated: new Date().toISOString()
-      }, { merge: true });
-
-      console.log(`AI ${currentData.name} MMR updated: ${currentData.mmr} -> ${finalMmr}`);
-  }
-
-  // Add periodic MMR updates for AIs
-  function startAIMmrUpdates() {
-      // Update random AI every 5 minutes
-      setInterval(async () => {
-          if (superSlotLegends.length > 0) {
-              const randomAI = superSlotLegends[Math.floor(Math.random() * superSlotLegends.length)];
-              await updateAIMmr(randomAI.id, randomAI.mmr);
-          }
-      }, 5 * 60 * 1000); // 5 minutes
-  }
-
-  // Modify loadLeaderboard to use Firebase data
   function loadLeaderboard() {
-      const leaderboardList = document.getElementById("leaderboard-list");
-      leaderboardList.innerHTML = "";
+    const leaderboardList = document.getElementById("leaderboard-list");
+    leaderboardList.innerHTML = "";
 
-      // Get all SSL AIs from Firebase data or fallback to static data
-      const allPlayers = superSlotLegends && superSlotLegends.length > 0 
-          ? [...superSlotLegends]
-          : [...specialAIs.superSlotLegends];
-      
-      // Add player if they're SSL
-      if (playerData.mmr >= 1864) {
-          allPlayers.push({
-              name: playerData.username,
-              mmr: playerData.mmr,
-              isPlayer: true
-          });
-      }
+    // Get all SSL AIs
+    const allPlayers = [...specialAIs.superSlotLegends];
+    
+    // Add player if they're SSL
+    if (playerData.mmr >= 1864) {
+        allPlayers.push({
+            name: playerData.username,
+            mmr: playerData.mmr,
+            isPlayer: true
+        });
+    }
 
-      // Sort by MMR (highest to lowest)
-      allPlayers.sort((a, b) => b.mmr - a.mmr);
+    // Sort by MMR (highest to lowest)
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
 
-      // Take top 25
-      const top25 = allPlayers.slice(0, 25);
+    // Take top 25
+    const top25 = allPlayers.slice(0, 25);
 
-      // Create leaderboard entries
-      top25.forEach((player, index) => {
-          const entry = document.createElement("div");
-          entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-          
-          entry.innerHTML = `
-              <div class="leaderboard-rank">#${index + 1}</div>
-              <div class="leaderboard-player">
-                  <span class="leaderboard-username">${player.name}</span>
-              </div>
-              <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-          `;
-          
-          leaderboardList.appendChild(entry);
-      });
+    // Create leaderboard entries
+    top25.forEach((player, index) => {
+        const entry = document.createElement("div");
+        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+        
+        entry.innerHTML = `
+            <div class="leaderboard-rank">#${index + 1}</div>
+            <div class="leaderboard-player">
+                <span class="leaderboard-username">${player.name}</span>
+            </div>
+            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+        `;
+        
+        leaderboardList.appendChild(entry);
+    });
 
-      // Find player's rank in the full list
-      const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+    // Find player's rank in the full list
+    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
 
-      // Add player stats above the close button
-      const popupContent = document.querySelector("#leaderboard-popup .popup-content");
-      const closeButton = popupContent.querySelector(".close-button");
-      
-      // Remove existing player stats if they exist
-      const existingStats = popupContent.querySelector(".player-stats");
-      if (existingStats) {
-          existingStats.remove();
-      }
+    // Add player stats above the close button
+    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
+    const closeButton = popupContent.querySelector(".close-button");
+    
+    // Remove existing player stats if they exist
+    const existingStats = popupContent.querySelector(".player-stats");
+    if (existingStats) {
+        existingStats.remove();
+    }
 
-      const playerStats = document.createElement("div");
-      playerStats.className = "player-stats";
-      playerStats.innerHTML = `
-          <div class="player-stats-header">Your Stats</div>
-          <div class="player-stats-content">
-              <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-              <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-          </div>
-      `;
-      
-      // Insert player stats before the close button
-      closeButton.parentNode.insertBefore(playerStats, closeButton);
-
-      // If Firebase isn't initialized yet, try to initialize it
-      if (!isFirebaseInitialized) {
-          initializeFirebaseAI().then(() => {
-              // Reload leaderboard with Firebase data once initialized
-              loadLeaderboard();
-          });
-      }
-  }
+    const playerStats = document.createElement("div");
+    playerStats.className = "player-stats";
+    playerStats.innerHTML = `
+        <div class="player-stats-header">Your Stats</div>
+        <div class="player-stats-content">
+            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+        </div>
+    `;
+    
+    // Insert player stats before the close button
+    closeButton.parentNode.insertBefore(playerStats, closeButton);
+}
   
   function getRank(mmr) {
       const ranks = [
