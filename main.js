@@ -1203,8 +1203,10 @@ const aiNames = [
       const leaderboardList = document.getElementById("leaderboard-list");
       leaderboardList.innerHTML = "";
 
-      // Get all SSL AIs from Firebase data
-      const allPlayers = [...superSlotLegends];
+      // Get all SSL AIs from Firebase data or fallback to static data
+      const allPlayers = superSlotLegends && superSlotLegends.length > 0 
+          ? [...superSlotLegends]
+          : [...specialAIs.superSlotLegends];
       
       // Add player if they're SSL
       if (playerData.mmr >= 1864) {
@@ -1262,6 +1264,14 @@ const aiNames = [
       
       // Insert player stats before the close button
       closeButton.parentNode.insertBefore(playerStats, closeButton);
+
+      // If Firebase isn't initialized yet, try to initialize it
+      if (!isFirebaseInitialized) {
+          initializeFirebaseAI().then(() => {
+              // Reload leaderboard with Firebase data once initialized
+              loadLeaderboard();
+          });
+      }
   }
   
   function getRank(mmr) {
