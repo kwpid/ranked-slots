@@ -1236,38 +1236,59 @@ window.onload = () => {
   
   
   function getAvailableTitles() {
-      return titles.filter(title => {
-          if (title.title === "NONE") return true;
-          if (title.wlUsers.includes(playerData.username)) return true;
-          if (title.minMMR && playerData.mmr >= title.minMMR) return true;
-          return false;
-      }).sort((a, b) => {
-          // NONE always first
-          if (a.title === "NONE") return -1;
-          if (b.title === "NONE") return 1;
+    const tierOrder = [
+    "WORLD CHAMPION",
+    "WORLDS CONTENDER",
+    "MAJOR CHAMPION",
+    "MAJOR FINALIST",
+    "MAJOR CONTENDER",
+    "REGIONAL CHAMPION",
+    "REGIONAL FINALIST",
+    "REGIONAL CONTENDER",
+    "ELITE",
+    "CONTENDER",
+    "CHALLENGER"
+];
 
-          // Season titles (S#) second
-          const aIsSeason = a.title.startsWith("S") && !isNaN(parseInt(a.title[1]));
-          const bIsSeason = b.title.startsWith("S") && !isNaN(parseInt(b.title[1]));
-          
-          if (aIsSeason && !bIsSeason) return -1;
-          if (!aIsSeason && bIsSeason) return 1;
-          
-          // If both are season titles, sort by season number
-          if (aIsSeason && bIsSeason) {
-              const aSeason = parseInt(a.title[1]);
-              const bSeason = parseInt(b.title[1]);
-              if (aSeason !== bSeason) return bSeason - aSeason; // Higher season first
-          }
 
-          // Grey titles last
-          if (a.color === "grey" && b.color !== "grey") return 1;
-          if (a.color !== "grey" && b.color === "grey") return -1;
+    return titles.filter(title => {
+        if (title.title === "NONE") return true;
+        if (title.wlUsers.includes(playerData.username)) return true;
+        if (title.minMMR && playerData.mmr >= title.minMMR) return true;
+        return false;
+    }).sort((a, b) => {
+        // NONE always first
+        if (a.title === "NONE") return -1;
+        if (b.title === "NONE") return 1;
 
-          // If both are same type, sort alphabetically
-          return a.title.localeCompare(b.title);
-      });
-  }
+        const aIsRSCS = a.title.startsWith("RSCS");
+        const bIsRSCS = b.title.startsWith("RSCS");
+
+        // RSCS titles come first
+        if (aIsRSCS && !bIsRSCS) return -1;
+        if (!aIsRSCS && bIsRSCS) return 1;
+
+        if (aIsRSCS && bIsRSCS) {
+            const aSeasonMatch = a.title.match(/S(\d+)/);
+            const bSeasonMatch = b.title.match(/S(\d+)/);
+
+            const aSeason = aSeasonMatch ? parseInt(aSeasonMatch[1]) : 0;
+            const bSeason = bSeasonMatch ? parseInt(bSeasonMatch[1]) : 0;
+
+            if (aSeason !== bSeason) return bSeason - aSeason; // Newer seasons first
+
+            // Compare title tier
+            const aTier = tierOrder.findIndex(tier => a.title.includes(tier));
+            const bTier = tierOrder.findIndex(tier => b.title.includes(tier));
+
+            return aTier - bTier; // Lower index = lower tier
+        }
+
+        // Fallback: alphabetical
+        return a.title.localeCompare(b.title);
+    });
+}
+
   
   function showTitleNotification(title) {
       const popup = document.getElementById("notification-popup");
