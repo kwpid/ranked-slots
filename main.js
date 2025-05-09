@@ -326,7 +326,7 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS ELITE",
@@ -342,14 +342,14 @@ window.onload = () => {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 ELITE",
@@ -363,28 +363,28 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S1 MAJOR FINALIST",
@@ -423,14 +423,14 @@ window.onload = () => {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S2 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S2 ELITE",
@@ -444,14 +444,14 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S2 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S2 REGIONAL CHAMPION",
@@ -465,7 +465,7 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""azap]
     },
     {
         title: "RSCS S2 MAJOR FINALIST",
