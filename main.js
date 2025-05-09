@@ -465,7 +465,7 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""azap]
+        wlUsers: ["azap"]
     },
     {
         title: "RSCS S2 MAJOR FINALIST",
