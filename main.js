@@ -342,14 +342,14 @@ window.onload = () => {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 ELITE",
@@ -363,28 +363,28 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S1 MAJOR FINALIST",
@@ -423,14 +423,14 @@ window.onload = () => {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S2 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S2 ELITE",
@@ -444,14 +444,14 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S2 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S2 REGIONAL CHAMPION",
@@ -465,7 +465,7 @@ window.onload = () => {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: [""]
     },
     {
         title: "RSCS S2 MAJOR FINALIST",
@@ -503,11 +503,26 @@ window.onload = () => {
         title: "S1 GRAND CHAMPION",
         color: "red",
         glow: true,
-        minMMR: 1403,
+        minMMR: null,
         wlUsers: [""],
     },
     {
         title: "S1 SUPERSLOT LEGEND",
+        color: "white",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""],
+    },
+
+      {
+        title: "S2 GRAND CHAMPION",
+        color: "gold",
+        glow: true,
+        minMMR: 1403,
+        wlUsers: [""],
+    },
+    {
+        title: "S2 SUPERSLOT LEGEND",
         color: "white",
         glow: true,
         minMMR: 1864,
