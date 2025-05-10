@@ -245,13 +245,14 @@ const aiNames = [
     document.getElementById(popupId).style.display = "block";
 }
   
- function closePopup(popupId) {
+function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     if (popup) {
         popup.style.display = "none";
     } else {
         console.error(`Popup with ID ${popupId} not found`);
     }
+    return false; // Prevent default behavior
 }
   
   // Switches tabs inside Shop or Inventory
