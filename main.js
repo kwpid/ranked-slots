@@ -1260,8 +1260,7 @@ function loadLeaderboard() {
         allPlayers.push({
             name: playerData.username,
             mmr: playerData.mmr,
-            isPlayer: true,
-            title: playerData.title
+            isPlayer: true
         });
     }
 
@@ -1276,24 +1275,12 @@ function loadLeaderboard() {
         const entry = document.createElement("div");
         entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
         
-        // Add crown for top 3
-        let rankDisplay = `#${index + 1}`;
-        if (index < 3) {
-            rankDisplay = `👑 ${rankDisplay}`;
-        }
-        
         entry.innerHTML = `
-            <div class="leaderboard-rank">${rankDisplay}</div>
+            <div class="leaderboard-rank">#${index + 1}</div>
             <div class="leaderboard-player">
                 <span class="leaderboard-username">${player.name}</span>
-                <span class="leaderboard-title" style="color: ${titles.find(t => t.title === (player.title || "NONE"))?.color || "grey"}">
-                    ${player.title || "NONE"}
-                </span>
             </div>
             <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-            <div class="leaderboard-trend">
-                ${getTrendIndicator(player)}
-            </div>
         `;
         
         leaderboardList.appendChild(entry);
@@ -1319,7 +1306,6 @@ function loadLeaderboard() {
         <div class="player-stats-content">
             <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
             <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-            ${playerRank > 1 ? `<div class="player-stats-next">Next rank: #${playerRank - 1} (${allPlayers[playerRank - 2]?.mmr ? Math.round(allPlayers[playerRank - 2].mmr - playerData.mmr) : 0} MMR needed)</div>` : ''}
         </div>
     `;
     
