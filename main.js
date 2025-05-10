@@ -245,10 +245,14 @@ window.onload = () => {
     document.getElementById(popupId).style.display = "block";
 }
   
-  // Closes a popup
-  function closePopup(popupId) {
-      document.getElementById(popupId).style.display = "none";
-  }
+ function closePopup(popupId) {
+    const popup = document.getElementById(popupId);
+    if (popup) {
+        popup.style.display = "none";
+    } else {
+        console.error(`Popup with ID ${popupId} not found`);
+    }
+}
   
   // Switches tabs inside Shop or Inventory
   function switchTab(section, tab) {
