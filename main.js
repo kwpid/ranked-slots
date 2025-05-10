@@ -211,19 +211,19 @@ const aiNames = [
       const seed = date.getDate() + date.getHours() >= 12 ? 1 : 0;
       return items.filter((_, index) => index % 2 === seed);
   }
-  // Load data on page load
-window.onload = () => {
+ window.onload = () => {
     loadPlayerData();
     updateMenu();
     loadShop();
     updateTitleDisplay();
 
-    // Add event listeners for title popup buttons
-    document.getElementById("titles-button").onclick = () => {
-        loadTitlesPopup();
-        openPopup("title-popup");
-    };
-    document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
+    // Proper close button binding
+    document.getElementById("close-title-popup").addEventListener("click", function(e) {
+        e.preventDefault();
+        closePopup("title-popup");
+    });
+
+    // Other existing code...
     document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
     document.getElementById("equip-now-button").onclick = () => {
         closePopup("notification-popup");
