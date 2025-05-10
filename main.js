@@ -219,6 +219,10 @@ window.onload = () => {
     updateTitleDisplay();
 
     // Add event listeners for title popup buttons
+    document.getElementById("titles-button").onclick = () => {
+        loadTitlesPopup();
+        openPopup("title-popup");
+    };
     document.getElementById("close-title-popup").onclick = () => closePopup("title-popup");
     document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
     document.getElementById("equip-now-button").onclick = () => {
@@ -235,8 +239,11 @@ window.onload = () => {
   }
   // Opens a popup
   function openPopup(popupId) {
-      document.getElementById(popupId).style.display = "block";
-  }
+    if (popupId === "title-popup") {
+        loadTitlesPopup();
+    }
+    document.getElementById(popupId).style.display = "block";
+}
   
   // Closes a popup
   function closePopup(popupId) {
@@ -1274,6 +1281,7 @@ window.onload = () => {
         if (title.title === "NONE") return true;
         if (title.wlUsers.includes(playerData.username)) return true;
         if (title.minMMR && playerData.mmr >= title.minMMR) return true;
+        if (playerData.ownedTitles && playerData.ownedTitles.includes(title.title)) return true;
         return false;
     }).sort((a, b) => {
         if (a.title === "NONE") return -1;
@@ -1322,7 +1330,6 @@ window.onload = () => {
         return a.title.localeCompare(b.title);
     });
 }
-
 
   
   function showTitleNotification(title) {
@@ -1384,35 +1391,40 @@ window.onload = () => {
   }
   
   function loadTitlesPopup() {
-      const titlesList = document.getElementById("titles-list");
-      titlesList.innerHTML = "";
-      
-      const availableTitles = getAvailableTitles();
-      
-      availableTitles.forEach(title => {
-          const titleElement = document.createElement("div");
-          titleElement.classList.add("title-item");
-          
-          const titleSpan = document.createElement("span");
-          titleSpan.textContent = title.title;
-          titleSpan.style.color = title.color;
-          if (title.glow) {
-              titleSpan.classList.add("glow");
-          }
-          
-          // Add a checkmark if this is the currently equipped title
-          if (title.title === playerData.title) {
-              const checkmark = document.createElement("span");
-              checkmark.textContent = " ✓";
-              checkmark.style.color = "#00ff00";
-              titleSpan.appendChild(checkmark);
-          }
-          
-          titleElement.appendChild(titleSpan);
-          titleElement.onclick = () => equipTitle(title.title);
-          
-          titlesList.appendChild(titleElement);
-      });
-  }
+    const titlesList = document.getElementById("titles-list");
+    titlesList.innerHTML = "";
+    
+    const availableTitles = getAvailableTitles();
+    
+    if (availableTitles.length === 0) {
+        titlesList.innerHTML = "<p>No titles available</p>";
+        return;
+    }
+    
+    availableTitles.forEach(title => {
+        const titleElement = document.createElement("div");
+        titleElement.classList.add("title-item");
+        
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = title.title;
+        titleSpan.style.color = title.color;
+        if (title.glow) {
+            titleSpan.classList.add("glowing-title");
+        }
+        
+        // Add a checkmark if this is the currently equipped title
+        if (title.title === playerData.title) {
+            const checkmark = document.createElement("span");
+            checkmark.textContent = " ✓";
+            checkmark.style.color = "#00ff00";
+            titleSpan.appendChild(checkmark);
+        }
+        
+        titleElement.appendChild(titleSpan);
+        titleElement.onclick = () => equipTitle(title.title);
+        
+        titlesList.appendChild(titleElement);
+    });
+}
   
   updateMenu();
