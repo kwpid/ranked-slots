@@ -216,6 +216,7 @@ const aiNames = [
     updateMenu();
     loadShop();
     updateTitleDisplay();
+     simulateAIMatches();
 
     // Proper close button binding
     document.getElementById("close-title-popup").addEventListener("click", function(e) {
@@ -778,81 +779,163 @@ function closePopup(popupId) {
     { name: "neoo", title: "NONE", mmr: 1967 },
     { name: "kwpid", title: "NONE", mmr: 2067 }
     
-    ]
+    ].map(ai => {
+        // Try to load saved MMR from localStorage
+        const savedAI = localStorage.getItem(`ssl_ai_${ai.name}`);
+        if (savedAI) {
+            const parsed = JSON.parse(savedAI);
+            // Ensure MMR stays within bounds (1864-2400)
+            parsed.mmr = Math.max(1864, Math.min(2400, parsed.mmr));
+            return parsed;
+        }
+        return ai;
+    })
 };
-  
+  function saveAIData(ai) {
+    localStorage.setItem(`ssl_ai_${ai.name}`, JSON.stringify(ai));
+}
+function getRandomOpponent(currentAI) {
+    const opponents = specialAIs.superSlotLegends.filter(a => a.name !== currentAI.name);
+    if (opponents.length === 0) return null;
+    
+    // Weight towards opponents with similar MMR
+    const viableOpponents = opponents.filter(opp => 
+        Math.abs(opp.mmr - currentAI.mmr) <= 400
+    );
+    
+    const pool = viableOpponents.length > 0 ? viableOpponents : opponents;
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+function simulateAIMatches() {
+    const lastSimulation = localStorage.getItem('last_ai_simulation');
+    const now = new Date().getTime();
+    
+    // Only simulate if at least 1 hour has passed since last simulation
+    if (lastSimulation && (now - parseInt(lastSimulation)) < 3600000) {
+        return;
+    }
+    
+    // Update all SSL AIs
+    specialAIs.superSlotLegends.forEach(ai => {
+        // Determine how many matches to simulate (0-3)
+        const matchesToPlay = Math.floor(Math.random() * 4);
+        
+        for (let i = 0; i < matchesToPlay; i++) {
+            const opponent = getRandomOpponent(ai);
+            if (!opponent) continue;
+            
+            // Simulate match outcome (weighted toward higher MMR player winning)
+            const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
+            const aiWon = Math.random() < aiWinProbability;
+            
+            // Calculate MMR change
+            const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
+            
+            // Update MMR (keeping within bounds)
+            ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
+            
+            // If opponent is another AI, update their MMR too
+            if (aiWon) {
+                opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
+                saveAIData(opponent);
+            }
+        }
+        
+        // Save this AI's data
+        saveAIData(ai);
+    });
+    
+    // Record when we last simulated matches
+    localStorage.setItem('last_ai_simulation', now.toString());
+}
   function startMatch() {
-      document.getElementById("queue-screen").classList.add("hidden");
-      document.getElementById("match-screen").classList.remove("hidden");
-      
-      // Set player info
-      document.getElementById("player-username").textContent = playerData.username;
-      const playerTitleElement = document.getElementById("player-title");
-      playerTitleElement.textContent = playerData.title;
-      // Apply title effects for player
-      const playerTitle = titles.find(t => t.title === playerData.title);
-      if (playerTitle) {
-          playerTitleElement.style.color = playerTitle.color;
-          if (playerTitle.glow) {
-              playerTitleElement.classList.add("glowing-title");
-          } else {
-              playerTitleElement.classList.remove("glowing-title");
-          }
-      }
-      document.getElementById("player-rank").textContent = getRank(playerData.mmr);
-      document.getElementById("player-mmr").textContent = playerData.mmr;
-  
-      // Set AI info based on player's MMR
-      if (playerData.mmr >= 1864) {
-          // SuperSlot Legend rank - can face SSL AIs
-          const selectedAI = specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
-          aiData = {
-              username: selectedAI.name,
-              title: selectedAI.title,
-              mmr: selectedAI.mmr
-          };
-      } else {
-          // Regular AI with random grey title (including Grand Champions)
-          const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
-          aiData = {
-              username: aiName,
-              mmr: playerData.mmr + (Math.random() * 200 - 100),
-              title: getRandomGreyTitle()
-          };
-      }
-      
-      document.getElementById("ai-username").textContent = aiData.username;
-      const aiTitleElement = document.getElementById("ai-title");
-      aiTitleElement.textContent = aiData.title;
-      // Apply title effects for AI
-      const aiTitle = titles.find(t => t.title === aiData.title);
-      if (aiTitle) {
-          aiTitleElement.style.color = aiTitle.color;
-          if (aiTitle.glow) {
-              aiTitleElement.classList.add("glowing-title");
-          } else {
-              aiTitleElement.classList.remove("glowing-title");
-          }
-      }
-      document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
-      document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
-      
-      // Start countdown
-      let countdown = 5;
-      document.getElementById("countdown").textContent = countdown;
-      
-      countdownInterval = setInterval(() => {
-          countdown--;
-          document.getElementById("countdown").textContent = countdown;
-          
-          if (countdown <= 0) {
-              clearInterval(countdownInterval);
-              document.getElementById("countdown").style.display = "none";
-              gameActive = true;
-              aiAutoSpin();
-          }
-      }, 1000);
-  }
+    document.getElementById("queue-screen").classList.add("hidden");
+    document.getElementById("match-screen").classList.remove("hidden");
+    
+    // Set player info (unchanged)
+    document.getElementById("player-username").textContent = playerData.username;
+    const playerTitleElement = document.getElementById("player-title");
+    playerTitleElement.textContent = playerData.title;
+    const playerTitle = titles.find(t => t.title === playerData.title);
+    if (playerTitle) {
+        playerTitleElement.style.color = playerTitle.color;
+        if (playerTitle.glow) {
+            playerTitleElement.classList.add("glowing-title");
+        } else {
+            playerTitleElement.classList.remove("glowing-title");
+        }
+    }
+    document.getElementById("player-rank").textContent = getRank(playerData.mmr);
+    document.getElementById("player-mmr").textContent = playerData.mmr;
+
+    // Set AI info based on player's MMR
+    if (playerData.mmr >= 1864) {
+        // SuperSlot Legend rank - can face SSL AIs
+        // Filter AIs within a reasonable MMR range (±200) of the player
+        const eligibleAIs = specialAIs.superSlotLegends.filter(
+            ai => Math.abs(ai.mmr - playerData.mmr) <= 200
+        );
+        
+        // If no AIs in range, expand to ±300, then any SSL
+        let selectedAI;
+        if (eligibleAIs.length > 0) {
+            selectedAI = eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
+        } else {
+            const widerPool = specialAIs.superSlotLegends.filter(
+                ai => Math.abs(ai.mmr - playerData.mmr) <= 300
+            );
+            selectedAI = widerPool.length > 0 
+                ? widerPool[Math.floor(Math.random() * widerPool.length)]
+                : specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
+        }
+        
+        aiData = {
+            username: selectedAI.name,
+            title: selectedAI.title,
+            mmr: selectedAI.mmr
+        };
+    } else {
+        // Regular AI with random grey title
+        const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
+        aiData = {
+            username: aiName,
+            mmr: playerData.mmr + (Math.random() * 200 - 100),
+            title: getRandomGreyTitle()
+        };
+    }
+    
+    // Set AI display info (unchanged)
+    document.getElementById("ai-username").textContent = aiData.username;
+    const aiTitleElement = document.getElementById("ai-title");
+    aiTitleElement.textContent = aiData.title;
+    const aiTitle = titles.find(t => t.title === aiData.title);
+    if (aiTitle) {
+        aiTitleElement.style.color = aiTitle.color;
+        if (aiTitle.glow) {
+            aiTitleElement.classList.add("glowing-title");
+        } else {
+            aiTitleElement.classList.remove("glowing-title");
+        }
+    }
+    document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
+    document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
+    
+    // Start countdown (unchanged)
+    let countdown = 5;
+    document.getElementById("countdown").textContent = countdown;
+    
+    countdownInterval = setInterval(() => {
+        countdown--;
+        document.getElementById("countdown").textContent = countdown;
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById("countdown").style.display = "none";
+            gameActive = true;
+            aiAutoSpin();
+        }
+    }, 1000);
+}
   
   function getRandomGreyTitle() {
       const greyTitles = titles.filter(title => title.color === "grey" && title.title !== "NONE");
@@ -969,62 +1052,72 @@ function closePopup(popupId) {
   }
   
   function endGame(playerWon) {
-      if (!gameActive) return; // Prevent multiple calls
-      
-      gameActive = false;
-      clearInterval(spinInterval);
-      clearInterval(countdownInterval);
-      
-      // Calculate MMR change using the new system
-      const oldMMR = playerData.mmr;
-      const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
-      playerData.mmr += mmrChange;
-      
-      // Update stats and coins
-      let coinsEarned = 0;
-  if (playerWon) {
-          playerData.wins++;
-          // Add random coins between 10-15 for wins
-          coinsEarned = Math.floor(Math.random() * 6) + 10;
-          playerData.coins += coinsEarned;
-  } else {
-          playerData.losses++;
-      }
-      
-      // Update peak MMR
-      if (playerData.mmr > playerData.peakMMR) {
-          playerData.peakMMR = playerData.mmr;
-      }
-      
-      // Check for new titles
-      checkForNewTitles();
-      
-      // Save data
-      savePlayerData();
-      
-      // Show end screen
-      document.getElementById("match-screen").classList.add("hidden");
-      document.getElementById("end-screen").classList.remove("hidden");
-      
-      // Update end screen info
-      document.getElementById("result").textContent = playerWon ? "Victory!" : "Defeat";
-      document.getElementById("old-mmr").textContent = oldMMR;
-      document.getElementById("new-mmr").textContent = playerData.mmr;
-      document.getElementById("mmr-change").textContent = `MMR Change: ${mmrChange > 0 ? "+" : ""}${mmrChange}`;
-      
-      // Show coins earned if player won
-      if (playerWon) {
-          const coinsElement = document.getElementById("player-coins");
-          coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
-          coinsElement.style.color = "#ffcc00";
-      } else {
-          const coinsElement = document.getElementById("player-coins");
-          coinsElement.textContent = "";
-      }
-      
-      // Update menu display
-      updateMenu();
-  }
+    if (!gameActive) return;
+    
+    gameActive = false;
+    clearInterval(spinInterval);
+    clearInterval(countdownInterval);
+    
+    // Calculate MMR change using the new system
+    const oldMMR = playerData.mmr;
+    const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
+    playerData.mmr += mmrChange;
+    
+    // Update stats and coins (unchanged)
+    let coinsEarned = 0;
+    if (playerWon) {
+        playerData.wins++;
+        coinsEarned = Math.floor(Math.random() * 6) + 10;
+        playerData.coins += coinsEarned;
+    } else {
+        playerData.losses++;
+    }
+    
+    // Update peak MMR (unchanged)
+    if (playerData.mmr > playerData.peakMMR) {
+        playerData.peakMMR = playerData.mmr;
+    }
+    
+    // If player is SSL and opponent is SSL AI, update AI's MMR
+    if (playerData.mmr >= 1864 && aiData.username && 
+        specialAIs.superSlotLegends.some(ai => ai.name === aiData.username)) {
+        
+        const ai = specialAIs.superSlotLegends.find(ai => ai.name === aiData.username);
+        if (ai) {
+            const aiMMRChange = calculateMMRChange(ai.mmr, oldMMR, !playerWon);
+            ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + aiMMRChange));
+            saveAIData(ai);
+        }
+    }
+    
+    // Check for new titles (unchanged)
+    checkForNewTitles();
+    
+    // Save data (unchanged)
+    savePlayerData();
+    
+    // Show end screen (unchanged)
+    document.getElementById("match-screen").classList.add("hidden");
+    document.getElementById("end-screen").classList.remove("hidden");
+    
+    // Update end screen info (unchanged)
+    document.getElementById("result").textContent = playerWon ? "Victory!" : "Defeat";
+    document.getElementById("old-mmr").textContent = oldMMR;
+    document.getElementById("new-mmr").textContent = playerData.mmr;
+    document.getElementById("mmr-change").textContent = `MMR Change: ${mmrChange > 0 ? "+" : ""}${mmrChange}`;
+    
+    if (playerWon) {
+        const coinsElement = document.getElementById("player-coins");
+        coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
+        coinsElement.style.color = "#ffcc00";
+    } else {
+        const coinsElement = document.getElementById("player-coins");
+        coinsElement.textContent = "";
+    }
+    
+    // Update menu display (unchanged)
+    updateMenu();
+}
   
   
   
@@ -1155,11 +1248,11 @@ function closePopup(popupId) {
 
   
 
-  function loadLeaderboard() {
+ function loadLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     leaderboardList.innerHTML = "";
 
-    // Get all SSL AIs
+    // Get all SSL AIs and sort by current MMR
     const allPlayers = [...specialAIs.superSlotLegends];
     
     // Add player if they're SSL
@@ -1167,9 +1260,82 @@ function closePopup(popupId) {
         allPlayers.push({
             name: playerData.username,
             mmr: playerData.mmr,
-            isPlayer: true
+            isPlayer: true,
+            title: playerData.title
         });
     }
+
+    // Sort by current MMR (highest to lowest)
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
+
+    // Take top 25
+    const top25 = allPlayers.slice(0, 25);
+
+    // Create leaderboard entries
+    top25.forEach((player, index) => {
+        const entry = document.createElement("div");
+        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+        
+        // Add crown for top 3
+        let rankDisplay = `#${index + 1}`;
+        if (index < 3) {
+            rankDisplay = `👑 ${rankDisplay}`;
+        }
+        
+        entry.innerHTML = `
+            <div class="leaderboard-rank">${rankDisplay}</div>
+            <div class="leaderboard-player">
+                <span class="leaderboard-username">${player.name}</span>
+                <span class="leaderboard-title" style="color: ${titles.find(t => t.title === (player.title || "NONE"))?.color || "grey"}">
+                    ${player.title || "NONE"}
+                </span>
+            </div>
+            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+            <div class="leaderboard-trend">
+                ${getTrendIndicator(player)}
+            </div>
+        `;
+        
+        leaderboardList.appendChild(entry);
+    });
+
+    // Find player's rank in the full list
+    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+
+    // Add player stats above the close button
+    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
+    const closeButton = popupContent.querySelector(".close-button");
+    
+    // Remove existing player stats if they exist
+    const existingStats = popupContent.querySelector(".player-stats");
+    if (existingStats) {
+        existingStats.remove();
+    }
+
+    const playerStats = document.createElement("div");
+    playerStats.className = "player-stats";
+    playerStats.innerHTML = `
+        <div class="player-stats-header">Your Stats</div>
+        <div class="player-stats-content">
+            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+            ${playerRank ? `<div class="player-stats-next">Next rank: #${playerRank - 1} (${allPlayers[playerRank - 2]?.mmr ? Math.round(allPlayers[playerRank - 2].mmr - playerData.mmr) : 0} MMR needed)</div>` : ''}
+        </div>
+    `;
+    
+    // Insert player stats before the close button
+    closeButton.parentNode.insertBefore(playerStats, closeButton);
+}
+
+function getTrendIndicator(player) {
+    // For simplicity, we'll randomly show trends for AIs
+    if (player.isPlayer) return ""; // Don't show for player
+    
+    const trend = Math.random();
+    if (trend > 0.7) return "↑"; // Up trend
+    if (trend < 0.3) return "↓"; // Down trend
+    return "→"; // Neutral
+}
 
     // Sort by MMR (highest to lowest)
     allPlayers.sort((a, b) => b.mmr - a.mmr);
