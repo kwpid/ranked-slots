@@ -1336,56 +1336,6 @@ function getTrendIndicator(player) {
     if (trend < 0.3) return "↓"; // Down trend
     return "→"; // Neutral
 }
-
-    // Sort by MMR (highest to lowest)
-    allPlayers.sort((a, b) => b.mmr - a.mmr);
-
-    // Take top 25
-    const top25 = allPlayers.slice(0, 25);
-
-    // Create leaderboard entries
-    top25.forEach((player, index) => {
-        const entry = document.createElement("div");
-        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-        
-        entry.innerHTML = `
-            <div class="leaderboard-rank">#${index + 1}</div>
-            <div class="leaderboard-player">
-                <span class="leaderboard-username">${player.name}</span>
-            </div>
-            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-        `;
-        
-        leaderboardList.appendChild(entry);
-    });
-
-    // Find player's rank in the full list
-    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
-
-    // Add player stats above the close button
-    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
-    const closeButton = popupContent.querySelector(".close-button");
-    
-    // Remove existing player stats if they exist
-    const existingStats = popupContent.querySelector(".player-stats");
-    if (existingStats) {
-        existingStats.remove();
-    }
-
-    const playerStats = document.createElement("div");
-    playerStats.className = "player-stats";
-    playerStats.innerHTML = `
-        <div class="player-stats-header">Your Stats</div>
-        <div class="player-stats-content">
-            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-        </div>
-    `;
-    
-    // Insert player stats before the close button
-    closeButton.parentNode.insertBefore(playerStats, closeButton);
-}
-  
   function getRank(mmr) {
       const ranks = [
           { name: "Bronze I", min: 0, max: 173 },
