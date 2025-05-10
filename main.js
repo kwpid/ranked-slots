@@ -1248,7 +1248,7 @@ function simulateAIMatches() {
 
   
 
- function loadLeaderboard() {
+function loadLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     leaderboardList.innerHTML = "";
 
@@ -1319,7 +1319,7 @@ function simulateAIMatches() {
         <div class="player-stats-content">
             <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
             <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-            ${playerRank ? `<div class="player-stats-next">Next rank: #${playerRank - 1} (${allPlayers[playerRank - 2]?.mmr ? Math.round(allPlayers[playerRank - 2].mmr - playerData.mmr) : 0} MMR needed)</div>` : ''}
+            ${playerRank > 1 ? `<div class="player-stats-next">Next rank: #${playerRank - 1} (${allPlayers[playerRank - 2]?.mmr ? Math.round(allPlayers[playerRank - 2].mmr - playerData.mmr) : 0} MMR needed)</div>` : ''}
         </div>
     `;
     
