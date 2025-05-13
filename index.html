@@ -779,10 +779,6 @@
     <img id="rank-image" src="images/unranked.png" alt="Rank">
     <p><span id="current-rank">Unranked</span></p>
     <p>MMR: <span id="current-mmr">1000</span></p>
-    <div class="gamemode-selector">
-        <button class="button" onclick="selectGamemode('1v1')" id="1v1-button">1v1</button>
-        <button class="button" onclick="selectGamemode('2v2')" id="2v2-button">2v2</button>
-    </div>
     <button class="button" onclick="startQueue()">Queue</button>
 
     <div class="button-container">
@@ -806,79 +802,41 @@
     <h1>Match</h1>
     <div id="countdown">5</div>
     <div class="game-info">
-        <div class="team team1">
-            <h3>Your Team</h3>
-            <div class="player-slot">
-                <p><span id="player-username">Player</span></p>
-                <p><span id="player-title"></span></p>
-                <p><span id="player-rank">Unranked</span> [<span id="player-mmr">0</span>]</p>
-                <div class="slot-machine">
-                    <div class="slot" id="player-slot-1">?</div>
-                    <div class="slot" id="player-slot-2">?</div>
-                    <div class="slot" id="player-slot-3">?</div>
-                </div>
-                <button class="button" onclick="spin('player')">Spin</button>
-                <div id="player-dots">
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                </div>
+        <div>
+            <h3>You</h3>
+            <p><span id="player-username">Player</span></p>
+            <p><span id="player-title"></span></p>
+            <p><span id="player-rank">Unranked</span> [<span id="player-mmr">0</span>]</p>
+            <div class="slot-machine">
+                <div class="slot" id="player-slot-1">?</div>
+                <div class="slot" id="player-slot-2">?</div>
+                <div class="slot" id="player-slot-3">?</div>
             </div>
-            <div class="player-slot teammate-slot hidden">
-                <p><span id="teammate-username"></span></p>
-                <p><span id="teammate-title"></span></p>
-                <p><span id="teammate-rank">Unranked</span> [<span id="teammate-mmr">0</span>]</p>
-                <div class="slot-machine">
-                    <div class="slot" id="teammate-slot-1">?</div>
-                    <div class="slot" id="teammate-slot-2">?</div>
-                    <div class="slot" id="teammate-slot-3">?</div>
-                </div>
-                <div id="teammate-dots">
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                </div>
+            <button class="button" onclick="spin('player')">Spin</button>
+            <div id="player-dots">
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
             </div>
         </div>
-        <div class="team team2">
-            <h3>Opponent Team</h3>
-            <div class="player-slot">
-                <p><span id="ai-username"></span></p>
-                <p><span id="ai-title"></span></p>
-                <p><span id="ai-rank">Unranked</span> [<span id="ai-mmr">0</span>]</p>
-                <div class="slot-machine">
-                    <div class="slot" id="ai-slot-1">?</div>
-                    <div class="slot" id="ai-slot-2">?</div>
-                    <div class="slot" id="ai-slot-3">?</div>
-                </div>
-                <div id="ai-dots">
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                </div>
+        <div>
+            <h3>Opponent</h3>
+            <p><span id="ai-username"></span></p>
+            <p><span id="ai-title"></span></p>
+            <p><span id="ai-rank">Unranked</span> [<span id="ai-mmr">0</span>]</p>
+            <div class="slot-machine">
+                <div class="slot" id="ai-slot-1">?</div>
+                <div class="slot" id="ai-slot-2">?</div>
+                <div class="slot" id="ai-slot-3">?</div>
             </div>
-            <div class="player-slot opponent2-slot hidden">
-                <p><span id="ai2-username"></span></p>
-                <p><span id="ai2-title"></span></p>
-                <p><span id="ai2-rank">Unranked</span> [<span id="ai2-mmr">0</span>]</p>
-                <div class="slot-machine">
-                    <div class="slot" id="ai2-slot-1">?</div>
-                    <div class="slot" id="ai2-slot-2">?</div>
-                    <div class="slot" id="ai2-slot-3">?</div>
-                </div>
-                <div id="ai2-dots">
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                    <span class="dot inactive"></span>
-                </div>
+            <div id="ai-dots">
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
+                <span class="dot inactive"></span>
             </div>
         </div>
     </div>
