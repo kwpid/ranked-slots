@@ -66,16 +66,13 @@ const aiNames = [
       wins: 0,
       losses: 0,
       mmr: 600,
-      mmr2v2: 600, // New 2v2 MMR
       peakMMR: 600,
-      peakMMR2v2: 600, // New 2v2 peak MMR
       coins: 0,
       ownedTitles: ["NONE"] // Track all titles the player owns
   };
   let aiData = {
       username: "",
-      mmr: 600,
-      mmr2v2: 600 // New 2v2 MMR
+      mmr: 600
   };
   const items = [
       {name: "Centio", type: "hero", price: 1500, rarity: "common", perks: {1: 35, 2: 10}},
@@ -824,54 +821,23 @@ function simulateAIMatches() {
         const matchesToPlay = Math.floor(Math.random() * 4);
         
         for (let i = 0; i < matchesToPlay; i++) {
-            // Randomly choose between 1v1 and 2v2
-            const is2v2 = Math.random() < 0.5;
+            const opponent = getRandomOpponent(ai);
+            if (!opponent) continue;
             
-            if (is2v2) {
-                // Simulate 2v2 match
-                const teammate = getRandomOpponent(ai);
-                const opponent1 = getRandomOpponent(ai);
-                const opponent2 = getRandomOpponent(ai);
-                
-                if (!teammate || !opponent1 || !opponent2) continue;
-                
-                // Calculate team MMRs
-                const team1MMR = (ai.mmr2v2 + teammate.mmr2v2) / 2;
-                const team2MMR = (opponent1.mmr2v2 + opponent2.mmr2v2) / 2;
-                
-                // Simulate match outcome
-                const team1WinProbability = 1 / (1 + Math.pow(10, (team2MMR - team1MMR) / 400));
-                const team1Won = Math.random() < team1WinProbability;
-                
-                // Calculate MMR changes
-                const mmrChange = calculateMMRChange(team1MMR, team2MMR, team1Won);
-                
-                // Update MMRs
-                ai.mmr2v2 = Math.max(1864, Math.min(2400, ai.mmr2v2 + mmrChange));
-                teammate.mmr2v2 = Math.max(1864, Math.min(2400, teammate.mmr2v2 + mmrChange));
-                opponent1.mmr2v2 = Math.max(1864, Math.min(2400, opponent1.mmr2v2 - mmrChange));
-                opponent2.mmr2v2 = Math.max(1864, Math.min(2400, opponent2.mmr2v2 - mmrChange));
-                
-                // Save all AIs' data
-                saveAIData(teammate);
-                saveAIData(opponent1);
-                saveAIData(opponent2);
-            } else {
-                // Simulate 1v1 match (existing code)
-                const opponent = getRandomOpponent(ai);
-                if (!opponent) continue;
-                
-                const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
-                const aiWon = Math.random() < aiWinProbability;
-                
-                const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
-                
-                ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
-                
-                if (aiWon) {
-                    opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
-                    saveAIData(opponent);
-                }
+            // Simulate match outcome (weighted toward higher MMR player winning)
+            const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
+            const aiWon = Math.random() < aiWinProbability;
+            
+            // Calculate MMR change
+            const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
+            
+            // Update MMR (keeping within bounds)
+            ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
+            
+            // If opponent is another AI, update their MMR too
+            if (aiWon) {
+                opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
+                saveAIData(opponent);
             }
         }
         
@@ -886,7 +852,7 @@ function simulateAIMatches() {
     document.getElementById("queue-screen").classList.add("hidden");
     document.getElementById("match-screen").classList.remove("hidden");
     
-    // Set player info
+    // Set player info (unchanged)
     document.getElementById("player-username").textContent = playerData.username;
     const playerTitleElement = document.getElementById("player-title");
     playerTitleElement.textContent = playerData.title;
@@ -899,43 +865,62 @@ function simulateAIMatches() {
             playerTitleElement.classList.remove("glowing-title");
         }
     }
-    document.getElementById("player-rank").textContent = getRank(getCurrentMMR());
-    document.getElementById("player-mmr").textContent = getCurrentMMR();
+    document.getElementById("player-rank").textContent = getRank(playerData.mmr);
+    document.getElementById("player-mmr").textContent = playerData.mmr;
 
-    // Handle 2v2 setup
-    if (currentGamemode === '2v2') {
-        document.querySelector('.teammate-slot').classList.add('visible');
-        document.querySelector('.opponent2-slot').classList.add('visible');
+    // Set AI info based on player's MMR
+    if (playerData.mmr >= 1864) {
+        // SuperSlot Legend rank - can face SSL AIs
+        // Filter AIs within a reasonable MMR range (±200) of the player
+        const eligibleAIs = specialAIs.superSlotLegends.filter(
+            ai => Math.abs(ai.mmr - playerData.mmr) <= 200
+        );
         
-        // Set up teammate (AI)
-        const teammate = getRandomAI(getCurrentMMR());
-        teamData.teammate = teammate;
-        document.getElementById("teammate-username").textContent = teammate.username;
-        document.getElementById("teammate-title").textContent = teammate.title;
-        document.getElementById("teammate-rank").textContent = getRank(teammate.mmr2v2);
-        document.getElementById("teammate-mmr").textContent = Math.round(teammate.mmr2v2);
+        // If no AIs in range, expand to ±300, then any SSL
+        let selectedAI;
+        if (eligibleAIs.length > 0) {
+            selectedAI = eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
+        } else {
+            const widerPool = specialAIs.superSlotLegends.filter(
+                ai => Math.abs(ai.mmr - playerData.mmr) <= 300
+            );
+            selectedAI = widerPool.length > 0 
+                ? widerPool[Math.floor(Math.random() * widerPool.length)]
+                : specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
+        }
         
-        // Set up second opponent
-        const opponent2 = getRandomAI(getCurrentMMR());
-        teamData.opponents.push(opponent2);
-        document.getElementById("ai2-username").textContent = opponent2.username;
-        document.getElementById("ai2-title").textContent = opponent2.title;
-        document.getElementById("ai2-rank").textContent = getRank(opponent2.mmr2v2);
-        document.getElementById("ai2-mmr").textContent = Math.round(opponent2.mmr2v2);
+        aiData = {
+            username: selectedAI.name,
+            title: selectedAI.title,
+            mmr: selectedAI.mmr
+        };
     } else {
-        document.querySelector('.teammate-slot').classList.remove('visible');
-        document.querySelector('.opponent2-slot').classList.remove('visible');
+        // Regular AI with random grey title
+        const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
+        aiData = {
+            username: aiName,
+            mmr: playerData.mmr + (Math.random() * 200 - 100),
+            title: getRandomGreyTitle()
+        };
     }
-
-    // Set up first opponent
-    const opponent = getRandomAI(getCurrentMMR());
-    teamData.opponents = [opponent];
-    document.getElementById("ai-username").textContent = opponent.username;
-    document.getElementById("ai-title").textContent = opponent.title;
-    document.getElementById("ai-rank").textContent = getRank(opponent.mmr2v2);
-    document.getElementById("ai-mmr").textContent = Math.round(opponent.mmr2v2);
     
-    // Start countdown
+    // Set AI display info (unchanged)
+    document.getElementById("ai-username").textContent = aiData.username;
+    const aiTitleElement = document.getElementById("ai-title");
+    aiTitleElement.textContent = aiData.title;
+    const aiTitle = titles.find(t => t.title === aiData.title);
+    if (aiTitle) {
+        aiTitleElement.style.color = aiTitle.color;
+        if (aiTitle.glow) {
+            aiTitleElement.classList.add("glowing-title");
+        } else {
+            aiTitleElement.classList.remove("glowing-title");
+        }
+    }
+    document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
+    document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
+    
+    // Start countdown (unchanged)
     let countdown = 5;
     document.getElementById("countdown").textContent = countdown;
     
@@ -951,168 +936,6 @@ function simulateAIMatches() {
         }
     }, 1000);
 }
-
-function getRandomAI(playerMMR) {
-    if (playerMMR >= 1864) {
-        const eligibleAIs = specialAIs.superSlotLegends.filter(
-            ai => Math.abs(ai.mmr2v2 - playerMMR) <= 200
-        );
-        
-        let selectedAI;
-        if (eligibleAIs.length > 0) {
-            selectedAI = eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
-        } else {
-            const widerPool = specialAIs.superSlotLegends.filter(
-                ai => Math.abs(ai.mmr2v2 - playerMMR) <= 300
-            );
-            selectedAI = widerPool.length > 0 
-                ? widerPool[Math.floor(Math.random() * widerPool.length)]
-                : specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
-        }
-        
-        return {
-            username: selectedAI.name,
-            title: selectedAI.title,
-            mmr: selectedAI.mmr,
-            mmr2v2: selectedAI.mmr2v2
-        };
-    } else {
-        const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
-        return {
-            username: aiName,
-            mmr: playerMMR + (Math.random() * 200 - 100),
-            mmr2v2: playerMMR + (Math.random() * 200 - 100),
-            title: getRandomGreyTitle()
-        };
-    }
-}
-
-function calculateTeamMMR(team) {
-    return team.reduce((sum, player) => sum + player.mmr2v2, 0) / team.length;
-}
-
-function endGame(playerWon) {
-    if (!gameActive) return;
-    
-    gameActive = false;
-    clearInterval(spinInterval);
-    clearInterval(countdownInterval);
-    
-    const oldMMR = getCurrentMMR();
-    let mmrChange;
-    
-    if (currentGamemode === '2v2') {
-        const playerTeamMMR = calculateTeamMMR([playerData, teamData.teammate]);
-        const opponentTeamMMR = calculateTeamMMR(teamData.opponents);
-        mmrChange = calculateMMRChange(playerTeamMMR, opponentTeamMMR, playerWon);
-    } else {
-        mmrChange = calculateMMRChange(playerData.mmr, teamData.opponents[0].mmr, playerWon);
-    }
-    
-    setCurrentMMR(oldMMR + mmrChange);
-    
-    // Update stats and coins
-    let coinsEarned = 0;
-    if (playerWon) {
-        playerData.wins++;
-        coinsEarned = Math.floor(Math.random() * 6) + 10;
-        playerData.coins += coinsEarned;
-    } else {
-        playerData.losses++;
-    }
-    
-    // Update peak MMR
-    if (getCurrentMMR() > getCurrentPeakMMR()) {
-        setCurrentPeakMMR(getCurrentMMR());
-    }
-    
-    // Update AI MMRs if in SSL range
-    if (getCurrentMMR() >= 1864) {
-        teamData.opponents.forEach(opponent => {
-            const ai = specialAIs.superSlotLegends.find(ai => ai.name === opponent.username);
-            if (ai) {
-                const aiMMRChange = calculateMMRChange(ai.mmr2v2, oldMMR, !playerWon);
-                ai.mmr2v2 = Math.max(1864, Math.min(2400, ai.mmr2v2 + aiMMRChange));
-                saveAIData(ai);
-            }
-        });
-    }
-    
-    // Check for new titles
-    checkForNewTitles();
-    
-    // Save data
-    savePlayerData();
-    
-    // Show end screen
-    document.getElementById("match-screen").classList.add("hidden");
-    document.getElementById("end-screen").classList.remove("hidden");
-    
-    // Update end screen info
-    document.getElementById("result").textContent = playerWon ? "Victory!" : "Defeat";
-    document.getElementById("old-mmr").textContent = oldMMR;
-    document.getElementById("new-mmr").textContent = getCurrentMMR();
-    document.getElementById("mmr-change").textContent = mmrChange > 0 ? `+${mmrChange}` : mmrChange;
-    document.getElementById("coins-earned").textContent = coinsEarned;
-}
-
-function updateMenu() {
-    document.getElementById("username-display").textContent = playerData.username;
-    document.getElementById("wins").textContent = playerData.wins;
-    document.getElementById("losses").textContent = playerData.losses;
-    const totalGames = playerData.wins + playerData.losses;
-    const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
-    document.getElementById("winrate").textContent = `${winRate}%`;
-    document.getElementById("peak-mmr").textContent = getCurrentPeakMMR();
-    document.getElementById("peak-rank").textContent = getRank(getCurrentPeakMMR());
-    const rank = getRank(getCurrentMMR());
-    document.getElementById("current-rank").textContent = rank;
-    document.getElementById("current-mmr").textContent = getCurrentMMR();
-    document.getElementById("rank-image").src = getRankImage(rank);
-    document.getElementById("player-coins").textContent = playerData.coins;
-    
-    // Set active gamemode button
-    document.getElementById('1v1-button').classList.toggle('active', currentGamemode === '1v1');
-    document.getElementById('2v2-button').classList.toggle('active', currentGamemode === '2v2');
-    
-    savePlayerData();
-}
-
-// Initialize gamemode selection
-document.addEventListener('DOMContentLoaded', () => {
-    selectGamemode('1v1');
-});
-
-function selectGamemode(mode) {
-    currentGamemode = mode;
-    document.getElementById('1v1-button').classList.toggle('active', mode === '1v1');
-    document.getElementById('2v2-button').classList.toggle('active', mode === '2v2');
-}
-
-function getCurrentMMR() {
-    return currentGamemode === '1v1' ? playerData.mmr : playerData.mmr2v2;
-}
-
-function getCurrentPeakMMR() {
-    return currentGamemode === '1v1' ? playerData.peakMMR : playerData.peakMMR2v2;
-}
-
-function setCurrentMMR(value) {
-    if (currentGamemode === '1v1') {
-        playerData.mmr = value;
-    } else {
-        playerData.mmr2v2 = value;
-    }
-}
-
-function setCurrentPeakMMR(value) {
-    if (currentGamemode === '1v1') {
-        playerData.peakMMR = value;
-    } else {
-        playerData.peakMMR2v2 = value;
-    }
-}
-
   
   function getRandomGreyTitle() {
       const greyTitles = titles.filter(title => title.color === "grey" && title.title !== "NONE");
@@ -1386,101 +1209,108 @@ function setCurrentPeakMMR(value) {
       return playerIndex !== -1 ? playerIndex + 1 : null;
   }
   
-  function loadLeaderboard() {
-    const leaderboardContent = document.getElementById("leaderboard-content");
-    leaderboardContent.innerHTML = "";
+  function updateMenu() {
+      document.getElementById("username-display").textContent = playerData.username;
     
-    // Create tabs for 1v1 and 2v2
-    const tabsDiv = document.createElement("div");
-    tabsDiv.className = "leaderboard-tabs";
-    
-    const tab1v1 = document.createElement("button");
-    tab1v1.textContent = "1v1";
-    tab1v1.className = "leaderboard-tab active";
-    tab1v1.onclick = () => showLeaderboardTab("1v1");
-    
-    const tab2v2 = document.createElement("button");
-    tab2v2.textContent = "2v2";
-    tab2v2.className = "leaderboard-tab";
-    tab2v2.onclick = () => showLeaderboardTab("2v2");
-    
-    tabsDiv.appendChild(tab1v1);
-    tabsDiv.appendChild(tab2v2);
-    leaderboardContent.appendChild(tabsDiv);
-    
-    // Create content containers
-    const content1v1 = document.createElement("div");
-    content1v1.id = "leaderboard-1v1";
-    content1v1.className = "leaderboard-content active";
-    
-    const content2v2 = document.createElement("div");
-    content2v2.id = "leaderboard-2v2";
-    content2v2.className = "leaderboard-content";
-    
-    leaderboardContent.appendChild(content1v1);
-    leaderboardContent.appendChild(content2v2);
-    
-    // Load initial 1v1 leaderboard
-    showLeaderboardTab("1v1");
-}
+      document.getElementById("wins").textContent = playerData.wins;
+      document.getElementById("losses").textContent = playerData.losses;
+      const totalGames = playerData.wins + playerData.losses;
+      const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
+      document.getElementById("winrate").textContent = `${winRate}%`;
+      document.getElementById("peak-mmr").textContent = playerData.peakMMR;
+    document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
+      const rank = getRank(playerData.mmr);
+      document.getElementById("current-rank").textContent = rank;
+      document.getElementById("current-mmr").textContent = playerData.mmr;
+      document.getElementById("rank-image").src = getRankImage(rank);
+      document.getElementById("player-coins").textContent = playerData.coins;
+  
+      // Add leaderboard button if not already present
+      if (!document.getElementById("leaderboard-button")) {
+          const menuButtons = document.querySelector("#menu-screen .button-container");
+          const leaderboardButton = document.createElement("button");
+          leaderboardButton.id = "leaderboard-button";
+          leaderboardButton.className = "button";
+          leaderboardButton.textContent = "Leaderboard";
+          leaderboardButton.onclick = () => {
+              loadLeaderboard();
+              openPopup("leaderboard-popup");
+          };
+          menuButtons.appendChild(leaderboardButton);
+      }
 
-function showLeaderboardTab(mode) {
-    // Update tab styles
-    document.querySelectorAll('.leaderboard-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`.leaderboard-tab:nth-child(${mode === '1v1' ? '1' : '2'})`).classList.add('active');
-    
-    // Update content visibility
-    document.querySelectorAll('.leaderboard-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(`leaderboard-${mode}`).classList.add('active');
-    
-    // Get all players
+      savePlayerData();
+  }
+
+
+
+  
+
+  
+
+function loadLeaderboard() {
+    const leaderboardList = document.getElementById("leaderboard-list");
+    leaderboardList.innerHTML = "";
+
+    // Get all SSL AIs and sort by current MMR
     const allPlayers = [...specialAIs.superSlotLegends];
     
     // Add player if they're SSL
-    if ((mode === '1v1' && playerData.mmr >= 1864) || (mode === '2v2' && playerData.mmr2v2 >= 1864)) {
+    if (playerData.mmr >= 1864) {
         allPlayers.push({
             name: playerData.username,
-            mmr: mode === '1v1' ? playerData.mmr : playerData.mmr2v2,
+            mmr: playerData.mmr,
             isPlayer: true
         });
     }
-    
-    // Sort by appropriate MMR
-    allPlayers.sort((a, b) => {
-        const aMMR = mode === '1v1' ? a.mmr : a.mmr2v2;
-        const bMMR = mode === '1v1' ? b.mmr : b.mmr2v2;
-        return bMMR - aMMR;
-    });
-    
+
+    // Sort by current MMR (highest to lowest)
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
+
+    // Take top 25
+    const top25 = allPlayers.slice(0, 25);
+
     // Create leaderboard entries
-    const content = document.getElementById(`leaderboard-${mode}`);
-    content.innerHTML = "";
-    
-    allPlayers.forEach((player, index) => {
+    top25.forEach((player, index) => {
         const entry = document.createElement("div");
-        entry.className = `leaderboard-entry ${player.isPlayer ? 'player-entry' : ''}`;
+        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
         
-        const rank = document.createElement("span");
-        rank.className = "rank";
-        rank.textContent = `#${index + 1}`;
+        entry.innerHTML = `
+            <div class="leaderboard-rank">#${index + 1}</div>
+            <div class="leaderboard-player">
+                <span class="leaderboard-username">${player.name}</span>
+            </div>
+            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+        `;
         
-        const name = document.createElement("span");
-        name.className = "name";
-        name.textContent = player.name;
-        
-        const mmr = document.createElement("span");
-        mmr.className = "mmr";
-        mmr.textContent = Math.round(mode === '1v1' ? player.mmr : player.mmr2v2);
-        
-        entry.appendChild(rank);
-        entry.appendChild(name);
-        entry.appendChild(mmr);
-        content.appendChild(entry);
+        leaderboardList.appendChild(entry);
     });
+
+    // Find player's rank in the full list
+    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+
+    // Add player stats above the close button
+    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
+    const closeButton = popupContent.querySelector(".close-button");
+    
+    // Remove existing player stats if they exist
+    const existingStats = popupContent.querySelector(".player-stats");
+    if (existingStats) {
+        existingStats.remove();
+    }
+
+    const playerStats = document.createElement("div");
+    playerStats.className = "player-stats";
+    playerStats.innerHTML = `
+        <div class="player-stats-header">Your Stats</div>
+        <div class="player-stats-content">
+            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+        </div>
+    `;
+    
+    // Insert player stats before the close button
+    closeButton.parentNode.insertBefore(playerStats, closeButton);
 }
 
 function getTrendIndicator(player) {
