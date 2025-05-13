@@ -66,17 +66,19 @@ const aiNames = [
       wins: 0,
       losses: 0,
       mmr: 600,
-      mmr2v2: 600, // New 2v2 MMR
+      mmr2v2: 600,
       peakMMR: 600,
-      peakMMR2v2: 600, // New 2v2 peak MMR
+      peakMMR2v2: 600,
       coins: 0,
-      ownedTitles: ["NONE"] // Track all titles the player owns
+      ownedTitles: ["NONE"]
   };
 
   let teamData = {
       teammate: null,
       opponents: []
   };
+
+  let currentGamemode = "1v1"; // Initialize with default gamemode
 
   let aiData = {
       username: "",
@@ -1069,17 +1071,18 @@ function updateMenu() {
     const totalGames = playerData.wins + playerData.losses;
     const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
     document.getElementById("winrate").textContent = `${winRate}%`;
-    document.getElementById("peak-mmr").textContent = getCurrentPeakMMR();
-    document.getElementById("peak-rank").textContent = getRank(getCurrentPeakMMR());
-    const rank = getRank(getCurrentMMR());
-    document.getElementById("current-rank").textContent = rank;
-    document.getElementById("current-mmr").textContent = getCurrentMMR();
-    document.getElementById("rank-image").src = getRankImage(rank);
-    document.getElementById("player-coins").textContent = playerData.coins;
     
-    // Set active gamemode button
-    document.getElementById('1v1-button').classList.toggle('active', currentGamemode === '1v1');
-    document.getElementById('2v2-button').classList.toggle('active', currentGamemode === '2v2');
+    // Update current MMR and rank based on selected gamemode
+    const currentMMR = getCurrentMMR();
+    const currentPeakMMR = getCurrentPeakMMR();
+    const currentRank = getRank(currentMMR);
+    
+    document.getElementById("current-mmr").textContent = Math.round(currentMMR);
+    document.getElementById("current-rank").textContent = currentRank;
+    document.getElementById("peak-mmr").textContent = Math.round(currentPeakMMR);
+    document.getElementById("peak-rank").textContent = getRank(currentPeakMMR);
+    document.getElementById("rank-image").src = getRankImage(currentRank);
+    document.getElementById("player-coins").textContent = playerData.coins;
     
     savePlayerData();
 }
@@ -1091,8 +1094,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function selectGamemode(mode) {
     currentGamemode = mode;
-    document.getElementById('1v1-button').classList.toggle('active', mode === '1v1');
-    document.getElementById('2v2-button').classList.toggle('active', mode === '2v2');
+    document.getElementById("gamemode-screen").classList.add("hidden");
+    document.getElementById("queue-screen").classList.remove("hidden");
+    startQueue();
 }
 
 function getCurrentMMR() {
@@ -1733,34 +1737,4 @@ function updateGamemodeScreen() {
     document.getElementById("2v2-rank").textContent = getRank(playerData.mmr2v2);
     document.getElementById("2v2-mmr").textContent = Math.round(playerData.mmr2v2);
     document.getElementById("2v2-peak-mmr").textContent = Math.round(playerData.mmr2v2);
-}
-
-function selectGamemode(mode) {
-    currentGamemode = mode;
-    document.getElementById("gamemode-screen").classList.add("hidden");
-    document.getElementById("queue-screen").classList.remove("hidden");
-    startQueue();
-}
-
-function updateMenu() {
-    document.getElementById("username-display").textContent = playerData.username;
-    document.getElementById("wins").textContent = playerData.wins;
-    document.getElementById("losses").textContent = playerData.losses;
-    const totalGames = playerData.wins + playerData.losses;
-    const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
-    document.getElementById("winrate").textContent = `${winRate}%`;
-    
-    // Update current MMR and rank based on selected gamemode
-    const currentMMR = getCurrentMMR();
-    const currentPeakMMR = getCurrentPeakMMR();
-    const currentRank = getRank(currentMMR);
-    
-    document.getElementById("current-mmr").textContent = Math.round(currentMMR);
-    document.getElementById("current-rank").textContent = currentRank;
-    document.getElementById("peak-mmr").textContent = Math.round(currentPeakMMR);
-    document.getElementById("peak-rank").textContent = getRank(currentPeakMMR);
-    document.getElementById("rank-image").src = getRankImage(currentRank);
-    document.getElementById("player-coins").textContent = playerData.coins;
-    
-    savePlayerData();
 }
