@@ -779,15 +779,30 @@
     <img id="rank-image" src="images/unranked.png" alt="Rank">
     <p><span id="current-rank">Unranked</span></p>
     <p>MMR: <span id="current-mmr">1000</span></p>
-    <div class="gamemode-selector">
-        <button class="button" onclick="selectGamemode('1v1')" id="1v1-button">1v1</button>
-        <button class="button" onclick="selectGamemode('2v2')" id="2v2-button">2v2</button>
-    </div>
-    <button class="button" onclick="startQueue()">Queue</button>
+    <button class="button" onclick="showGamemodeScreen()">Queue</button>
 
     <div class="button-container">
         <button class="button" onclick="openPopup('title-popup'); loadTitlesPopup();">Titles</button>
     </div>
+</div>
+
+<div id="gamemode-screen" class="container hidden">
+    <h1>Select Gamemode</h1>
+    <div class="gamemode-options">
+        <div class="gamemode-option" onclick="selectGamemode('1v1')">
+            <h2>1v1</h2>
+            <p>Rank: <span id="1v1-rank">Unranked</span></p>
+            <p>MMR: <span id="1v1-mmr">600</span></p>
+            <p>Peak MMR: <span id="1v1-peak-mmr">600</span></p>
+        </div>
+        <div class="gamemode-option" onclick="selectGamemode('2v2')">
+            <h2>2v2</h2>
+            <p>Rank: <span id="2v2-rank">Unranked</span></p>
+            <p>MMR: <span id="2v2-mmr">600</span></p>
+            <p>Peak MMR: <span id="2v2-peak-mmr">600</span></p>
+        </div>
+    </div>
+    <button class="button" onclick="hideGamemodeScreen()">Back</button>
 </div>
 
 <div id="queue-screen" class="container hidden">
