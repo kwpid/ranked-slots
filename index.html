@@ -806,11 +806,15 @@
 </div>
 
 <div id="queue-screen" class="container hidden">
-    <h2>Searching for Match...</h2>
-    <p>Time in Queue: <span id="queue-time">0</span>s</p>
-    <p>Estimated Time: 30s</p>
-    <button onclick="startQueue()" class="button">Start Queue</button>
-    <button onclick="cancelQueue()" class="button">Cancel</button>
+    <h1>Queueing...</h1>
+    <p>Time Elapsed: <span id="queue-time">0</span>s</p>
+    <p>Estimated Time: 10s</p>
+    <div class="loading-dots">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+    </div>
+    <button class="button" onclick="cancelQueue()">Cancel</button>
 </div>
 
 <div id="match-screen" class="container hidden">
