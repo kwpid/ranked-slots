@@ -72,6 +72,12 @@ const aiNames = [
       coins: 0,
       ownedTitles: ["NONE"] // Track all titles the player owns
   };
+
+  let teamData = {
+      teammate: null,
+      opponents: []
+  };
+
   let aiData = {
       username: "",
       mmr: 600,
@@ -1705,3 +1711,56 @@ function getTrendIndicator(player) {
 }
   
   updateMenu();
+
+  function showGamemodeScreen() {
+    document.getElementById("menu-screen").classList.add("hidden");
+    document.getElementById("gamemode-screen").classList.remove("hidden");
+    updateGamemodeScreen();
+}
+
+function hideGamemodeScreen() {
+    document.getElementById("gamemode-screen").classList.add("hidden");
+    document.getElementById("menu-screen").classList.remove("hidden");
+}
+
+function updateGamemodeScreen() {
+    // Update 1v1 stats
+    document.getElementById("1v1-rank").textContent = getRank(playerData.mmr);
+    document.getElementById("1v1-mmr").textContent = Math.round(playerData.mmr);
+    document.getElementById("1v1-peak-mmr").textContent = Math.round(playerData.peakMMR);
+    
+    // Update 2v2 stats
+    document.getElementById("2v2-rank").textContent = getRank(playerData.mmr2v2);
+    document.getElementById("2v2-mmr").textContent = Math.round(playerData.mmr2v2);
+    document.getElementById("2v2-peak-mmr").textContent = Math.round(playerData.mmr2v2);
+}
+
+function selectGamemode(mode) {
+    currentGamemode = mode;
+    document.getElementById("gamemode-screen").classList.add("hidden");
+    document.getElementById("queue-screen").classList.remove("hidden");
+    startQueue();
+}
+
+function updateMenu() {
+    document.getElementById("username-display").textContent = playerData.username;
+    document.getElementById("wins").textContent = playerData.wins;
+    document.getElementById("losses").textContent = playerData.losses;
+    const totalGames = playerData.wins + playerData.losses;
+    const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
+    document.getElementById("winrate").textContent = `${winRate}%`;
+    
+    // Update current MMR and rank based on selected gamemode
+    const currentMMR = getCurrentMMR();
+    const currentPeakMMR = getCurrentPeakMMR();
+    const currentRank = getRank(currentMMR);
+    
+    document.getElementById("current-mmr").textContent = Math.round(currentMMR);
+    document.getElementById("current-rank").textContent = currentRank;
+    document.getElementById("peak-mmr").textContent = Math.round(currentPeakMMR);
+    document.getElementById("peak-rank").textContent = getRank(currentPeakMMR);
+    document.getElementById("rank-image").src = getRankImage(currentRank);
+    document.getElementById("player-coins").textContent = playerData.coins;
+    
+    savePlayerData();
+}
