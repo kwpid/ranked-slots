@@ -1096,7 +1096,7 @@ function selectGamemode(mode) {
     currentGamemode = mode;
     document.getElementById("gamemode-screen").classList.add("hidden");
     document.getElementById("queue-screen").classList.remove("hidden");
-    startQueue();
+    // Remove the automatic startQueue() call
 }
 
 function getCurrentMMR() {
