@@ -339,7 +339,7 @@ function closePopup(popupId) {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["azap"]
+        wlUsers: ["kwpid"]
     },
     {
         title: "RSCS ELITE",
@@ -509,7 +509,84 @@ function closePopup(popupId) {
         wlUsers: [""]
     },
 
-      
+      // SEASON 3
+      {
+        title: "RSCS S3 CHALLENGER",
+        color: "#4da1f6",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 ELITE",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S2 REGIONAL CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 REGIONAL FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 MAJOR CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S3 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S3 MAJOR CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S3 WORLDS CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S3 WORLD CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
 
 
     {
