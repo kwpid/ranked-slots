@@ -1471,18 +1471,32 @@ function getTrendIndicator(player) {
         if (a.title === "NONE") return -1;
         if (b.title === "NONE") return 1;
 
-        const aIsRSCS = a.title.startsWith("RSCS");
-        const bIsRSCS = b.title.startsWith("RSCS");
+        // Helper to classify title category
+        const getCategory = (title) => {
+            const isRSCS = title.startsWith("RSCS");
+            const hasSeason = /S\d+/.test(title);
+            const isChallenger = title.includes("CHALLENGER");
+            const isRanked = /^S\d+/.test(title) && rankedOrder.some(t => title.includes(t));
 
-        const aIsRanked = /^S\d+/.test(a.title) && rankedOrder.some(tier => a.title.includes(tier));
-        const bIsRanked = /^S\d+/.test(b.title) && rankedOrder.some(tier => b.title.includes(tier));
+            if (isRSCS && !hasSeason) return 0; // RSCS global
+            if (isRSCS && hasSeason && isChallenger) return 2; // RSCS Challenger
+            if (isRSCS && hasSeason) return 1; // RSCS S# Season
+            if (isRanked) return 3; // Ranked
+            return 4; // Other
+        };
 
-        // RSCS first
-        if (aIsRSCS && !bIsRSCS) return -1;
-        if (!aIsRSCS && bIsRSCS) return 1;
+        const catA = getCategory(a.title);
+        const catB = getCategory(b.title);
+        if (catA !== catB) return catA - catB;
 
-        // If both RSCS
-        if (aIsRSCS && bIsRSCS) {
+        // Sort inside same category
+        if (catA === 0) {
+            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
+            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
+            return aTier - bTier;
+        }
+
+        if (catA === 1 || catA === 2) {
             const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
             const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
             if (aSeason !== bSeason) return bSeason - aSeason;
@@ -1492,11 +1506,7 @@ function getTrendIndicator(player) {
             return aTier - bTier;
         }
 
-        // Ranked second
-        if (aIsRanked && !bIsRanked) return -1;
-        if (!aIsRanked && bIsRanked) return 1;
-
-        if (aIsRanked && bIsRanked) {
+        if (catA === 3) {
             const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
             const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
             if (aSeason !== bSeason) return bSeason - aSeason;
@@ -1506,14 +1516,15 @@ function getTrendIndicator(player) {
             return aRank - bRank;
         }
 
-        // Grey titles last
+        // Grey last
         if (a.color === "grey" && b.color !== "grey") return 1;
         if (a.color !== "grey" && b.color === "grey") return -1;
 
-        // Fallback: alphabetically
+        // Fallback alphabetical
         return a.title.localeCompare(b.title);
     });
 }
+
 
   
   function showTitleNotification(title) {
