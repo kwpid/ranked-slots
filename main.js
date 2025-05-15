@@ -777,7 +777,7 @@ function closePopup(popupId) {
     { name: "jyn", title: "RSCS S1 CHALLENGER", mmr: 1916 },
     { name: "qry", title: "NONE", mmr: 1967 },
     { name: "neoo", title: "NONE", mmr: 1967 },
-    { name: "kwpid", title: "NONE", mmr: 2067 }
+    { name: "kwpid", title: "NONE", mmr: 2145 }
     
     ].map(ai => {
         // Try to load saved MMR from localStorage
