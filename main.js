@@ -332,7 +332,7 @@ function closePopup(popupId) {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: ["kwpid"]
     },
     {
         title: "RSCS REGIONAL CHAMPION",
@@ -587,6 +587,84 @@ function closePopup(popupId) {
         minMMR: null,
         wlUsers: [""]
     },
+      // SEASON 3
+      {
+        title: "RSCS S4 CHALLENGER",
+        color: "#4da1f6",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 ELITE",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 REGIONAL CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 REGIONAL FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 MAJOR CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 MAJOR CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 WORLDS CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
+    {
+        title: "RSCS S4 WORLD CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"]
+    },
 
 
     {
@@ -608,16 +686,46 @@ function closePopup(popupId) {
         title: "S2 GRAND CHAMPION",
         color: "gold",
         glow: true,
-        minMMR: 1403,
+        minMMR: null,
         wlUsers: [""],
     },
     {
         title: "S2 SUPERSLOT LEGEND",
         color: "white",
         glow: true,
+        minMMR: null,
+        wlUsers: [""],
+    },
+      {
+        title: "S3 GRAND CHAMPION",
+        color: "red",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"],
+    },
+    {
+        title: "S3 SUPERSLOT LEGEND",
+        color: "white",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kwpid"],
+    },
+      {
+        title: "S4 GRAND CHAMPION",
+        color: "gold",
+        glow: true,
+        minMMR: 1403,
+        wlUsers: [""],
+    },
+    {
+        title: "S4 SUPERSLOT LEGEND",
+        color: "white",
+        glow: true,
         minMMR: 1864,
         wlUsers: [""],
     },
+      
+      
 
 
 
