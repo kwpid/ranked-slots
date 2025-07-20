@@ -757,55 +757,6 @@
     font-weight: bold;
     text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
 }
-
-.leaderboard-tabs {
-    display: flex;
-    margin-bottom: 10px;
-}
-.leaderboard-tab-button {
-    flex: 1;
-    padding: 10px;
-    background: #222;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    border-bottom: 2px solid transparent;
-    transition: background 0.2s, border-bottom 0.2s;
-}
-.leaderboard-tab-button.active {
-    background: #333;
-    border-bottom: 2px solid #ffcc00;
-    color: #ffcc00;
-}
-.stats-tabs {
-    display: flex;
-    margin-bottom: 10px;
-}
-.stats-tab-button {
-    flex: 1;
-    padding: 8px;
-    background: #222;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    border-bottom: 2px solid transparent;
-    transition: background 0.2s, border-bottom 0.2s;
-}
-.stats-tab-button.active {
-    background: #333;
-    border-bottom: 2px solid #00ffcc;
-    color: #00ffcc;
-}
-.stats-leaderboard-list {
-    margin-top: 10px;
-    max-height: 500px;
-    overflow-y: auto;
-    background: #1a1a1a;
-    border-radius: 8px;
-    border: 1px solid #333;
-}
     </style>
 </head>
 <body>
@@ -926,9 +877,25 @@
 <!-- Leaderboard Popup -->
 <div id="leaderboard-popup" class="popup hidden">
     <div class="popup-content">
-        <h2>Top 25 SuperSlot Legends</h2>
-        <div id="leaderboard-list">
-            <!-- Leaderboard entries will be populated here -->
+        <div class="leaderboard-tabs">
+            <button class="leaderboard-tab-button active" id="elo-tab" onclick="switchLeaderboardTab('elo')">ELO</button>
+            <button class="leaderboard-tab-button" id="stats-tab" onclick="switchLeaderboardTab('stats')">Stats</button>
+        </div>
+        <div id="elo-leaderboard-section">
+            <h2>Top 25 SuperSlot Legends</h2>
+            <div id="leaderboard-list">
+                <!-- Leaderboard entries will be populated here -->
+            </div>
+        </div>
+        <div id="stats-leaderboard-section" style="display:none;">
+            <div class="stats-tabs">
+                <button class="stats-tab-button active" id="wins-tab" onclick="switchStatsTab('wins')">All Time Wins</button>
+                <button class="stats-tab-button" id="goals-tab" onclick="switchStatsTab('goals')">All Time Goals</button>
+                <button class="stats-tab-button" id="saves-tab" onclick="switchStatsTab('saves')">All Time Saves</button>
+            </div>
+            <div id="stats-leaderboard-list-wins" class="stats-leaderboard-list"></div>
+            <div id="stats-leaderboard-list-goals" class="stats-leaderboard-list" style="display:none;"></div>
+            <div id="stats-leaderboard-list-saves" class="stats-leaderboard-list" style="display:none;"></div>
         </div>
         <button class="close-button" onclick="closePopup('leaderboard-popup')">Close</button>
     </div>
