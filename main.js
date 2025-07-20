@@ -129,15 +129,20 @@ const aiNames = [
       const savedData = localStorage.getItem("playerData");
       if (savedData) {
           playerData = JSON.parse(savedData);
-          // Initialize ownedTitles if it doesn't exist
+          // Ensure new stats always exist
+          if (playerData.goals === undefined) playerData.goals = 0;
+          if (playerData.saves === undefined) playerData.saves = 0;
+          if (playerData.allTimeWins === undefined) playerData.allTimeWins = playerData.wins || 0;
+          if (playerData.allTimeGoals === undefined) playerData.allTimeGoals = 0;
+          if (playerData.allTimeSaves === undefined) playerData.allTimeSaves = 0;
           if (!playerData.ownedTitles) {
               playerData.ownedTitles = ["NONE"];
-              // Add current title to owned titles if it's not NONE
               if (playerData.title && playerData.title !== "NONE") {
                   playerData.ownedTitles.push(playerData.title);
               }
               savePlayerData();
           }
+          savePlayerData();
           console.log("Loaded player data:", playerData); // Debug log
       }
   }
@@ -1573,26 +1578,30 @@ function loadStatsLeaderboard(stat) {
     container.innerHTML = '';
     // Get all SSL AIs and sort by stat
     const allPlayers = [...specialAIs.superSlotLegends];
+    let playerInTop = false;
     if (playerData.mmr >= 1864) {
         const playerObj = {
             name: playerData.username,
             isPlayer: true
         };
-        playerObj[statKey] = playerData[statKey] || 0;
+        // For wins, always use playerData.wins if allTimeWins is missing
+        if (statKey === 'allTimeWins') {
+            playerObj[statKey] = playerData.allTimeWins !== undefined ? playerData.allTimeWins : playerData.wins || 0;
+        } else {
+            playerObj[statKey] = playerData[statKey] || 0;
+        }
         allPlayers.push(playerObj);
     }
     allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
     const top25 = allPlayers.slice(0, 25);
     top25.forEach((player, index) => {
+        const isPlayer = player.isPlayer || player.name === playerData.username;
+        if (isPlayer) playerInTop = true;
         const entry = document.createElement('div');
-        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+        entry.className = `leaderboard-entry${isPlayer ? ' player-entry' : ''}`;
         entry.innerHTML = `
-            <div class="leaderboard-rank">#${index + 1}</div>
-            <div class="leaderboard-player">
-                <span class="leaderboard-username">${player.name}</span>
-            </div>
-            <div class="leaderboard-mmr">${player[statKey] || 0} ${label}</div>
-        `;
+            <div class=\"leaderboard-rank\">#${index + 1}</div>
+            <div class=\"leaderboard-player\">\n                <span class=\"leaderboard-username\">${player.name}</span>\n            </div>\n            <div class=\"leaderboard-mmr\">${player[statKey] || 0} ${label}</div>\n        `;
         container.appendChild(entry);
     });
     updatePlayerStatsSummary('stats', stat);
