@@ -68,11 +68,21 @@ const aiNames = [
       mmr: 600,
       peakMMR: 600,
       coins: 0,
-      ownedTitles: ["NONE"] // Track all titles the player owns
+      ownedTitles: ["NONE"], // Track all titles the player owns
+      goals: 0,
+      saves: 0,
+      allTimeWins: 0,
+      allTimeGoals: 0,
+      allTimeSaves: 0
   };
   let aiData = {
       username: "",
-      mmr: 600
+      mmr: 600,
+      goals: 0,
+      saves: 0,
+      allTimeWins: 0,
+      allTimeGoals: 0,
+      allTimeSaves: 0
   };
   const items = [
       {name: "Centio", type: "hero", price: 1500, rarity: "common", perks: {1: 35, 2: 10}},
@@ -1248,14 +1258,33 @@ function simulateAIMatches() {
     const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
     playerData.mmr += mmrChange;
     
+    // Award random goals and saves
+    const playerGoals = Math.floor(Math.random() * 3) + 1; // 1-3 goals
+    const aiGoals = Math.floor(Math.random() * 3) + 1;
+    const playerSaves = Math.floor(Math.random() * 3); // 0-2 saves
+    const aiSaves = Math.floor(Math.random() * 3);
+    
+    playerData.goals += playerGoals;
+    playerData.saves += playerSaves;
+    playerData.allTimeGoals += playerGoals;
+    playerData.allTimeSaves += playerSaves;
+    aiData.goals = (aiData.goals || 0) + aiGoals;
+    aiData.saves = (aiData.saves || 0) + aiSaves;
+    aiData.allTimeGoals = (aiData.allTimeGoals || 0) + aiGoals;
+    aiData.allTimeSaves = (aiData.allTimeSaves || 0) + aiSaves;
+    
     // Update stats and coins (unchanged)
     let coinsEarned = 0;
     if (playerWon) {
         playerData.wins++;
+        playerData.allTimeWins++;
         coinsEarned = Math.floor(Math.random() * 6) + 10;
         playerData.coins += coinsEarned;
+        // AI loss, no win increment
     } else {
         playerData.losses++;
+        // AI win
+        aiData.allTimeWins = (aiData.allTimeWins || 0) + 1;
     }
     
     // Update peak MMR (unchanged)
@@ -1731,3 +1760,138 @@ function getTrendIndicator(player) {
 }
   
   updateMenu();
+
+const patchAIStats = ai => {
+    if (ai.goals === undefined) ai.goals = 0;
+    if (ai.saves === undefined) ai.saves = 0;
+    if (ai.allTimeWins === undefined) ai.allTimeWins = 0;
+    if (ai.allTimeGoals === undefined) ai.allTimeGoals = 0;
+    if (ai.allTimeSaves === undefined) ai.allTimeSaves = 0;
+    return ai;
+};
+if (specialAIs && specialAIs.superSlotLegends) {
+    specialAIs.superSlotLegends = specialAIs.superSlotLegends.map(patchAIStats);
+}
+
+function switchLeaderboardTab(tab) {
+    const eloSection = document.getElementById('elo-leaderboard-section');
+    const statsSection = document.getElementById('stats-leaderboard-section');
+    document.getElementById('elo-tab').classList.toggle('active', tab === 'elo');
+    document.getElementById('stats-tab').classList.toggle('active', tab === 'stats');
+    eloSection.style.display = tab === 'elo' ? '' : 'none';
+    statsSection.style.display = tab === 'stats' ? '' : 'none';
+    if (tab === 'elo') {
+        loadLeaderboard('elo');
+    } else {
+        loadStatsLeaderboard('wins');
+    }
+}
+
+function switchStatsTab(stat) {
+    document.getElementById('wins-tab').classList.toggle('active', stat === 'wins');
+    document.getElementById('goals-tab').classList.toggle('active', stat === 'goals');
+    document.getElementById('saves-tab').classList.toggle('active', stat === 'saves');
+    document.getElementById('stats-leaderboard-list-wins').style.display = stat === 'wins' ? '' : 'none';
+    document.getElementById('stats-leaderboard-list-goals').style.display = stat === 'goals' ? '' : 'none';
+    document.getElementById('stats-leaderboard-list-saves').style.display = stat === 'saves' ? '' : 'none';
+    loadStatsLeaderboard(stat);
+}
+
+function loadLeaderboard(type = 'elo') {
+    if (type === 'elo') {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = '';
+        // Get all SSL AIs and sort by current MMR
+        const allPlayers = [...specialAIs.superSlotLegends];
+        // Add player if they're SSL
+        if (playerData.mmr >= 1864) {
+            allPlayers.push({
+                name: playerData.username,
+                mmr: playerData.mmr,
+                isPlayer: true
+            });
+        }
+        // Sort by current MMR (highest to lowest)
+        allPlayers.sort((a, b) => b.mmr - a.mmr);
+        // Take top 25
+        const top25 = allPlayers.slice(0, 25);
+        // Create leaderboard entries
+        top25.forEach((player, index) => {
+            const entry = document.createElement('div');
+            entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+            entry.innerHTML = `
+                <div class="leaderboard-rank">#${index + 1}</div>
+                <div class="leaderboard-player">
+                    <span class="leaderboard-username">${player.name}</span>
+                </div>
+                <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+            `;
+            leaderboardList.appendChild(entry);
+        });
+        // Find player's rank in the full list
+        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+        // Add player stats above the close button
+        const popupContent = document.querySelector('#leaderboard-popup .popup-content');
+        const closeButton = popupContent.querySelector('.close-button');
+        // Remove existing player stats if they exist
+        const existingStats = popupContent.querySelector('.player-stats');
+        if (existingStats) {
+            existingStats.remove();
+        }
+        const playerStats = document.createElement('div');
+        playerStats.className = 'player-stats';
+        playerStats.innerHTML = `
+            <div class="player-stats-header">Your Stats</div>
+            <div class="player-stats-content">
+                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+                <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+            </div>
+        `;
+        closeButton.parentNode.insertBefore(playerStats, closeButton);
+    }
+}
+
+function loadStatsLeaderboard(stat) {
+    let statKey, containerId, label;
+    if (stat === 'wins') {
+        statKey = 'allTimeWins';
+        containerId = 'stats-leaderboard-list-wins';
+        label = 'Wins';
+    } else if (stat === 'goals') {
+        statKey = 'allTimeGoals';
+        containerId = 'stats-leaderboard-list-goals';
+        label = 'Goals';
+    } else {
+        statKey = 'allTimeSaves';
+        containerId = 'stats-leaderboard-list-saves';
+        label = 'Saves';
+    }
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    // Get all SSL AIs and sort by stat
+    const allPlayers = [...specialAIs.superSlotLegends];
+    if (playerData.mmr >= 1864) {
+        const playerObj = {
+            name: playerData.username,
+            isPlayer: true
+        };
+        playerObj[statKey] = playerData[statKey] || 0;
+        allPlayers.push(playerObj);
+    }
+    allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
+    const top25 = allPlayers.slice(0, 25);
+    top25.forEach((player, index) => {
+        const entry = document.createElement('div');
+        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+        entry.innerHTML = `
+            <div class="leaderboard-rank">#${index + 1}</div>
+            <div class="leaderboard-player">
+                <span class="leaderboard-username">${player.name}</span>
+            </div>
+            <div class="leaderboard-mmr">${player[statKey] || 0} ${label}</div>
+        `;
+        container.appendChild(entry);
+    });
+    // Highlight player's stats
+    // (Optional: add player stats summary for this stat)
+}
