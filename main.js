@@ -1496,7 +1496,6 @@ function loadLeaderboard() {
     
     // Insert player stats before the close button
     closeButton.parentNode.insertBefore(playerStats, closeButton);
-    updateTitleDisplay();
 }
 
 function getTrendIndicator(player) {
@@ -1570,70 +1569,65 @@ function getTrendIndicator(player) {
         "GRAND CHAMPION"
     ];
 
-    let available = titles.filter(title => {
+    return titles.filter(title => {
         if (title.title === "NONE") return true;
         if (title.wlUsers.includes(playerData.username)) return true;
         if (title.minMMR && playerData.mmr >= title.minMMR) return true;
         if (playerData.ownedTitles && playerData.ownedTitles.includes(title.title)) return true;
         return false;
-    });
-    // Insert the custom world title if present and not already in the list
-    const worldTitle = getCustomWorldTitle();
-    if (worldTitle) {
-        // Remove any previous world title from the list (in case the number changed)
-        available = available.filter(t => !/^#\d+ IN THE WORLD$/.test(t.title));
-        available.unshift(worldTitle); // Add at the top
-    } else {
-        // Remove any world title if not in top 25
-        available = available.filter(t => !/^#\d+ IN THE WORLD$/.test(t.title));
-    }
-    return available.sort((a, b) => {
+    }).sort((a, b) => {
         if (a.title === "NONE") return -1;
         if (b.title === "NONE") return 1;
-        // ... existing sort logic ...
+
+        // Helper to classify title category
         const getCategory = (title) => {
-            const isRSCS = title.title.startsWith("RSCS");
-            const hasSeason = /S\d+/.test(title.title);
-            const isChallenger = title.title.includes("CHALLENGER");
-            const isRanked = /^S\d+/.test(title.title) && rankedOrder.some(t => title.title.includes(t));
+            const isRSCS = title.startsWith("RSCS");
+            const hasSeason = /S\d+/.test(title);
+            const isChallenger = title.includes("CHALLENGER");
+            const isRanked = /^S\d+/.test(title) && rankedOrder.some(t => title.includes(t));
+
             if (isRSCS && !hasSeason) return 0; // RSCS global
             if (isRSCS && hasSeason && isChallenger) return 2; // RSCS Challenger
             if (isRSCS && hasSeason) return 1; // RSCS S# Season
             if (isRanked) return 3; // Ranked
-            if (/^#\d+ IN THE WORLD$/.test(title.title)) return -2; // Always top
             return 4; // Other
         };
-        const catA = getCategory(a);
-        const catB = getCategory(b);
+
+        const catA = getCategory(a.title);
+        const catB = getCategory(b.title);
         if (catA !== catB) return catA - catB;
-        // ... rest of sort logic ...
+
+        // Sort inside same category
         if (catA === 0) {
             const aTier = rscsOrder.findIndex(t => a.title.includes(t));
             const bTier = rscsOrder.findIndex(t => b.title.includes(t));
             return aTier - bTier;
         }
+
         if (catA === 1 || catA === 2) {
             const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
             const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
             if (aSeason !== bSeason) return bSeason - aSeason;
+
             const aTier = rscsOrder.findIndex(t => a.title.includes(t));
             const bTier = rscsOrder.findIndex(t => b.title.includes(t));
             return aTier - bTier;
         }
+
         if (catA === 3) {
             const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
             const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
             if (aSeason !== bSeason) return bSeason - aSeason;
+
             const aRank = rankedOrder.findIndex(t => a.title.includes(t));
             const bRank = rankedOrder.findIndex(t => b.title.includes(t));
             return aRank - bRank;
         }
-        // World title always top
-        if (/^#\d+ IN THE WORLD$/.test(a.title)) return -1;
-        if (/^#\d+ IN THE WORLD$/.test(b.title)) return 1;
+
         // Grey last
         if (a.color === "grey" && b.color !== "grey") return 1;
         if (a.color !== "grey" && b.color === "grey") return -1;
+
         // Fallback alphabetical
         return a.title.localeCompare(b.title);
     });
@@ -1737,78 +1731,3 @@ function getTrendIndicator(player) {
 }
   
   updateMenu();
-
-// Add a function to get the player's leaderboard position (1-based, or null if not in top 25)
-function getPlayerLeaderboardPosition() {
-    const allPlayers = [...specialAIs.superSlotLegends];
-    if (playerData.mmr >= 1864) {
-        allPlayers.push({ name: playerData.username, mmr: playerData.mmr, isPlayer: true });
-    }
-    allPlayers.sort((a, b) => b.mmr - a.mmr);
-    const playerRank = allPlayers.findIndex(p => p.name === playerData.username);
-    if (playerRank !== -1 && playerRank < 25) {
-        return playerRank + 1;
-    }
-    return null;
-}
-
-// Insert the custom title at the top of the titles array (after the "." title)
-function getCustomWorldTitle() {
-    const pos = getPlayerLeaderboardPosition();
-    if (pos) {
-        return {
-            title: `#${pos} IN THE WORLD`,
-            color: "gold",
-            glow: true,
-            minMMR: null,
-            wlUsers: [playerData.username],
-            isDynamicWorldTitle: true
-        };
-    }
-    return null;
-}
-
-// Patch updateTitleDisplay to show the custom title if present, above all others except the "." title
-function updateTitleDisplay() {
-    const titleDisplay = document.getElementById("title-display");
-    let currentTitleName = playerData.title || "NONE";
-    let currentTitle = titles.find(t => t.title === currentTitleName);
-    // Check for custom world title
-    const worldTitle = getCustomWorldTitle();
-    // If player has the "." title, show it at the top
-    if (currentTitleName === ".") {
-        titleDisplay.textContent = ".";
-        titleDisplay.style.color = currentTitle ? currentTitle.color : "";
-        if (currentTitle && currentTitle.glow) {
-            titleDisplay.classList.add("glowing-title");
-        } else {
-            titleDisplay.classList.remove("glowing-title");
-        }
-        return;
-    }
-    // If player is in top 25, show the custom world title
-    if (worldTitle) {
-        titleDisplay.textContent = worldTitle.title;
-        titleDisplay.style.color = worldTitle.color;
-        if (worldTitle.glow) {
-            titleDisplay.classList.add("glowing-title");
-        } else {
-            titleDisplay.classList.remove("glowing-title");
-        }
-        return;
-    }
-    // Otherwise, show the player's equipped title
-    if (currentTitle) {
-        titleDisplay.textContent = currentTitle.title;
-        titleDisplay.style.color = currentTitle.color;
-        if (currentTitle.glow) {
-            titleDisplay.classList.add("glowing-title");
-        } else {
-            titleDisplay.classList.remove("glowing-title");
-        }
-    } else {
-        titleDisplay.textContent = "NONE";
-        titleDisplay.style.color = "grey";
-        titleDisplay.classList.remove("glowing-title");
-    }
-}
