@@ -1462,69 +1462,140 @@ function simulateAIMatches() {
 
   
 
-function loadLeaderboard() {
-    const leaderboardList = document.getElementById("leaderboard-list");
-    leaderboardList.innerHTML = "";
-
-    // Get all SSL AIs and sort by current MMR
-    const allPlayers = [...specialAIs.superSlotLegends];
-    
-    // Add player if they're SSL
-    if (playerData.mmr >= 1864) {
-        allPlayers.push({
-            name: playerData.username,
-            mmr: playerData.mmr,
-            isPlayer: true
+function loadLeaderboard(type = 'elo') {
+    if (type === 'elo') {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        leaderboardList.innerHTML = '';
+        // Get all SSL AIs and sort by current MMR
+        const allPlayers = [...specialAIs.superSlotLegends];
+        // Add player if they're SSL
+        if (playerData.mmr >= 1864) {
+            allPlayers.push({
+                name: playerData.username,
+                mmr: playerData.mmr,
+                isPlayer: true
+            });
+        }
+        // Sort by current MMR (highest to lowest)
+        allPlayers.sort((a, b) => b.mmr - a.mmr);
+        // Take top 25
+        const top25 = allPlayers.slice(0, 25);
+        // Create leaderboard entries
+        top25.forEach((player, index) => {
+            const entry = document.createElement('div');
+            entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+            entry.innerHTML = `
+                <div class="leaderboard-rank">#${index + 1}</div>
+                <div class="leaderboard-player">
+                    <span class="leaderboard-username">${player.name}</span>
+                </div>
+                <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+            `;
+            leaderboardList.appendChild(entry);
         });
+        updatePlayerStatsSummary('elo');
     }
+}
 
-    // Sort by current MMR (highest to lowest)
-    allPlayers.sort((a, b) => b.mmr - a.mmr);
+function updatePlayerStatsSummary(type = 'elo', stat = 'wins') {
+    const popupContent = document.querySelector('#leaderboard-popup .popup-content');
+    const closeButton = popupContent.querySelector('.close-button');
+    // Remove existing player stats if they exist
+    const existingStats = popupContent.querySelector('.player-stats');
+    if (existingStats) {
+        existingStats.remove();
+    }
+    let statsHtml = '';
+    if (type === 'elo') {
+        const allPlayers = [...specialAIs.superSlotLegends];
+        if (playerData.mmr >= 1864) {
+            allPlayers.push({ name: playerData.username, mmr: playerData.mmr, isPlayer: true });
+        }
+        allPlayers.sort((a, b) => b.mmr - a.mmr);
+        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+        statsHtml = `
+            <div class="player-stats-header">Your Stats</div>
+            <div class="player-stats-content">
+                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+                <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+            </div>
+        `;
+    } else {
+        let statKey, label;
+        if (stat === 'wins') {
+            statKey = 'allTimeWins';
+            label = 'Wins';
+        } else if (stat === 'goals') {
+            statKey = 'allTimeGoals';
+            label = 'Goals';
+        } else {
+            statKey = 'allTimeSaves';
+            label = 'Saves';
+        }
+        const allPlayers = [...specialAIs.superSlotLegends];
+        if (playerData.mmr >= 1864) {
+            const playerObj = { name: playerData.username, isPlayer: true };
+            playerObj[statKey] = playerData[statKey] || 0;
+            allPlayers.push(playerObj);
+        }
+        allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
+        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+        statsHtml = `
+            <div class="player-stats-header">Your Stats</div>
+            <div class="player-stats-content">
+                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+                <div class="player-stats-mmr">${playerData[statKey] || 0} ${label}</div>
+            </div>
+        `;
+    }
+    const playerStats = document.createElement('div');
+    playerStats.className = 'player-stats';
+    playerStats.innerHTML = statsHtml;
+    closeButton.parentNode.insertBefore(playerStats, closeButton);
+}
 
-    // Take top 25
+function loadStatsLeaderboard(stat) {
+    let statKey, containerId, label;
+    if (stat === 'wins') {
+        statKey = 'allTimeWins';
+        containerId = 'stats-leaderboard-list-wins';
+        label = 'Wins';
+    } else if (stat === 'goals') {
+        statKey = 'allTimeGoals';
+        containerId = 'stats-leaderboard-list-goals';
+        label = 'Goals';
+    } else {
+        statKey = 'allTimeSaves';
+        containerId = 'stats-leaderboard-list-saves';
+        label = 'Saves';
+    }
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    // Get all SSL AIs and sort by stat
+    const allPlayers = [...specialAIs.superSlotLegends];
+    if (playerData.mmr >= 1864) {
+        const playerObj = {
+            name: playerData.username,
+            isPlayer: true
+        };
+        playerObj[statKey] = playerData[statKey] || 0;
+        allPlayers.push(playerObj);
+    }
+    allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
     const top25 = allPlayers.slice(0, 25);
-
-    // Create leaderboard entries
     top25.forEach((player, index) => {
-        const entry = document.createElement("div");
+        const entry = document.createElement('div');
         entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-        
         entry.innerHTML = `
             <div class="leaderboard-rank">#${index + 1}</div>
             <div class="leaderboard-player">
                 <span class="leaderboard-username">${player.name}</span>
             </div>
-            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+            <div class="leaderboard-mmr">${player[statKey] || 0} ${label}</div>
         `;
-        
-        leaderboardList.appendChild(entry);
+        container.appendChild(entry);
     });
-
-    // Find player's rank in the full list
-    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
-
-    // Add player stats above the close button
-    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
-    const closeButton = popupContent.querySelector(".close-button");
-    
-    // Remove existing player stats if they exist
-    const existingStats = popupContent.querySelector(".player-stats");
-    if (existingStats) {
-        existingStats.remove();
-    }
-
-    const playerStats = document.createElement("div");
-    playerStats.className = "player-stats";
-    playerStats.innerHTML = `
-        <div class="player-stats-header">Your Stats</div>
-        <div class="player-stats-content">
-            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-        </div>
-    `;
-    
-    // Insert player stats before the close button
-    closeButton.parentNode.insertBefore(playerStats, closeButton);
+    updatePlayerStatsSummary('stats', stat);
 }
 
 function getTrendIndicator(player) {
@@ -1762,11 +1833,32 @@ function getTrendIndicator(player) {
   updateMenu();
 
 const patchAIStats = ai => {
-    if (ai.goals === undefined) ai.goals = 0;
-    if (ai.saves === undefined) ai.saves = 0;
-    if (ai.allTimeWins === undefined) ai.allTimeWins = 0;
-    if (ai.allTimeGoals === undefined) ai.allTimeGoals = 0;
-    if (ai.allTimeSaves === undefined) ai.allTimeSaves = 0;
+    // If stats are already in localStorage, use them
+    const saved = localStorage.getItem(`ssl_ai_${ai.name}`);
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        ai.goals = parsed.goals || 0;
+        ai.saves = parsed.saves || 0;
+        ai.allTimeWins = parsed.allTimeWins || 0;
+        ai.allTimeGoals = parsed.allTimeGoals || 0;
+        ai.allTimeSaves = parsed.allTimeSaves || 0;
+        return ai;
+    }
+    // Otherwise, assign random stats on first load
+    if (ai.allTimeWins === undefined) ai.allTimeWins = Math.floor(Math.random() * 5001) + 5000; // 5k-10k
+    if (ai.allTimeGoals === undefined) ai.allTimeGoals = Math.floor(Math.random() * 150001) + 100000; // 100k-250k
+    if (ai.allTimeSaves === undefined) ai.allTimeSaves = Math.floor(Math.random() * 25001) + 25000; // 25k-50k
+    ai.goals = ai.goals || 0;
+    ai.saves = ai.saves || 0;
+    // Only save if stats are above 0
+    if (ai.allTimeWins > 0 || ai.allTimeGoals > 0 || ai.allTimeSaves > 0) {
+        localStorage.setItem(`ssl_ai_${ai.name}`,
+            JSON.stringify({
+                ...ai,
+                mmr: ai.mmr // preserve mmr
+            })
+        );
+    }
     return ai;
 };
 if (specialAIs && specialAIs.superSlotLegends) {
@@ -1795,103 +1887,4 @@ function switchStatsTab(stat) {
     document.getElementById('stats-leaderboard-list-goals').style.display = stat === 'goals' ? '' : 'none';
     document.getElementById('stats-leaderboard-list-saves').style.display = stat === 'saves' ? '' : 'none';
     loadStatsLeaderboard(stat);
-}
-
-function loadLeaderboard(type = 'elo') {
-    if (type === 'elo') {
-        const leaderboardList = document.getElementById('leaderboard-list');
-        leaderboardList.innerHTML = '';
-        // Get all SSL AIs and sort by current MMR
-        const allPlayers = [...specialAIs.superSlotLegends];
-        // Add player if they're SSL
-        if (playerData.mmr >= 1864) {
-            allPlayers.push({
-                name: playerData.username,
-                mmr: playerData.mmr,
-                isPlayer: true
-            });
-        }
-        // Sort by current MMR (highest to lowest)
-        allPlayers.sort((a, b) => b.mmr - a.mmr);
-        // Take top 25
-        const top25 = allPlayers.slice(0, 25);
-        // Create leaderboard entries
-        top25.forEach((player, index) => {
-            const entry = document.createElement('div');
-            entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-            entry.innerHTML = `
-                <div class="leaderboard-rank">#${index + 1}</div>
-                <div class="leaderboard-player">
-                    <span class="leaderboard-username">${player.name}</span>
-                </div>
-                <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-            `;
-            leaderboardList.appendChild(entry);
-        });
-        // Find player's rank in the full list
-        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
-        // Add player stats above the close button
-        const popupContent = document.querySelector('#leaderboard-popup .popup-content');
-        const closeButton = popupContent.querySelector('.close-button');
-        // Remove existing player stats if they exist
-        const existingStats = popupContent.querySelector('.player-stats');
-        if (existingStats) {
-            existingStats.remove();
-        }
-        const playerStats = document.createElement('div');
-        playerStats.className = 'player-stats';
-        playerStats.innerHTML = `
-            <div class="player-stats-header">Your Stats</div>
-            <div class="player-stats-content">
-                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-                <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-            </div>
-        `;
-        closeButton.parentNode.insertBefore(playerStats, closeButton);
-    }
-}
-
-function loadStatsLeaderboard(stat) {
-    let statKey, containerId, label;
-    if (stat === 'wins') {
-        statKey = 'allTimeWins';
-        containerId = 'stats-leaderboard-list-wins';
-        label = 'Wins';
-    } else if (stat === 'goals') {
-        statKey = 'allTimeGoals';
-        containerId = 'stats-leaderboard-list-goals';
-        label = 'Goals';
-    } else {
-        statKey = 'allTimeSaves';
-        containerId = 'stats-leaderboard-list-saves';
-        label = 'Saves';
-    }
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    // Get all SSL AIs and sort by stat
-    const allPlayers = [...specialAIs.superSlotLegends];
-    if (playerData.mmr >= 1864) {
-        const playerObj = {
-            name: playerData.username,
-            isPlayer: true
-        };
-        playerObj[statKey] = playerData[statKey] || 0;
-        allPlayers.push(playerObj);
-    }
-    allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
-    const top25 = allPlayers.slice(0, 25);
-    top25.forEach((player, index) => {
-        const entry = document.createElement('div');
-        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-        entry.innerHTML = `
-            <div class="leaderboard-rank">#${index + 1}</div>
-            <div class="leaderboard-player">
-                <span class="leaderboard-username">${player.name}</span>
-            </div>
-            <div class="leaderboard-mmr">${player[statKey] || 0} ${label}</div>
-        `;
-        container.appendChild(entry);
-    });
-    // Highlight player's stats
-    // (Optional: add player stats summary for this stat)
 }
