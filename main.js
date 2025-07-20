@@ -1467,42 +1467,37 @@ function simulateAIMatches() {
 
   
 
-function loadLeaderboard(type = 'elo') {
-    if (type === 'elo') {
-        const leaderboardList = document.getElementById('leaderboard-list');
-        leaderboardList.innerHTML = '';
-        // Get all SSL AIs and sort by current MMR
-        const allPlayers = [...specialAIs.superSlotLegends];
-        // Add player if they're SSL
-        if (playerData.mmr >= 1864) {
-            allPlayers.push({
-                name: playerData.username,
-                mmr: playerData.mmr,
-                isPlayer: true
-            });
-        }
-        // Sort by current MMR (highest to lowest)
-        allPlayers.sort((a, b) => b.mmr - a.mmr);
-        // Take top 25
-        const top25 = allPlayers.slice(0, 25);
-        // Create leaderboard entries
-        top25.forEach((player, index) => {
-            const entry = document.createElement('div');
-            entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-            entry.innerHTML = `
-                <div class="leaderboard-rank">#${index + 1}</div>
-                <div class="leaderboard-player">
-                    <span class="leaderboard-username">${player.name}</span>
-                </div>
-                <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
-            `;
-            leaderboardList.appendChild(entry);
+function loadLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboard-list');
+    leaderboardList.innerHTML = '';
+    // Get all SSL AIs and sort by current MMR
+    const allPlayers = [...specialAIs.superSlotLegends];
+    // Add player if they're SSL
+    if (playerData.mmr >= 1864) {
+        allPlayers.push({
+            name: playerData.username,
+            mmr: playerData.mmr,
+            isPlayer: true
         });
-        updatePlayerStatsSummary('elo');
     }
-}
-
-function updatePlayerStatsSummary(type = 'elo', stat = 'wins') {
+    // Sort by current MMR (highest to lowest)
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
+    // Take top 25
+    const top25 = allPlayers.slice(0, 25);
+    // Create leaderboard entries
+    top25.forEach((player, index) => {
+        const entry = document.createElement('div');
+        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
+        entry.innerHTML = `
+            <div class="leaderboard-rank">#${index + 1}</div>
+            <div class="leaderboard-player">
+                <span class="leaderboard-username">${player.name}</span>
+            </div>
+            <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
+        `;
+        leaderboardList.appendChild(entry);
+    });
+    // Player stats summary for MMR
     const popupContent = document.querySelector('#leaderboard-popup .popup-content');
     const closeButton = popupContent.querySelector('.close-button');
     // Remove existing player stats if they exist
@@ -1510,240 +1505,24 @@ function updatePlayerStatsSummary(type = 'elo', stat = 'wins') {
     if (existingStats) {
         existingStats.remove();
     }
-    let statsHtml = '';
-    if (type === 'elo') {
-        const allPlayers = [...specialAIs.superSlotLegends];
-        if (playerData.mmr >= 1864) {
-            allPlayers.push({ name: playerData.username, mmr: playerData.mmr, isPlayer: true });
-        }
-        allPlayers.sort((a, b) => b.mmr - a.mmr);
-        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
-        statsHtml = `
-            <div class="player-stats-header">Your Stats</div>
-            <div class="player-stats-content">
-                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-                <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
-            </div>
-        `;
-    } else {
-        let statKey, label;
-        if (stat === 'wins') {
-            statKey = 'allTimeWins';
-            label = 'Wins';
-        } else if (stat === 'goals') {
-            statKey = 'allTimeGoals';
-            label = 'Goals';
-        } else {
-            statKey = 'allTimeSaves';
-            label = 'Saves';
-        }
-        const allPlayers = [...specialAIs.superSlotLegends];
-        if (playerData.mmr >= 1864) {
-            const playerObj = { name: playerData.username, isPlayer: true };
-            playerObj[statKey] = playerData[statKey] || 0;
-            allPlayers.push(playerObj);
-        }
-        allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
-        const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
-        statsHtml = `
-            <div class="player-stats-header">Your Stats</div>
-            <div class="player-stats-content">
-                <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
-                <div class="player-stats-mmr">${playerData[statKey] || 0} ${label}</div>
-            </div>
-        `;
+    const allPlayersWithPlayer = [...specialAIs.superSlotLegends];
+    if (playerData.mmr >= 1864) {
+        allPlayersWithPlayer.push({ name: playerData.username, mmr: playerData.mmr, isPlayer: true });
     }
+    allPlayersWithPlayer.sort((a, b) => b.mmr - a.mmr);
+    const playerRank = allPlayersWithPlayer.findIndex(p => p.name === playerData.username) + 1;
     const playerStats = document.createElement('div');
     playerStats.className = 'player-stats';
-    playerStats.innerHTML = statsHtml;
+    playerStats.innerHTML = `
+        <div class="player-stats-header">Your Stats</div>
+        <div class="player-stats-content">
+            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+            <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
+        </div>
+    `;
     closeButton.parentNode.insertBefore(playerStats, closeButton);
 }
 
-function loadStatsLeaderboard(stat) {
-    let statKey, containerId, label;
-    if (stat === 'wins') {
-        statKey = 'allTimeWins';
-        containerId = 'stats-leaderboard-list-wins';
-        label = 'Wins';
-    } else if (stat === 'goals') {
-        statKey = 'allTimeGoals';
-        containerId = 'stats-leaderboard-list-goals';
-        label = 'Goals';
-    } else {
-        statKey = 'allTimeSaves';
-        containerId = 'stats-leaderboard-list-saves';
-        label = 'Saves';
-    }
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    // Get all SSL AIs and sort by stat
-    const allPlayers = [...specialAIs.superSlotLegends];
-    let playerInTop = false;
-    if (playerData.mmr >= 1864) {
-        const playerObj = {
-            name: playerData.username,
-            isPlayer: true
-        };
-        // For wins, always use playerData.wins if allTimeWins is missing
-        if (statKey === 'allTimeWins') {
-            playerObj[statKey] = playerData.allTimeWins !== undefined ? playerData.allTimeWins : playerData.wins || 0;
-        } else {
-            playerObj[statKey] = playerData[statKey] || 0;
-        }
-        allPlayers.push(playerObj);
-    }
-    allPlayers.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
-    const top25 = allPlayers.slice(0, 25);
-    top25.forEach((player, index) => {
-        const isPlayer = player.isPlayer || player.name === playerData.username;
-        if (isPlayer) playerInTop = true;
-        const entry = document.createElement('div');
-        entry.className = `leaderboard-entry${isPlayer ? ' player-entry' : ''}`;
-        entry.innerHTML = `
-            <div class=\"leaderboard-rank\">#${index + 1}</div>
-            <div class=\"leaderboard-player\">\n                <span class=\"leaderboard-username\">${player.name}</span>\n            </div>\n            <div class=\"leaderboard-mmr\">${player[statKey] || 0} ${label}</div>\n        `;
-        container.appendChild(entry);
-    });
-    updatePlayerStatsSummary('stats', stat);
-}
-
-function getTrendIndicator(player) {
-    // For simplicity, we'll randomly show trends for AIs
-    if (player.isPlayer) return ""; // Don't show for player
-    
-    const trend = Math.random();
-    if (trend > 0.7) return "↑"; // Up trend
-    if (trend < 0.3) return "↓"; // Down trend
-    return "→"; // Neutral
-}
-  function getRank(mmr) {
-      const ranks = [
-          { name: "Bronze I", min: 0, max: 173 },
-          { name: "Bronze II", min: 174, max: 233 },
-          { name: "Bronze III", min: 234, max: 293 },
-          { name: "Silver I", min: 294, max: 354 },
-          { name: "Silver II", min: 355, max: 414 },
-          { name: "Silver III", min: 415, max: 474 },
-          { name: "Gold I", min: 475, max: 534 },
-          { name: "Gold II", min: 546, max: 594 },
-          { name: "Gold III", min: 595, max: 654 },
-          { name: "Platinum I", min: 655, max: 714 },
-          { name: "Platinum II", min: 715, max: 763 },
-          { name: "Platinum III", min: 764, max: 834 },
-          { name: "Diamond I", min: 835, max: 892 },
-          { name: "Diamond II", min: 893, max: 981 },
-          { name: "Diamond III", min: 995, max: 1074 },
-          { name: "Champion I", min: 1075, max: 1185 },
-          { name: "Champion II", min: 1186, max: 1299 },
-          { name: "Champion III", min: 1300, max: 1402 },
-          { name: "Grand Champion I", min: 1403, max: 1574 },
-          { name: "Grand Champion II", min: 1575, max: 1699 },
-          { name: "Grand Champion III", min: 1708, max: 1864 },
-          { name: "SuperSlot Legend", min: 1864, max: 9999 }
-      ];
-    // Find the rank based on MMR
-      for (const rank of ranks) {
-          if (mmr >= rank.min && mmr <= rank.max) {
-              if (rank.name === "SuperSlot Legend") {
-                  return rank.name; // No divisions for this rank
-              }
-              // Calculate division (5 divisions)
-              const divisionSize = Math.floor((rank.max - rank.min + 1) / 5);
-              const division = Math.min(5, Math.floor((mmr - rank.min) / divisionSize) + 1);
-              return `${rank.name} - Div ${division}`;
-          }
-      }
-  
-      return "Unranked";
-  }
-  
-  
-  function getAvailableTitles() {
-    const rscsOrder = [
-        "WORLD CHAMPION",
-        "WORLDS CONTENDER",
-        "MAJOR CHAMPION",
-        "MAJOR FINALIST",
-        "MAJOR CONTENDER",
-        "REGIONAL CHAMPION",
-        "REGIONAL FINALIST",
-        "REGIONAL CONTENDER",
-        "ELITE",
-        "CONTENDER",
-        "CHALLENGER"
-    ];
-
-    const rankedOrder = [
-        "SUPERSLOT LEGEND",
-        "GRAND CHAMPION"
-    ];
-
-    return titles.filter(title => {
-        if (title.title === "NONE") return true;
-        if (title.wlUsers.includes(playerData.username)) return true;
-        if (title.minMMR && playerData.mmr >= title.minMMR) return true;
-        if (playerData.ownedTitles && playerData.ownedTitles.includes(title.title)) return true;
-        return false;
-    }).sort((a, b) => {
-        if (a.title === "NONE") return -1;
-        if (b.title === "NONE") return 1;
-
-        // Helper to classify title category
-        const getCategory = (title) => {
-            const isRSCS = title.startsWith("RSCS");
-            const hasSeason = /S\d+/.test(title);
-            const isChallenger = title.includes("CHALLENGER");
-            const isRanked = /^S\d+/.test(title) && rankedOrder.some(t => title.includes(t));
-
-            if (isRSCS && !hasSeason) return 0; // RSCS global
-            if (isRSCS && hasSeason && isChallenger) return 2; // RSCS Challenger
-            if (isRSCS && hasSeason) return 1; // RSCS S# Season
-            if (isRanked) return 3; // Ranked
-            return 4; // Other
-        };
-
-        const catA = getCategory(a.title);
-        const catB = getCategory(b.title);
-        if (catA !== catB) return catA - catB;
-
-        // Sort inside same category
-        if (catA === 0) {
-            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
-            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
-            return aTier - bTier;
-        }
-
-        if (catA === 1 || catA === 2) {
-            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
-            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
-            if (aSeason !== bSeason) return bSeason - aSeason;
-
-            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
-            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
-            return aTier - bTier;
-        }
-
-        if (catA === 3) {
-            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
-            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
-            if (aSeason !== bSeason) return bSeason - aSeason;
-
-            const aRank = rankedOrder.findIndex(t => a.title.includes(t));
-            const bRank = rankedOrder.findIndex(t => b.title.includes(t));
-            return aRank - bRank;
-        }
-
-        // Grey last
-        if (a.color === "grey" && b.color !== "grey") return 1;
-        if (a.color !== "grey" && b.color === "grey") return -1;
-
-        // Fallback alphabetical
-        return a.title.localeCompare(b.title);
-    });
-}
-
-
-  
   function showTitleNotification(title) {
       const popup = document.getElementById("notification-popup");
       const titleElement = document.getElementById("new-title");
@@ -1870,28 +1649,4 @@ const patchAIStats = ai => {
 };
 if (specialAIs && specialAIs.superSlotLegends) {
     specialAIs.superSlotLegends = specialAIs.superSlotLegends.map(patchAIStats);
-}
-
-function switchLeaderboardTab(tab) {
-    const eloSection = document.getElementById('elo-leaderboard-section');
-    const statsSection = document.getElementById('stats-leaderboard-section');
-    document.getElementById('elo-tab').classList.toggle('active', tab === 'elo');
-    document.getElementById('stats-tab').classList.toggle('active', tab === 'stats');
-    eloSection.style.display = tab === 'elo' ? '' : 'none';
-    statsSection.style.display = tab === 'stats' ? '' : 'none';
-    if (tab === 'elo') {
-        loadLeaderboard('elo');
-    } else {
-        loadStatsLeaderboard('wins');
-    }
-}
-
-function switchStatsTab(stat) {
-    document.getElementById('wins-tab').classList.toggle('active', stat === 'wins');
-    document.getElementById('goals-tab').classList.toggle('active', stat === 'goals');
-    document.getElementById('saves-tab').classList.toggle('active', stat === 'saves');
-    document.getElementById('stats-leaderboard-list-wins').style.display = stat === 'wins' ? '' : 'none';
-    document.getElementById('stats-leaderboard-list-goals').style.display = stat === 'goals' ? '' : 'none';
-    document.getElementById('stats-leaderboard-list-saves').style.display = stat === 'saves' ? '' : 'none';
-    loadStatsLeaderboard(stat);
 }
