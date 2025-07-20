@@ -1854,20 +1854,18 @@ const patchAIStats = ai => {
         return ai;
     }
     // Otherwise, assign random stats on first load
-    if (ai.allTimeWins === undefined) ai.allTimeWins = Math.floor(Math.random() * 5001) + 5000; // 5k-10k
-    if (ai.allTimeGoals === undefined) ai.allTimeGoals = Math.floor(Math.random() * 150001) + 100000; // 100k-250k
-    if (ai.allTimeSaves === undefined) ai.allTimeSaves = Math.floor(Math.random() * 25001) + 25000; // 25k-50k
-    ai.goals = ai.goals || 0;
-    ai.saves = ai.saves || 0;
-    // Only save if stats are above 0
-    if (ai.allTimeWins > 0 || ai.allTimeGoals > 0 || ai.allTimeSaves > 0) {
-        localStorage.setItem(`ssl_ai_${ai.name}`,
-            JSON.stringify({
-                ...ai,
-                mmr: ai.mmr // preserve mmr
-            })
-        );
-    }
+    ai.allTimeWins = Math.floor(Math.random() * 5001) + 5000; // 5k-10k
+    ai.allTimeGoals = Math.floor(Math.random() * 150001) + 100000; // 100k-250k
+    ai.allTimeSaves = Math.floor(Math.random() * 25001) + 25000; // 25k-50k
+    ai.goals = 0;
+    ai.saves = 0;
+    // Save to localStorage
+    localStorage.setItem(`ssl_ai_${ai.name}`,
+        JSON.stringify({
+            ...ai,
+            mmr: ai.mmr // preserve mmr
+        })
+    );
     return ai;
 };
 if (specialAIs && specialAIs.superSlotLegends) {
