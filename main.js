@@ -1496,6 +1496,7 @@ function loadLeaderboard() {
     
     // Insert player stats before the close button
     closeButton.parentNode.insertBefore(playerStats, closeButton);
+    updateTitleDisplay();
 }
 
 function getTrendIndicator(player) {
@@ -1731,3 +1732,78 @@ function getTrendIndicator(player) {
 }
   
   updateMenu();
+
+// Add a function to get the player's leaderboard position (1-based, or null if not in top 25)
+function getPlayerLeaderboardPosition() {
+    const allPlayers = [...specialAIs.superSlotLegends];
+    if (playerData.mmr >= 1864) {
+        allPlayers.push({ name: playerData.username, mmr: playerData.mmr, isPlayer: true });
+    }
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
+    const playerRank = allPlayers.findIndex(p => p.name === playerData.username);
+    if (playerRank !== -1 && playerRank < 25) {
+        return playerRank + 1;
+    }
+    return null;
+}
+
+// Insert the custom title at the top of the titles array (after the "." title)
+function getCustomWorldTitle() {
+    const pos = getPlayerLeaderboardPosition();
+    if (pos) {
+        return {
+            title: `#${pos} IN THE WORLD`,
+            color: "maroon",
+            glow: true,
+            minMMR: null,
+            wlUsers: [playerData.username],
+            isDynamicWorldTitle: true
+        };
+    }
+    return null;
+}
+
+// Patch updateTitleDisplay to show the custom title if present, above all others except the "." title
+function updateTitleDisplay() {
+    const titleDisplay = document.getElementById("title-display");
+    let currentTitleName = playerData.title || "NONE";
+    let currentTitle = titles.find(t => t.title === currentTitleName);
+    // Check for custom world title
+    const worldTitle = getCustomWorldTitle();
+    // If player has the "." title, show it at the top
+    if (currentTitleName === ".") {
+        titleDisplay.textContent = ".";
+        titleDisplay.style.color = currentTitle ? currentTitle.color : "";
+        if (currentTitle && currentTitle.glow) {
+            titleDisplay.classList.add("glowing-title");
+        } else {
+            titleDisplay.classList.remove("glowing-title");
+        }
+        return;
+    }
+    // If player is in top 25, show the custom world title
+    if (worldTitle) {
+        titleDisplay.textContent = worldTitle.title;
+        titleDisplay.style.color = worldTitle.color;
+        if (worldTitle.glow) {
+            titleDisplay.classList.add("glowing-title");
+        } else {
+            titleDisplay.classList.remove("glowing-title");
+        }
+        return;
+    }
+    // Otherwise, show the player's equipped title
+    if (currentTitle) {
+        titleDisplay.textContent = currentTitle.title;
+        titleDisplay.style.color = currentTitle.color;
+        if (currentTitle.glow) {
+            titleDisplay.classList.add("glowing-title");
+        } else {
+            titleDisplay.classList.remove("glowing-title");
+        }
+    } else {
+        titleDisplay.textContent = "NONE";
+        titleDisplay.style.color = "grey";
+        titleDisplay.classList.remove("glowing-title");
+    }
+}
