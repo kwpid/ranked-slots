@@ -587,7 +587,7 @@ function closePopup(popupId) {
         minMMR: null,
         wlUsers: [""]
     },
-      // SEASON 3
+      // SEASON 4
       {
         title: "RSCS S4 CHALLENGER",
         color: "#4da1f6",
@@ -664,6 +664,85 @@ function closePopup(popupId) {
         glow: true,
         minMMR: null,
         wlUsers: ["kwpid"]
+    },
+
+// SEASON 5
+{
+        title: "RSCS S5 CHALLENGER",
+        color: "#4da1f6",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 ELITE",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S5 REGIONAL CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 REGIONAL FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S5 MAJOR CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S5 MAJOR CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S5 WORLDS CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["newpo"]
+    },
+    {
+        title: "RSCS S4 WORLD CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
     },
 
 
@@ -817,8 +896,7 @@ function closePopup(popupId) {
         { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 2123 },
         { name: "f", title: "RSCS S2 MAJOR CHAMPION", mmr: 2257 },
         { name: "Hawk!", title: "RSCS S2 WORLDS CONTENDER", mmr: 2309 },
-        { name: "newpo", title: "RSCS S2 REGIONAL CONTENDER", mmr: 2248 },
-        { name: "zen", title: "RSCS MAJOR CHAMPION", mmr: 2289 },
+        { name: "zen", title: "RSCS S5 WORLD CHAMPION", mmr: 2289 },
         { name: "v", title: "RSCS S1 CHALLENGER", mmr: 2140 },
         { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1992 },
         { name: "sieko", title: "RSCS S2 WORLD CHAMPION", mmr: 2111 },
