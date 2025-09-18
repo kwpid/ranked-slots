@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "python-3.11"]
+modules = ["nodejs-20", "web"]
 
 [nix]
 channel = "stable-25_05"
@@ -38,6 +38,10 @@ externalPort = 80
 localPort = 43377
 externalPort = 3000
 
+[[ports]]
+localPort = 46253
+externalPort = 3001
+
 [deployment]
 deploymentTarget = "autoscale"
-run = ["python3", "-m", "http.server", "5000"]
+run = ["python3", "-m", "http.server"]

@@ -1562,12 +1562,7 @@ function simulateAIMatches() {
       }
   }
   
-  // Add event listener to the spin button
-  document.getElementById("spin-button").addEventListener("click", () => {
-      if (gameActive) {
-          spin("player");
-      }
-  });
+  // Spin button is handled by inline onclick in HTML
   
   
   function getSpinInterval(mmr) {
