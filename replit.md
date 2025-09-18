@@ -28,6 +28,9 @@ A competitive slot machine game where players battle AI opponents in ranked matc
 - `images/unranked.png` - Rank imagery assets
 
 ## Recent Changes
+- **NEW**: Season rewards system updated - now requires 5 wins per rank (instead of 10 wins per tier)
+- **NEW**: Auto-awards season rewards for ranks passed through when ranking up  
+- **NEW**: Enhanced data persistence - multiple save points ensure progress never gets lost
 - Fixed JavaScript error with missing spin-button element reference
 - Configured for Replit deployment
 - Set up proper static file serving

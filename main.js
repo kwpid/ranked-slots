@@ -163,56 +163,35 @@ const aiNames = [
       if (!playerData.seasonData[seasonKey]) {
           playerData.seasonData[seasonKey] = {
               placementMatches: 10,
-              seasonRewards: {},
-              winsInRank: {},
-              currentRewardTier: "BRONZE", // Start with the lowest tier
-              rewardTierLocked: false, // Whether current tier is completed and locked
+              seasonRewards: {}, // Track which rank rewards have been earned
+              winsInRank: {}, // Track wins per rank achieved
+              rankRewardsEarned: {}, // Track which ranks have earned their 5 wins
               softResetApplied: false
           };
           
           // Initialize winsInRank for all ranks
           ranks.forEach(rank => {
               playerData.seasonData[seasonKey].winsInRank[rank.name] = 0;
+              playerData.seasonData[seasonKey].rankRewardsEarned[rank.name] = false;
           });
           playerData.seasonData[seasonKey].winsInRank["UNRANKED"] = 0;
+          playerData.seasonData[seasonKey].rankRewardsEarned["UNRANKED"] = false;
       }
       
       // Migrate existing saves and ensure consistency
       const seasonData = playerData.seasonData[seasonKey];
       
-      if (!seasonData.currentRewardTier || seasonData.rewardTierLocked === undefined) {
-          // Find the highest tier that hasn't been completed yet
-          let targetTier = "BRONZE";
-          let shouldBeLocked = false;
-          
-          for (let i = 0; i < ranks.length; i++) {
-              const rankName = ranks[i].name;
-              if (!seasonData.seasonRewards[rankName]) {
-                  // Found first uncompleted tier
-                  targetTier = rankName;
-                  shouldBeLocked = false;
-                  break;
-              } else {
-                  // This tier is completed, check if it should be our target
-                  targetTier = rankName;
-                  shouldBeLocked = true;
-              }
-          }
-          
-          seasonData.currentRewardTier = targetTier;
-          seasonData.rewardTierLocked = shouldBeLocked;
-          
-          // If we're locked, try to unlock next tier immediately based on current rank
-          if (shouldBeLocked) {
-              const currentRank = getRankFromMMR(playerData.mmr);
-              const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
-              const currentTierIndex = ranks.findIndex(r => r.name === targetTier);
-              
-              if (currentRankIndex > currentTierIndex && currentTierIndex + 1 < ranks.length) {
-                  seasonData.currentRewardTier = ranks[currentTierIndex + 1].name;
-                  seasonData.rewardTierLocked = false;
-              }
-          }
+      // Remove old tier system properties if they exist
+      if (seasonData.currentRewardTier !== undefined) {
+          delete seasonData.currentRewardTier;
+      }
+      if (seasonData.rewardTierLocked !== undefined) {
+          delete seasonData.rewardTierLocked;
+      }
+      
+      // Ensure new properties exist
+      if (!seasonData.rankRewardsEarned) {
+          seasonData.rankRewardsEarned = {};
       }
       
       // Always ensure winsInRank is properly initialized for all ranks
@@ -223,14 +202,15 @@ const aiNames = [
           if (seasonData.winsInRank[rank.name] === undefined) {
               seasonData.winsInRank[rank.name] = 0;
           }
+          if (seasonData.rankRewardsEarned[rank.name] === undefined) {
+              seasonData.rankRewardsEarned[rank.name] = false;
+          }
       });
       if (seasonData.winsInRank["UNRANKED"] === undefined) {
           seasonData.winsInRank["UNRANKED"] = 0;
       }
-      
-      // Ensure current reward tier has a valid entry
-      if (seasonData.winsInRank[seasonData.currentRewardTier] === undefined) {
-          seasonData.winsInRank[seasonData.currentRewardTier] = 0;
+      if (seasonData.rankRewardsEarned["UNRANKED"] === undefined) {
+          seasonData.rankRewardsEarned["UNRANKED"] = false;
       }
   }
   
@@ -288,78 +268,68 @@ const aiNames = [
       
       const seasonData = playerData.seasonData[seasonKey];
       
-      // Only count wins toward current reward tier if not locked
-      if (!seasonData.rewardTierLocked) {
-          const currentTier = seasonData.currentRewardTier;
-          
-          // Check if player is at or above the current reward tier rank
-          const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
-          const tierIndex = ranks.findIndex(r => r.name === currentTier);
-          
-          // Always ensure the current tier exists in winsInRank before incrementing
-          if (seasonData.winsInRank[currentTier] === undefined) {
-              seasonData.winsInRank[currentTier] = 0;
+      // Count win for the current rank if player has achieved it
+      if (currentRank.name !== "UNRANKED") {
+          // Ensure the current rank exists in winsInRank
+          if (seasonData.winsInRank[currentRank.name] === undefined) {
+              seasonData.winsInRank[currentRank.name] = 0;
           }
-          
-          // For UNRANKED players, only count wins toward BRONZE tier
-          if (currentRank.name === "UNRANKED" && currentTier === "BRONZE") {
-              seasonData.winsInRank[currentTier]++;
-          }
-          // For ranked players, only count win if at or above the reward tier rank
-          else if (currentRank.name !== "UNRANKED" && currentRankIndex >= tierIndex) {
-              seasonData.winsInRank[currentTier]++;
-          }
+          seasonData.winsInRank[currentRank.name]++;
+      } else {
+          // For unranked players, count wins toward UNRANKED
+          seasonData.winsInRank["UNRANKED"]++;
       }
       
-      // Check if player unlocked a new season reward or can progress tiers
+      // Check for season rewards
       checkAndAwardSeasonRewards(seasonKey, currentRank);
+      
+      // Save data after updating
+      savePlayerData();
   }
   
   function checkAndAwardSeasonRewards(seasonKey, currentRank) {
       const seasonNum = seasonKey.substring(1); // Remove 'S' prefix
       const seasonData = playerData.seasonData[seasonKey];
-      const currentTier = seasonData.currentRewardTier;
-      const winsInCurrentTier = seasonData.winsInRank[currentTier] || 0;
+      const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
       
-      // Defensive check: If reward is already earned but lock flag not set, fix it
-      if (seasonData.seasonRewards[currentTier] && !seasonData.rewardTierLocked) {
-          seasonData.rewardTierLocked = true;
-          console.log(`Fixed inconsistent state: ${currentTier} reward was earned but not locked.`);
-      }
-      
-      // Check if current tier is completed (10 wins) and not already rewarded
-      if (winsInCurrentTier >= 10 && !seasonData.seasonRewards[currentTier]) {
-          // Award the season reward for current tier
-          const titleName = `S${seasonNum} ${currentTier}`;
-          seasonData.seasonRewards[currentTier] = true;
+      // Check all ranks at or below current rank for rewards
+      for (let i = 0; i <= currentRankIndex; i++) {
+          const rank = ranks[i];
+          const rankName = rank.name;
+          const winsInRank = seasonData.winsInRank[rankName] || 0;
           
-          if (!playerData.ownedTitles.includes(titleName)) {
-              playerData.ownedTitles.push(titleName);
-              showNewTitleNotification(titleName);
-          }
-          
-          // Lock this tier
-          seasonData.rewardTierLocked = true;
-          
-          console.log(`Season reward completed for ${currentTier}. Tier is now locked.`);
-          savePlayerData();
-      }
-      
-      // Check if we can unlock the next tier
-      if (seasonData.rewardTierLocked) {
-          const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
-          const currentTierIndex = ranks.findIndex(r => r.name === currentTier);
-          
-          // If player has ranked up above their current reward tier, unlock next tier
-          if (currentRankIndex > currentTierIndex) {
-              const nextTierIndex = currentTierIndex + 1;
-              if (nextTierIndex < ranks.length) {
-                  const nextTier = ranks[nextTierIndex].name;
-                  seasonData.currentRewardTier = nextTier;
-                  seasonData.rewardTierLocked = false;
-                  console.log(`Unlocked next reward tier: ${nextTier}`);
-                  savePlayerData();
+          // Check if player has 5 wins in this rank and hasn't earned the reward yet
+          if (winsInRank >= 5 && !seasonData.rankRewardsEarned[rankName]) {
+              const titleName = `S${seasonNum} ${rankName}`;
+              seasonData.seasonRewards[rankName] = true;
+              seasonData.rankRewardsEarned[rankName] = true;
+              
+              if (!playerData.ownedTitles.includes(titleName)) {
+                  playerData.ownedTitles.push(titleName);
+                  showNewTitleNotification(titleName);
               }
+              
+              console.log(`Season reward earned for ${rankName} with ${winsInRank} wins.`);
+          }
+      }
+      
+      // Auto-award rewards for ranks passed through (less than 5 wins but ranked out)
+      for (let i = 0; i < currentRankIndex; i++) {
+          const rank = ranks[i];
+          const rankName = rank.name;
+          
+          // If player has ranked past this rank and hasn't gotten the reward, auto-award it
+          if (!seasonData.rankRewardsEarned[rankName]) {
+              const titleName = `S${seasonNum} ${rankName}`;
+              seasonData.seasonRewards[rankName] = true;
+              seasonData.rankRewardsEarned[rankName] = true;
+              
+              if (!playerData.ownedTitles.includes(titleName)) {
+                  playerData.ownedTitles.push(titleName);
+                  showNewTitleNotification(titleName);
+              }
+              
+              console.log(`Auto-awarded season reward for ${rankName} (ranked past it).`);
           }
       }
   }
@@ -462,21 +432,17 @@ const aiNames = [
       const progressElement = document.getElementById("season-progress");
       
       if (playerData.seasonData[seasonKey]) {
-          const currentRewardTier = playerData.seasonData[seasonKey].currentRewardTier;
-          const winsInCurrentTier = playerData.seasonData[seasonKey].winsInRank[currentRewardTier] || 0;
-          const isLocked = playerData.seasonData[seasonKey].rewardTierLocked;
+          const currentRankName = currentRank.name;
+          const winsInCurrentRank = playerData.seasonData[seasonKey].winsInRank[currentRankName] || 0;
+          const hasEarnedReward = playerData.seasonData[seasonKey].rankRewardsEarned[currentRankName] || false;
           
-          // Check if player is below required rank for current tier
-          const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
-          const tierIndex = ranks.findIndex(r => r.name === currentRewardTier);
-          const isBelowTierRank = currentRank.name !== "UNRANKED" && currentRankIndex < tierIndex;
-          const isUnrankedNonBronze = currentRank.name === "UNRANKED" && currentRewardTier !== "BRONZE";
-          
-          let progress = `Reward: ${currentRewardTier} - ${winsInCurrentTier}/10 wins`;
-          if (isLocked) {
-              progress += " (COMPLETED - rank up to unlock next tier)";
-          } else if (isBelowTierRank || isUnrankedNonBronze) {
-              progress += " (LOCKED - rank up to continue)";
+          let progress;
+          if (currentRankName === "UNRANKED") {
+              progress = `Current: UNRANKED - ${winsInCurrentRank} wins (rank up to start earning season rewards)`;
+          } else if (hasEarnedReward) {
+              progress = `Current: ${currentRankName} - REWARD EARNED (${winsInCurrentRank} wins total)`;
+          } else {
+              progress = `Current: ${currentRankName} - ${winsInCurrentRank}/5 wins needed for season reward`;
           }
           progressElement.textContent = progress;
       }
@@ -509,8 +475,21 @@ const aiNames = [
       }
   }
   function savePlayerData() {
-      console.log("Saving player data:", playerData); // Debug log
-      localStorage.setItem("playerData", JSON.stringify(playerData));
+      try {
+          console.log("Saving player data:", playerData); // Debug log
+          const dataToSave = JSON.stringify(playerData);
+          localStorage.setItem("playerData", dataToSave);
+          
+          // Verify the save worked
+          const verifyData = localStorage.getItem("playerData");
+          if (verifyData) {
+              console.log("Data successfully saved to localStorage");
+          } else {
+              console.error("Failed to save data to localStorage!");
+          }
+      } catch (error) {
+          console.error("Error saving player data:", error);
+      }
   }
   
   function loadPlayerData() {
@@ -1788,9 +1767,14 @@ function simulateAIMatches() {
         playerData.losses++;
     }
     
+    // Save data after updating wins/losses
+    savePlayerData();
+    
     // Update peak MMR (unchanged)
     if (playerData.mmr > playerData.peakMMR) {
         playerData.peakMMR = playerData.mmr;
+        // Save data after updating peak MMR
+        savePlayerData();
     }
     
     // If player is SSL and opponent is SSL AI, update AI's MMR
