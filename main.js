@@ -284,6 +284,50 @@ const aiNames = [
       return seasonTitles;
   }
   
+  function getAITitle(aiMMR) {
+      const currentSeason = getCurrentSeason();
+      const allTitles = getAllTitles();
+      
+      // For Grand Champion and SuperSlot Legend MMR ranges, use those titles
+      if (aiMMR >= 1500) { // SuperSlot Legend range
+          const seasonTitles = allTitles.filter(t => 
+              t.title.includes("SUPERSLOT LEGEND") && 
+              (t.season === currentSeason || t.season === currentSeason - 1)
+          );
+          if (seasonTitles.length > 0) {
+              return seasonTitles[Math.floor(Math.random() * seasonTitles.length)].title;
+          }
+      }
+      
+      if (aiMMR >= 1200) { // Grand Champion range
+          const seasonTitles = allTitles.filter(t => 
+              t.title.includes("GRAND CHAMPION") && 
+              (t.season === currentSeason || t.season === currentSeason - 1)
+          );
+          if (seasonTitles.length > 0) {
+              return seasonTitles[Math.floor(Math.random() * seasonTitles.length)].title;
+          }
+      }
+      
+      // For lower MMR AIs, use MMR-based titles or random season titles for their rank
+      const availableMMRTitles = allTitles.filter(t => t.minMMR && aiMMR >= t.minMMR);
+      const availableSeasonTitles = allTitles.filter(t => 
+          t.season && (t.season === currentSeason || t.season === currentSeason - 1) &&
+          t.rankName && getRankFromMMR(aiMMR).name === t.rankName
+      );
+      
+      const allAvailableTitles = [...availableMMRTitles, ...availableSeasonTitles];
+      
+      if (allAvailableTitles.length > 0) {
+          // 70% chance to use a title, 30% chance to use "NONE"
+          if (Math.random() < 0.7) {
+              return allAvailableTitles[Math.floor(Math.random() * allAvailableTitles.length)].title;
+          }
+      }
+      
+      return "NONE";
+  }
+  
   function updateSeasonDisplay() {
       const seasonInfo = getSeasonInfo();
       const currentSeason = seasonInfo.season;
@@ -476,6 +520,7 @@ const aiNames = [
         loadShop();
     }
     updateTitleDisplay();
+    updateSeasonDisplay(); // Initialize season display
     simulateAIMatches();
 
     // Proper close button binding - check if element exists first
@@ -497,6 +542,9 @@ const aiNames = [
             openPopup("title-popup");
         };
     }
+    
+    // Update season display every minute
+    setInterval(updateSeasonDisplay, 60000);
 };
   function editUsername() {
       const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
@@ -1150,32 +1198,32 @@ const titles = getAllTitles();
   
   const specialAIs = {
     superSlotLegends: [
-        { name: "yumi", title: "RSCS S1 MAJOR CONTENDER", mmr: 2166 },
-        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
-        { name: "wez", title: "RSCS S1 WORLD CHAMPION", mmr: 2233 },
-        { name: "brickbybrick", title: "RSCS S1 CHALLENGER", mmr: 1973 },
-        { name: "Rw9", title: "RSCS S2 ELITE", mmr: 2338 },
-        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1961 },
-        { name: "mawykzy!", title: "S1 TOP CHAMPION", mmr: 2194 },
-        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 2167 },
-        { name: ".", title: "RSCS S1 CHALLENGER", mmr: 2218 },
-        { name: "koto", title: "RSCS S1 WORLDS CONTENDER", mmr: 2139 },
-        { name: "dani", title: "RSCS S1 ELITE", mmr: 2139 },
-        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 2129 },
-        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1865 },
-        { name: "Void", title: "RSCS REGIONAL CHAMPION", mmr: 2178 },
-        { name: "moon.", title: "RSCS S1 WORLDS CONTENDER", mmr: 1931 },
-        { name: "Lru", title: "RSCS S1 CHALLENGER", mmr: 1891 },
-        { name: "Kha0s", title: "RSCS S1 MAJOR CONTENDER", mmr: 1989 },
-        { name: "rising.", title: "RSCS S1 GRAND CHAMPION", mmr: 1948 },
-        { name: "?", title: "S1 RSCS ELITE", mmr: 2182 },
-        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 2123 },
-        { name: "f", title: "RSCS S2 MAJOR CHAMPION", mmr: 2257 },
-        { name: "Hawk!", title: "RSCS S2 WORLDS CONTENDER", mmr: 2309 },
-        { name: "zen", title: "RSCS S5 WORLD CHAMPION", mmr: 2289 },
-        { name: "v", title: "RSCS S1 CHALLENGER", mmr: 2140 },
-        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1992 },
-        { name: "sieko", title: "RSCS S2 WORLD CHAMPION", mmr: 2111 },
+        { name: "yumi", mmr: 2166 },
+        { name: "drali", mmr: 1879 },
+        { name: "wez", mmr: 2233 },
+        { name: "brickbybrick", mmr: 1973 },
+        { name: "Rw9", mmr: 2338 },
+        { name: "dark", mmr: 1961 },
+        { name: "mawykzy!", mmr: 2194 },
+        { name: "Speed", mmr: 2167 },
+        { name: ".", mmr: 2218 },
+        { name: "koto", mmr: 2139 },
+        { name: "dani", mmr: 2139 },
+        { name: "Qwert (OG)", mmr: 2129 },
+        { name: "dr.k", mmr: 1865 },
+        { name: "Void", mmr: 2178 },
+        { name: "moon.", mmr: 1931 },
+        { name: "Lru", mmr: 1891 },
+        { name: "Kha0s", mmr: 1989 },
+        { name: "rising.", mmr: 1948 },
+        { name: "?", mmr: 2182 },
+        { name: "dynamo", mmr: 2123 },
+        { name: "f", mmr: 2257 },
+        { name: "Hawk!", mmr: 2309 },
+        { name: "zen", mmr: 2289 },
+        { name: "v", mmr: 2140 },
+        { name: "a7md", mmr: 1992 },
+        { name: "sieko", mmr: 2111 },
         { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1908 },
         { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1913 },
         { name: "toxin", title: "RSCS S1 MAJOR CONTENDER", mmr: 1981 },
@@ -1430,7 +1478,7 @@ function simulateAIMatches() {
         
         aiData = {
             username: selectedAI.name,
-            title: selectedAI.title,
+            title: getAITitle(selectedAI.mmr),
             mmr: selectedAI.mmr
         };
     } else {
@@ -1447,7 +1495,7 @@ function simulateAIMatches() {
     document.getElementById("ai-username").textContent = aiData.username;
     const aiTitleElement = document.getElementById("ai-title");
     aiTitleElement.textContent = aiData.title;
-    const aiTitle = titles.find(t => t.title === aiData.title);
+    const aiTitle = getAllTitles().find(t => t.title === aiData.title);
     if (aiTitle) {
         aiTitleElement.style.color = aiTitle.color;
         if (aiTitle.glow) {
@@ -1597,17 +1645,29 @@ function simulateAIMatches() {
     clearInterval(spinInterval);
     clearInterval(countdownInterval);
     
-    // Calculate MMR change using the new system
+    // Calculate MMR change - check for placement matches first
     const oldMMR = playerData.mmr;
-    const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
+    let mmrChange;
+    
+    // Check if player is in placement matches
+    const placementChange = processPlacementMatch(playerWon);
+    if (placementChange !== null) {
+        mmrChange = placementChange;
+    } else {
+        mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
+    }
+    
     playerData.mmr += mmrChange;
     
-    // Update stats and coins (unchanged)
+    // Update stats and coins
     let coinsEarned = 0;
     if (playerWon) {
         playerData.wins++;
         coinsEarned = Math.floor(Math.random() * 6) + 10;
         playerData.coins += coinsEarned;
+        
+        // Update season rewards
+        updateSeasonRewards(true);
     } else {
         playerData.losses++;
     }
@@ -1654,8 +1714,9 @@ function simulateAIMatches() {
         coinsElement.textContent = "";
     }
     
-    // Update menu display (unchanged)
+    // Update menu display and season display
     updateMenu();
+    updateSeasonDisplay();
 }
   
   
