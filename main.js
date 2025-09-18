@@ -214,22 +214,32 @@ const aiNames = [
  window.onload = () => {
     loadPlayerData();
     updateMenu();
-    loadShop();
+    // Only load shop if shop elements exist
+    if (document.getElementById("shop-hero")) {
+        loadShop();
+    }
     updateTitleDisplay();
-     simulateAIMatches();
+    simulateAIMatches();
 
-    // Proper close button binding
-    document.getElementById("close-title-popup").addEventListener("click", function(e) {
-        e.preventDefault();
-        closePopup("title-popup");
-    });
+    // Proper close button binding - check if element exists first
+    const closeTitleBtn = document.getElementById("close-title-popup");
+    if (closeTitleBtn) {
+        closeTitleBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            closePopup("title-popup");
+        });
+    }
 
     // Other existing code...
-    document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
-    document.getElementById("equip-now-button").onclick = () => {
-        closePopup("notification-popup");
-        openPopup("title-popup");
-    };
+    const okBtn = document.getElementById("ok-button");
+    const equipBtn = document.getElementById("equip-now-button");
+    if (okBtn) okBtn.onclick = () => closePopup("notification-popup");
+    if (equipBtn) {
+        equipBtn.onclick = () => {
+            closePopup("notification-popup");
+            openPopup("title-popup");
+        };
+    }
 };
   function editUsername() {
       const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
