@@ -255,7 +255,22 @@ const aiNames = [
       }
   });
   function cancelQueue() {
-  location.reload();
+      // Clear the queue interval
+      clearInterval(queueInterval);
+      
+      // Hide queue screen and show menu
+      document.getElementById("queue-screen").classList.add("hidden");
+      document.getElementById("menu-screen").classList.remove("hidden");
+      
+      // Reset title in page tab
+      document.title = "Slot Machine Ranked";
+      
+      // Update menu display
+      updateMenu();
+      updateTitleDisplay();
+      
+      // Save data
+      savePlayerData();
   }
   document.addEventListener("keyup", (event) => {
       if (event.code === "Space") {
@@ -1723,7 +1738,23 @@ function simulateAIMatches() {
   }
   
   function goToMenu() {
-      location.reload(); // Refresh the page to return to the menu
+      // Hide all screens
+      document.getElementById("end-screen").classList.add("hidden");
+      document.getElementById("match-screen").classList.add("hidden");
+      document.getElementById("queue-screen").classList.add("hidden");
+      
+      // Show menu screen
+      document.getElementById("menu-screen").classList.remove("hidden");
+      
+      // Update menu with current data
+      updateMenu();
+      updateTitleDisplay();
+      
+      // Reset title in page tab
+      document.title = "Slot Machine Ranked";
+      
+      // Ensure data is saved
+      savePlayerData();
   }
   function getRankImage(rank) {
       // Remove division info if present (e.g., "Gold III - Div 2" → "Gold III")
