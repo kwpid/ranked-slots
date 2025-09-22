@@ -1344,48 +1344,7 @@ const titles = [
         wlUsers: [""],
     },
 
-    {
-        title: "S2 GRAND CHAMPION",
-        color: "gold",
-        glow: true,
-        minMMR: null,
-        wlUsers: [""],
-    },
-    {
-        title: "S2 SUPERSLOT LEGEND",
-        color: "white",
-        glow: true,
-        minMMR: null,
-        wlUsers: [""],
-    },
-    {
-        title: "S3 GRAND CHAMPION",
-        color: "red",
-        glow: true,
-        minMMR: null,
-        wlUsers: [""],
-    },
-    {
-        title: "S3 SUPERSLOT LEGEND",
-        color: "white",
-        glow: true,
-        minMMR: null,
-        wlUsers: [""],
-    },
-    {
-        title: "S4 GRAND CHAMPION",
-        color: "gold",
-        glow: true,
-        minMMR: 1403,
-        wlUsers: [""],
-    },
-    {
-        title: "S4 SUPERSLOT LEGEND",
-        color: "white",
-        glow: true,
-        minMMR: 1864,
-        wlUsers: [""],
-    },
+    
 
     {
         title: "OG",
