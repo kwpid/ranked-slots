@@ -28,12 +28,14 @@ A competitive slot machine game where players battle AI opponents in ranked matc
 - `images/unranked.png` - Rank imagery assets
 
 ## Recent Changes
+- **January 2025**: Successfully imported from GitHub and configured for Replit environment
+- **NEW**: Deployment configuration set up for autoscale hosting
 - **NEW**: Season rewards system updated - now requires 5 wins per rank (instead of 10 wins per tier)
 - **NEW**: Auto-awards season rewards for ranks passed through when ranking up  
 - **NEW**: Enhanced data persistence - multiple save points ensure progress never gets lost
 - Fixed JavaScript error with missing spin-button element reference
-- Configured for Replit deployment
-- Set up proper static file serving
+- Configured for Replit deployment with proper proxy settings
+- Set up proper static file serving on port 5000
 
 ## Game Mechanics
 - Players queue for matches against AI opponents
