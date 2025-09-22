@@ -532,6 +532,7 @@ function editUsername() {
     if (newUsername && newUsername.length <= 20) {
         playerData.username = newUsername;
         document.getElementById("username-display").textContent = newUsername;
+        savePlayerData(); // Save the data after username change
     }
 }
 // Opens a popup
@@ -2302,4 +2303,19 @@ function loadTitlesPopup() {
 }
 
 updateMenu();
+// Save data before page unloads
 window.addEventListener("beforeunload", savePlayerData);
+
+// Auto-save every 30 seconds to ensure data persistence
+setInterval(() => {
+    savePlayerData();
+    console.log("Auto-save: Player data saved");
+}, 30000);
+
+// Save on visibility change (when user switches tabs)
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        savePlayerData();
+        console.log("Visibility change: Player data saved");
+    }
+});
