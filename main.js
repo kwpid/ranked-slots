@@ -2056,7 +2056,8 @@ function updateMenu() {
         menuButtons.appendChild(leaderboardButton);
     }
 
-    savePlayerData();
+    // Don't auto-save here - let explicit changes save themselves
+    console.log("updateMenu completed - NOT auto-saving to avoid overriding changes");
 }
 
 function loadLeaderboard() {
