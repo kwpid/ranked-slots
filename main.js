@@ -109,6 +109,67 @@ function getSeasonStartDate(seasonNumber) {
     return startDate;
 }
 
+function getSeasonEndDate(seasonNumber) {
+    const startDate = getSeasonStartDate(seasonNumber);
+    const endDate = new Date(startDate);
+    endDate.setUTCMonth(endDate.getUTCMonth() + 1);
+    return endDate;
+}
+
+function formatTimeRemaining(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const days = Math.floor(totalSeconds / (24 * 60 * 60));
+    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (days > 0) {
+        return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`;
+    } else {
+        return `${minutes}m ${seconds}s`;
+    }
+}
+
+let seasonTimerInterval;
+
+function updateSeasonTimer() {
+    const currentSeason = getCurrentSeason();
+    const seasonEnd = getSeasonEndDate(currentSeason);
+    const now = new Date();
+    const timeRemaining = seasonEnd.getTime() - now.getTime();
+
+    const timerElement = document.getElementById("season-timer");
+    if (timerElement) {
+        if (timeRemaining > 0) {
+            const formattedTime = formatTimeRemaining(timeRemaining);
+            timerElement.textContent = `Season ends in: ${formattedTime}`;
+            console.log(`Season timer updated: ${formattedTime}`);
+        } else {
+            timerElement.textContent = "Season ending...";
+            console.log("Season ending - checking for reset");
+            // Check for season reset
+            checkSeasonReset();
+        }
+    } else {
+        console.log("Season timer element not found!");
+    }
+}
+
+function startSeasonTimer() {
+    // Clear any existing timer
+    if (seasonTimerInterval) {
+        clearInterval(seasonTimerInterval);
+    }
+    
+    // Update immediately
+    updateSeasonTimer();
+    
+    // Then update every second
+    seasonTimerInterval = setInterval(updateSeasonTimer, 1000);
+}
+
 function checkSeasonReset() {
     const currentSeason = getCurrentSeason();
     if (playerData.currentSeason !== currentSeason) {
@@ -225,22 +286,50 @@ function createSeasonTitle(seasonNumber, rank) {
     };
 }
 
+function getRankHierarchy() {
+    // Returns ranks in order from lowest to highest
+    return [
+        "Bronze",
+        "Silver", 
+        "Gold",
+        "Platinum",
+        "Diamond",
+        "Champion",
+        "Grand Champion",
+        "SuperSlot Legend"
+    ];
+}
+
+function getAllSeasonTitlesUpToRank(rank, seasonNumber) {
+    const hierarchy = getRankHierarchy();
+    const rankIndex = hierarchy.findIndex(r => r.toLowerCase() === rank.toLowerCase());
+    
+    if (rankIndex === -1) return []; // Unranked or invalid rank
+    
+    // Return all ranks from Bronze up to and including the achieved rank
+    return hierarchy.slice(0, rankIndex + 1).map(r => createSeasonTitle(seasonNumber, r)).filter(title => title !== null);
+}
+
 function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
     const oldRankBase = getRankFromName(oldRank);
     const newRankBase = getRankFromName(newRank);
 
     if (oldRankBase !== newRankBase && newRankBase !== "Unranked") {
-        const seasonTitle = createSeasonTitle(seasonNumber, newRankBase);
-        if (
-            seasonTitle &&
-            !playerData.ownedTitles.includes(seasonTitle.title)
-        ) {
-            // Add to global titles array temporarily for notification system
-            titles.push(seasonTitle);
-            playerData.ownedTitles.push(seasonTitle.title);
-            showTitleNotification(seasonTitle);
+        // Get all season titles that should be awarded up to the new rank
+        const titlesToAward = getAllSeasonTitlesUpToRank(newRankBase, seasonNumber);
+        
+        titlesToAward.forEach(seasonTitle => {
+            if (seasonTitle && !playerData.ownedTitles.includes(seasonTitle.title)) {
+                // Add to global titles array temporarily for notification system
+                titles.push(seasonTitle);
+                playerData.ownedTitles.push(seasonTitle.title);
+                showTitleNotification(seasonTitle);
+                console.log(`Season title unlocked: ${seasonTitle.title}`);
+            }
+        });
+        
+        if (titlesToAward.length > 0) {
             savePlayerData();
-            console.log(`Season title unlocked: ${seasonTitle.title}`);
         }
     }
 }
@@ -316,21 +405,23 @@ function savePlayerData() {
     console.log("=== SAVING PLAYER DATA ===");
     try {
         console.log("Data to save:", playerData);
-        
+
         const dataString = JSON.stringify(playerData);
         console.log("Serialized data length:", dataString.length);
-        
+
         localStorage.setItem("playerData", dataString);
-        
+
         // Verify the save worked
         const verification = localStorage.getItem("playerData");
-        console.log("Verification - saved data matches:", verification === dataString);
+        console.log(
+            "Verification - saved data matches:",
+            verification === dataString,
+        );
         console.log("Data saved successfully to localStorage");
-        
     } catch (error) {
         console.error("Error saving data:", error);
         console.log("Attempting fallback save...");
-        
+
         try {
             // Fallback: try saving minimal data
             const minimalData = {
@@ -342,7 +433,7 @@ function savePlayerData() {
                 peakMMR: playerData.peakMMR,
                 coins: playerData.coins,
                 ownedTitles: playerData.ownedTitles,
-                inventory: playerData.inventory
+                inventory: playerData.inventory,
             };
             localStorage.setItem("playerData", JSON.stringify(minimalData));
             console.log("Fallback save successful");
@@ -355,21 +446,24 @@ function savePlayerData() {
 
 function loadPlayerData() {
     console.log("=== LOADING PLAYER DATA ===");
-    
+
     // Debug localStorage availability
-    console.log("localStorage available:", typeof(Storage) !== "undefined" && localStorage);
-    
+    console.log(
+        "localStorage available:",
+        typeof Storage !== "undefined" && localStorage,
+    );
+
     const savedData = localStorage.getItem("playerData");
     console.log("Raw saved data:", savedData);
     console.log("Saved data exists:", !!savedData);
-    
+
     if (savedData) {
         try {
             const parsedData = JSON.parse(savedData);
             console.log("Parsed saved data:", parsedData);
-            
+
             playerData = parsedData;
-            
+
             // Initialize missing properties with defaults
             const defaultData = {
                 username: "Player",
@@ -384,24 +478,27 @@ function loadPlayerData() {
                 currentSeason: 1,
                 placementMatches: 0,
                 inPlacements: true,
-                seasonStats: {}
+                seasonStats: {},
             };
-            
+
             console.log("Before merge - playerData:", playerData);
             console.log("Default data:", defaultData);
-            
+
             // Merge defaults with saved data - saved data should win
             playerData = { ...defaultData, ...playerData };
-            
+
             console.log("After merge - playerData:", playerData);
-            
+
             // Ensure ownedTitles array exists and contains "NONE"
-            if (!playerData.ownedTitles || !Array.isArray(playerData.ownedTitles)) {
+            if (
+                !playerData.ownedTitles ||
+                !Array.isArray(playerData.ownedTitles)
+            ) {
                 playerData.ownedTitles = ["NONE"];
             } else if (!playerData.ownedTitles.includes("NONE")) {
                 playerData.ownedTitles.unshift("NONE");
             }
-            
+
             // Initialize inventory if missing
             if (!playerData.inventory || !Array.isArray(playerData.inventory)) {
                 playerData.inventory = [];
@@ -548,11 +645,14 @@ function getDailyShopRotation() {
     return items.filter((_, index) => index % 2 === seed);
 }
 window.onload = () => {
+    console.log("=== WINDOW.ONLOAD STARTING ===");
     loadPlayerData();
+    console.log("=== CALLING UPDATE MENU ===");
     updateMenu();
     // loadShop(); // Commented out - no shop elements in HTML
     updateTitleDisplay();
     simulateAIMatches();
+    console.log("=== WINDOW.ONLOAD COMPLETE ===");
 
     // Proper close button binding
     document
@@ -573,21 +673,21 @@ window.onload = () => {
 function editUsername() {
     console.log("=== EDIT USERNAME STARTED ===");
     console.log("Current playerData before edit:", playerData);
-    
+
     const newUsername = prompt(
         "Enter your username (1-20 characters):",
         playerData.username,
     );
     console.log("User entered username:", newUsername);
-    
+
     if (newUsername && newUsername.length <= 20) {
         console.log("Username is valid, updating playerData");
         playerData.username = newUsername;
         console.log("playerData after username change:", playerData);
-        
+
         document.getElementById("username-display").textContent = newUsername;
         console.log("Updated display element");
-        
+
         savePlayerData(); // Save the data after username change
         console.log("Called savePlayerData");
     } else {
@@ -1183,7 +1283,48 @@ const titles = [
         minMMR: null,
         wlUsers: [""],
     },
-
+    {
+        title: "S1 BRONZE",
+        color: "brown",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S1 SILVER",
+        color: "grey",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S1 GOLD",
+        color: "gold",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S1 PLATINUM",
+        color: "aqua",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S1 DIAMOND",
+        color: "blue",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S1 CHAMPION",
+        color: "#7604b9",
+        glow: false,
+        minMMR: null,
+        wlUsers: [""],
+    },
     {
         title: "S1 GRAND CHAMPION",
         color: "red",
@@ -1914,23 +2055,11 @@ function showDesktopNotification() {
 }
 
 function goToMenu() {
-    // Hide all screens
-    document.getElementById("end-screen").classList.add("hidden");
-    document.getElementById("match-screen").classList.add("hidden");
-    document.getElementById("queue-screen").classList.add("hidden");
-
-    // Show menu screen
-    document.getElementById("menu-screen").classList.remove("hidden");
-
-    // Update menu with current data
-    updateMenu();
-    updateTitleDisplay();
-
-    // Reset title in page tab
-    document.title = "Slot Machine Ranked";
-
-    // Ensure data is saved
+    // Ensure data is saved before refresh
     savePlayerData();
+    
+    // Refresh page to fix bugs when returning to menu
+    window.location.reload();
 }
 function getRankImage(rank) {
     // Remove division info if present (e.g., "Gold III - Div 2" → "Gold III")
@@ -2056,8 +2185,13 @@ function updateMenu() {
         menuButtons.appendChild(leaderboardButton);
     }
 
+    // Start season countdown timer
+    startSeasonTimer();
+
     // Don't auto-save here - let explicit changes save themselves
-    console.log("updateMenu completed - NOT auto-saving to avoid overriding changes");
+    console.log(
+        "updateMenu completed - NOT auto-saving to avoid overriding changes",
+    );
 }
 
 function loadLeaderboard() {
