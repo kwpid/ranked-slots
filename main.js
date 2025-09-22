@@ -314,12 +314,17 @@ function getAllSeasonTitlesUpToRank(rank, seasonNumber) {
 function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
     const oldRankBase = getRankFromName(oldRank);
     const newRankBase = getRankFromName(newRank);
+    
+    // CRITICAL FIX: Ensure we always use the current calculated season, not the passed parameter
+    // This prevents awarding titles with incorrect (higher) season numbers
+    const currentCalculatedSeason = getCurrentSeason();
 
     if (oldRankBase !== newRankBase && newRankBase !== "Unranked") {
         // Get all season titles that should be awarded up to the new rank
+        // FIXED: Use currentCalculatedSeason instead of seasonNumber to ensure correct season
         const titlesToAward = getAllSeasonTitlesUpToRank(
             newRankBase,
-            seasonNumber,
+            currentCalculatedSeason,
         );
 
         titlesToAward.forEach((seasonTitle) => {
@@ -327,8 +332,10 @@ function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
                 seasonTitle &&
                 !playerData.ownedTitles.includes(seasonTitle.title)
             ) {
-                // Add to global titles array temporarily for notification system
-                titles.push(seasonTitle);
+                // Add to global titles array temporarily for notification system (with de-duplication)
+                if (!titles.find(t => t.title === seasonTitle.title)) {
+                    titles.push(seasonTitle);
+                }
                 playerData.ownedTitles.push(seasonTitle.title);
                 showTitleNotification(seasonTitle);
                 console.log(`Season title unlocked: ${seasonTitle.title}`);
