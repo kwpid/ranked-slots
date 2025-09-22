@@ -68,11 +68,7 @@ const aiNames = [
       mmr: 600,
       peakMMR: 600,
       coins: 0,
-      ownedTitles: ["NONE"], // Track all titles the player owns
-      // Season system data
-      currentSeason: null, // Will be set by getCurrentSeason()
-      seasonData: {}, // Format: { "S1": { placementMatches: 10, seasonRewards: {}, winsInRank: {} }, ... }
-      lastMMRReset: null // Track when last soft reset occurred
+      ownedTitles: ["NONE"] // Track all titles the player owns
   };
   let aiData = {
       username: "",
@@ -89,366 +85,6 @@ const aiNames = [
   let spacebarHeld = false; // Flag to track if spacebar is held
   
   const jackpotProbability = 0.29;
-
-  // ======================== SEASON SYSTEM ========================
-  
-  // Rank definitions for season rewards
-  const ranks = [
-      { name: "BRONZE", mmr: 400 },
-      { name: "SILVER", mmr: 500 },
-      { name: "GOLD", mmr: 600 },
-      { name: "PLATINUM", mmr: 700 },
-      { name: "DIAMOND", mmr: 850 },
-      { name: "CHAMPION", mmr: 1000 },
-      { name: "GRAND CHAMPION", mmr: 1200 },
-      { name: "SUPERSLOT LEGEND", mmr: 1500 }
-  ];
-  
-  function getCurrentSeason() {
-      const now = new Date();
-      // Season 1 started September 2025 (for testing purposes)
-      const startYear = 2025;
-      const startMonth = 9; // September (0-indexed would be 8, but we'll use 1-indexed for readability)
-      
-      const yearsDiff = now.getFullYear() - startYear;
-      const monthsDiff = (now.getMonth() + 1) - startMonth; // Convert to 1-indexed
-      const totalMonths = yearsDiff * 12 + monthsDiff + 1; // +1 because we start at season 1
-      
-      return Math.max(1, totalMonths);
-  }
-  
-  function getSeasonDates(seasonNumber) {
-      const startYear = 2025;
-      const startMonth = 9; // September
-      
-      const totalMonths = seasonNumber - 1;
-      const seasonYear = startYear + Math.floor((startMonth - 1 + totalMonths) / 12);
-      const seasonMonth = ((startMonth - 1 + totalMonths) % 12) + 1;
-      
-      const seasonStart = new Date(seasonYear, seasonMonth - 1, 1);
-      const seasonEnd = new Date(seasonYear, seasonMonth, 0, 23, 59, 59); // Last day of month
-      
-      return { start: seasonStart, end: seasonEnd };
-  }
-  
-  function getSeasonInfo() {
-      const currentSeason = getCurrentSeason();
-      const dates = getSeasonDates(currentSeason);
-      const now = new Date();
-      const timeRemaining = dates.end - now;
-      
-      const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      
-      return {
-          season: currentSeason,
-          daysRemaining: days,
-          hoursRemaining: hours,
-          seasonStart: dates.start,
-          seasonEnd: dates.end
-      };
-  }
-  
-  function getRankFromMMR(mmr) {
-      for (let i = ranks.length - 1; i >= 0; i--) {
-          if (mmr >= ranks[i].mmr) {
-              return ranks[i];
-          }
-      }
-      return { name: "UNRANKED", mmr: 0 };
-  }
-  
-  function initializeSeasonData(seasonNumber) {
-      const seasonKey = `S${seasonNumber}`;
-      if (!playerData.seasonData[seasonKey]) {
-          playerData.seasonData[seasonKey] = {
-              placementMatches: 10,
-              seasonRewards: {}, // Track which rank rewards have been earned
-              winsInRank: {}, // Track wins per rank achieved
-              rankRewardsEarned: {}, // Track which ranks have earned their 5 wins
-              softResetApplied: false
-          };
-          
-          // Initialize winsInRank for all ranks
-          ranks.forEach(rank => {
-              playerData.seasonData[seasonKey].winsInRank[rank.name] = 0;
-              playerData.seasonData[seasonKey].rankRewardsEarned[rank.name] = false;
-          });
-          playerData.seasonData[seasonKey].winsInRank["UNRANKED"] = 0;
-          playerData.seasonData[seasonKey].rankRewardsEarned["UNRANKED"] = false;
-      }
-      
-      // Migrate existing saves and ensure consistency
-      const seasonData = playerData.seasonData[seasonKey];
-      
-      // Remove old tier system properties if they exist
-      if (seasonData.currentRewardTier !== undefined) {
-          delete seasonData.currentRewardTier;
-      }
-      if (seasonData.rewardTierLocked !== undefined) {
-          delete seasonData.rewardTierLocked;
-      }
-      
-      // Ensure new properties exist
-      if (!seasonData.rankRewardsEarned) {
-          seasonData.rankRewardsEarned = {};
-      }
-      
-      // Always ensure winsInRank is properly initialized for all ranks
-      if (!seasonData.winsInRank) {
-          seasonData.winsInRank = {};
-      }
-      ranks.forEach(rank => {
-          if (seasonData.winsInRank[rank.name] === undefined) {
-              seasonData.winsInRank[rank.name] = 0;
-          }
-          if (seasonData.rankRewardsEarned[rank.name] === undefined) {
-              seasonData.rankRewardsEarned[rank.name] = false;
-          }
-      });
-      if (seasonData.winsInRank["UNRANKED"] === undefined) {
-          seasonData.winsInRank["UNRANKED"] = 0;
-      }
-      if (seasonData.rankRewardsEarned["UNRANKED"] === undefined) {
-          seasonData.rankRewardsEarned["UNRANKED"] = false;
-      }
-  }
-  
-  function applySoftMMRReset() {
-      const currentSeason = getCurrentSeason();
-      const seasonKey = `S${currentSeason}`;
-      
-      if (!playerData.seasonData[seasonKey] || !playerData.seasonData[seasonKey].softResetApplied) {
-          // Soft reset: bring MMR 50% closer to 600 (base MMR)
-          const baseMMR = 600;
-          playerData.mmr = Math.round(playerData.mmr + (baseMMR - playerData.mmr) * 0.5);
-          
-          // Initialize season data
-          initializeSeasonData(currentSeason);
-          playerData.seasonData[seasonKey].softResetApplied = true;
-          playerData.lastMMRReset = new Date().toISOString();
-          
-          console.log(`Applied soft MMR reset for ${seasonKey}. New MMR: ${playerData.mmr}`);
-          savePlayerData();
-      }
-  }
-  
-  function isInPlacementMatches() {
-      const currentSeason = getCurrentSeason();
-      const seasonKey = `S${currentSeason}`;
-      return playerData.seasonData[seasonKey] && playerData.seasonData[seasonKey].placementMatches > 0;
-  }
-  
-  function processPlacementMatch(won) {
-      const currentSeason = getCurrentSeason();
-      const seasonKey = `S${currentSeason}`;
-      
-      if (playerData.seasonData[seasonKey] && playerData.seasonData[seasonKey].placementMatches > 0) {
-          playerData.seasonData[seasonKey].placementMatches--;
-          
-          // Placement matches have higher MMR gains/losses
-          const baseChange = won ? 30 : -25;
-          const placementMultiplier = 1.5;
-          return Math.round(baseChange * placementMultiplier);
-      }
-      
-      return null; // Not in placement matches
-  }
-  
-  function updateSeasonRewards(won) {
-      if (!won) return; // Only count wins for season rewards
-      
-      const currentSeason = getCurrentSeason();
-      const seasonKey = `S${currentSeason}`;
-      const currentRank = getRankFromMMR(playerData.mmr);
-      
-      if (!playerData.seasonData[seasonKey]) {
-          initializeSeasonData(currentSeason);
-      }
-      
-      const seasonData = playerData.seasonData[seasonKey];
-      
-      // Count win for the current rank if player has achieved it
-      if (currentRank.name !== "UNRANKED") {
-          // Ensure the current rank exists in winsInRank
-          if (seasonData.winsInRank[currentRank.name] === undefined) {
-              seasonData.winsInRank[currentRank.name] = 0;
-          }
-          seasonData.winsInRank[currentRank.name]++;
-      } else {
-          // For unranked players, count wins toward UNRANKED
-          seasonData.winsInRank["UNRANKED"]++;
-      }
-      
-      // Check for season rewards
-      checkAndAwardSeasonRewards(seasonKey, currentRank);
-      
-      // Save data after updating
-      savePlayerData();
-  }
-  
-  function checkAndAwardSeasonRewards(seasonKey, currentRank) {
-      const seasonNum = seasonKey.substring(1); // Remove 'S' prefix
-      const seasonData = playerData.seasonData[seasonKey];
-      const currentRankIndex = ranks.findIndex(r => r.name === currentRank.name);
-      
-      // Check all ranks at or below current rank for rewards
-      for (let i = 0; i <= currentRankIndex; i++) {
-          const rank = ranks[i];
-          const rankName = rank.name;
-          const winsInRank = seasonData.winsInRank[rankName] || 0;
-          
-          // Check if player has 5 wins in this rank and hasn't earned the reward yet
-          if (winsInRank >= 5 && !seasonData.rankRewardsEarned[rankName]) {
-              const titleName = `S${seasonNum} ${rankName}`;
-              seasonData.seasonRewards[rankName] = true;
-              seasonData.rankRewardsEarned[rankName] = true;
-              
-              if (!playerData.ownedTitles.includes(titleName)) {
-                  playerData.ownedTitles.push(titleName);
-                  showNewTitleNotification(titleName);
-              }
-              
-              console.log(`Season reward earned for ${rankName} with ${winsInRank} wins.`);
-          }
-      }
-      
-      // Auto-award rewards for ranks passed through (less than 5 wins but ranked out)
-      for (let i = 0; i < currentRankIndex; i++) {
-          const rank = ranks[i];
-          const rankName = rank.name;
-          
-          // If player has ranked past this rank and hasn't gotten the reward, auto-award it
-          if (!seasonData.rankRewardsEarned[rankName]) {
-              const titleName = `S${seasonNum} ${rankName}`;
-              seasonData.seasonRewards[rankName] = true;
-              seasonData.rankRewardsEarned[rankName] = true;
-              
-              if (!playerData.ownedTitles.includes(titleName)) {
-                  playerData.ownedTitles.push(titleName);
-                  showNewTitleNotification(titleName);
-              }
-              
-              console.log(`Auto-awarded season reward for ${rankName} (ranked past it).`);
-          }
-      }
-  }
-  
-  function generateSeasonTitles() {
-      const seasonTitles = [];
-      const currentSeason = getCurrentSeason();
-      
-      // Generate titles for current season and previous season (if exists)
-      for (let season = Math.max(1, currentSeason - 1); season <= currentSeason; season++) {
-          ranks.forEach(rank => {
-              const titleName = `S${season} ${rank.name}`;
-              const color = rank.name === "GRAND CHAMPION" ? "red" : 
-                           rank.name === "SUPERSLOT LEGEND" ? "white" : "grey";
-              const glow = rank.name === "GRAND CHAMPION" || rank.name === "SUPERSLOT LEGEND";
-              
-              seasonTitles.push({
-                  title: titleName,
-                  color: color,
-                  glow: glow,
-                  minMMR: null, // Season titles are earned through wins, not MMR
-                  wlUsers: [], // Available to all players who earn them
-                  season: season,
-                  rankName: rank.name
-              });
-          });
-      }
-      
-      return seasonTitles;
-  }
-  
-  function getAITitle(aiMMR) {
-      const currentSeason = getCurrentSeason();
-      const allTitles = getAllTitles();
-      
-      // For Grand Champion and SuperSlot Legend MMR ranges, use those titles
-      if (aiMMR >= 1500) { // SuperSlot Legend range
-          const seasonTitles = allTitles.filter(t => 
-              t.title.includes("SUPERSLOT LEGEND") && 
-              (t.season === currentSeason || t.season === currentSeason - 1)
-          );
-          if (seasonTitles.length > 0) {
-              return seasonTitles[Math.floor(Math.random() * seasonTitles.length)].title;
-          }
-      }
-      
-      if (aiMMR >= 1200) { // Grand Champion range
-          const seasonTitles = allTitles.filter(t => 
-              t.title.includes("GRAND CHAMPION") && 
-              (t.season === currentSeason || t.season === currentSeason - 1)
-          );
-          if (seasonTitles.length > 0) {
-              return seasonTitles[Math.floor(Math.random() * seasonTitles.length)].title;
-          }
-      }
-      
-      // For lower MMR AIs, use MMR-based titles or random season titles for their rank
-      const availableMMRTitles = allTitles.filter(t => t.minMMR && aiMMR >= t.minMMR);
-      const availableSeasonTitles = allTitles.filter(t => 
-          t.season && (t.season === currentSeason || t.season === currentSeason - 1) &&
-          t.rankName && getRankFromMMR(aiMMR).name === t.rankName
-      );
-      
-      const allAvailableTitles = [...availableMMRTitles, ...availableSeasonTitles];
-      
-      if (allAvailableTitles.length > 0) {
-          // 70% chance to use a title, 30% chance to use "NONE"
-          if (Math.random() < 0.7) {
-              return allAvailableTitles[Math.floor(Math.random() * allAvailableTitles.length)].title;
-          }
-      }
-      
-      return "NONE";
-  }
-  
-  function updateSeasonDisplay() {
-      const seasonInfo = getSeasonInfo();
-      const currentSeason = seasonInfo.season;
-      const seasonKey = `S${currentSeason}`;
-      
-      // Update season display
-      document.getElementById("season-display").textContent = `Season ${currentSeason}`;
-      
-      // Update countdown
-      const countdown = `${seasonInfo.daysRemaining}d ${seasonInfo.hoursRemaining}h remaining`;
-      document.getElementById("season-countdown").textContent = countdown;
-      
-      // Update placement status
-      const placementElement = document.getElementById("placement-status");
-      if (isInPlacementMatches()) {
-          const placementCount = playerData.seasonData[seasonKey].placementMatches;
-          placementElement.textContent = `Placements: ${placementCount}/10`;
-          placementElement.style.display = 'inline';
-      } else {
-          placementElement.style.display = 'none';
-      }
-      
-      // Update season progress
-      const currentRank = getRankFromMMR(playerData.mmr);
-      const progressElement = document.getElementById("season-progress");
-      
-      if (playerData.seasonData[seasonKey]) {
-          const currentRankName = currentRank.name;
-          const winsInCurrentRank = playerData.seasonData[seasonKey].winsInRank[currentRankName] || 0;
-          const hasEarnedReward = playerData.seasonData[seasonKey].rankRewardsEarned[currentRankName] || false;
-          
-          let progress;
-          if (currentRankName === "UNRANKED") {
-              progress = `Current: UNRANKED - ${winsInCurrentRank} wins (rank up to start earning season rewards)`;
-          } else if (hasEarnedReward) {
-              progress = `Current: ${currentRankName} - REWARD EARNED (${winsInCurrentRank} wins total)`;
-          } else {
-              progress = `Current: ${currentRankName} - ${winsInCurrentRank}/5 wins needed for season reward`;
-          }
-          progressElement.textContent = progress;
-      }
-  }
-  
-  // ======================== END SEASON SYSTEM ========================
   
   document.addEventListener("keydown", (event) => {
       if (event.code === "Space" && !event.repeat && gameActive && !spacebarHeld) {
@@ -475,21 +111,8 @@ const aiNames = [
       }
   }
   function savePlayerData() {
-      try {
-          console.log("Saving player data:", playerData); // Debug log
-          const dataToSave = JSON.stringify(playerData);
-          localStorage.setItem("playerData", dataToSave);
-          
-          // Verify the save worked
-          const verifyData = localStorage.getItem("playerData");
-          if (verifyData) {
-              console.log("Data successfully saved to localStorage");
-          } else {
-              console.error("Failed to save data to localStorage!");
-          }
-      } catch (error) {
-          console.error("Error saving player data:", error);
-      }
+      console.log("Saving player data:", playerData); // Debug log
+      localStorage.setItem("playerData", JSON.stringify(playerData));
   }
   
   function loadPlayerData() {
@@ -503,33 +126,9 @@ const aiNames = [
               if (playerData.title && playerData.title !== "NONE") {
                   playerData.ownedTitles.push(playerData.title);
               }
+              savePlayerData();
           }
-          
-          // Initialize season system data if it doesn't exist
-          if (!playerData.seasonData) {
-              playerData.seasonData = {};
-          }
-          if (!playerData.currentSeason) {
-              playerData.currentSeason = getCurrentSeason();
-          }
-          
-          // Check if we need to apply soft MMR reset for new season
-          const currentSeason = getCurrentSeason();
-          if (currentSeason > playerData.currentSeason) {
-              applySoftMMRReset();
-              playerData.currentSeason = currentSeason;
-          } else {
-              // Initialize current season data if needed
-              initializeSeasonData(currentSeason);
-          }
-          
           console.log("Loaded player data:", playerData); // Debug log
-          savePlayerData();
-      } else {
-          // Initialize new player with current season
-          playerData.currentSeason = getCurrentSeason();
-          initializeSeasonData(playerData.currentSeason);
-          applySoftMMRReset(); // This also saves the data
       }
   }
   function loadShop() {
@@ -615,36 +214,22 @@ const aiNames = [
  window.onload = () => {
     loadPlayerData();
     updateMenu();
-    // Only load shop if shop elements exist
-    if (document.getElementById("shop-hero")) {
-        loadShop();
-    }
+    loadShop();
     updateTitleDisplay();
-    updateSeasonDisplay(); // Initialize season display
-    simulateAIMatches();
+     simulateAIMatches();
 
-    // Proper close button binding - check if element exists first
-    const closeTitleBtn = document.getElementById("close-title-popup");
-    if (closeTitleBtn) {
-        closeTitleBtn.addEventListener("click", function(e) {
-            e.preventDefault();
-            closePopup("title-popup");
-        });
-    }
+    // Proper close button binding
+    document.getElementById("close-title-popup").addEventListener("click", function(e) {
+        e.preventDefault();
+        closePopup("title-popup");
+    });
 
     // Other existing code...
-    const okBtn = document.getElementById("ok-button");
-    const equipBtn = document.getElementById("equip-now-button");
-    if (okBtn) okBtn.onclick = () => closePopup("notification-popup");
-    if (equipBtn) {
-        equipBtn.onclick = () => {
-            closePopup("notification-popup");
-            openPopup("title-popup");
-        };
-    }
-    
-    // Update season display every minute
-    setInterval(updateSeasonDisplay, 60000);
+    document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
+    document.getElementById("equip-now-button").onclick = () => {
+        closePopup("notification-popup");
+        openPopup("title-popup");
+    };
 };
   function editUsername() {
       const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
@@ -725,8 +310,7 @@ function closePopup(popupId) {
       }, 1000);
   }
   
-  // Base titles - MMR-based titles that are available to all players
-  const baseTitles = [
+  const titles = [
     {
         title: "NONE",
         color: "grey",
@@ -1281,14 +865,6 @@ function closePopup(popupId) {
         wlUsers: [],
     }
 ];
-
-// Dynamic titles array - combines base titles with season titles
-function getAllTitles() {
-    return [...baseTitles, ...generateSeasonTitles()];
-}
-
-// For backward compatibility, create a getter that returns combined titles
-const titles = getAllTitles();
   
   
   
@@ -1298,32 +874,32 @@ const titles = getAllTitles();
   
   const specialAIs = {
     superSlotLegends: [
-        { name: "yumi", mmr: 2166 },
-        { name: "drali", mmr: 1879 },
-        { name: "wez", mmr: 2233 },
-        { name: "brickbybrick", mmr: 1973 },
-        { name: "Rw9", mmr: 2338 },
-        { name: "dark", mmr: 1961 },
-        { name: "mawykzy!", mmr: 2194 },
-        { name: "Speed", mmr: 2167 },
-        { name: ".", mmr: 2218 },
-        { name: "koto", mmr: 2139 },
-        { name: "dani", mmr: 2139 },
-        { name: "Qwert (OG)", mmr: 2129 },
-        { name: "dr.k", mmr: 1865 },
-        { name: "Void", mmr: 2178 },
-        { name: "moon.", mmr: 1931 },
-        { name: "Lru", mmr: 1891 },
-        { name: "Kha0s", mmr: 1989 },
-        { name: "rising.", mmr: 1948 },
-        { name: "?", mmr: 2182 },
-        { name: "dynamo", mmr: 2123 },
-        { name: "f", mmr: 2257 },
-        { name: "Hawk!", mmr: 2309 },
-        { name: "zen", mmr: 2289 },
-        { name: "v", mmr: 2140 },
-        { name: "a7md", mmr: 1992 },
-        { name: "sieko", mmr: 2111 },
+        { name: "yumi", title: "RSCS S1 MAJOR CONTENDER", mmr: 2166 },
+        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
+        { name: "wez", title: "RSCS S1 WORLD CHAMPION", mmr: 2233 },
+        { name: "brickbybrick", title: "RSCS S1 CHALLENGER", mmr: 1973 },
+        { name: "Rw9", title: "RSCS S2 ELITE", mmr: 2338 },
+        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1961 },
+        { name: "mawykzy!", title: "S1 TOP CHAMPION", mmr: 2194 },
+        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 2167 },
+        { name: ".", title: "RSCS S1 CHALLENGER", mmr: 2218 },
+        { name: "koto", title: "RSCS S1 WORLDS CONTENDER", mmr: 2139 },
+        { name: "dani", title: "RSCS S1 ELITE", mmr: 2139 },
+        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 2129 },
+        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1865 },
+        { name: "Void", title: "RSCS REGIONAL CHAMPION", mmr: 2178 },
+        { name: "moon.", title: "RSCS S1 WORLDS CONTENDER", mmr: 1931 },
+        { name: "Lru", title: "RSCS S1 CHALLENGER", mmr: 1891 },
+        { name: "Kha0s", title: "RSCS S1 MAJOR CONTENDER", mmr: 1989 },
+        { name: "rising.", title: "RSCS S1 GRAND CHAMPION", mmr: 1948 },
+        { name: "?", title: "S1 RSCS ELITE", mmr: 2182 },
+        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 2123 },
+        { name: "f", title: "RSCS S2 MAJOR CHAMPION", mmr: 2257 },
+        { name: "Hawk!", title: "RSCS S2 WORLDS CONTENDER", mmr: 2309 },
+        { name: "zen", title: "RSCS S5 WORLD CHAMPION", mmr: 2289 },
+        { name: "v", title: "RSCS S1 CHALLENGER", mmr: 2140 },
+        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1992 },
+        { name: "sieko", title: "RSCS S2 WORLD CHAMPION", mmr: 2111 },
         { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1908 },
         { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1913 },
         { name: "toxin", title: "RSCS S1 MAJOR CONTENDER", mmr: 1981 },
@@ -1578,7 +1154,7 @@ function simulateAIMatches() {
         
         aiData = {
             username: selectedAI.name,
-            title: getAITitle(selectedAI.mmr),
+            title: selectedAI.title,
             mmr: selectedAI.mmr
         };
     } else {
@@ -1595,7 +1171,7 @@ function simulateAIMatches() {
     document.getElementById("ai-username").textContent = aiData.username;
     const aiTitleElement = document.getElementById("ai-title");
     aiTitleElement.textContent = aiData.title;
-    const aiTitle = getAllTitles().find(t => t.title === aiData.title);
+    const aiTitle = titles.find(t => t.title === aiData.title);
     if (aiTitle) {
         aiTitleElement.style.color = aiTitle.color;
         if (aiTitle.glow) {
@@ -1662,7 +1238,12 @@ function simulateAIMatches() {
       }
   }
   
-  // Spin button is handled by inline onclick in HTML
+  // Add event listener to the spin button
+  document.getElementById("spin-button").addEventListener("click", () => {
+      if (gameActive) {
+          spin("player");
+      }
+  });
   
   
   function getSpinInterval(mmr) {
@@ -1740,41 +1321,24 @@ function simulateAIMatches() {
     clearInterval(spinInterval);
     clearInterval(countdownInterval);
     
-    // Calculate MMR change - check for placement matches first
+    // Calculate MMR change using the new system
     const oldMMR = playerData.mmr;
-    let mmrChange;
-    
-    // Check if player is in placement matches
-    const placementChange = processPlacementMatch(playerWon);
-    if (placementChange !== null) {
-        mmrChange = placementChange;
-    } else {
-        mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
-    }
-    
+    const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
     playerData.mmr += mmrChange;
     
-    // Update stats and coins
+    // Update stats and coins (unchanged)
     let coinsEarned = 0;
     if (playerWon) {
         playerData.wins++;
         coinsEarned = Math.floor(Math.random() * 6) + 10;
         playerData.coins += coinsEarned;
-        
-        // Update season rewards
-        updateSeasonRewards(true);
     } else {
         playerData.losses++;
     }
     
-    // Save data after updating wins/losses
-    savePlayerData();
-    
     // Update peak MMR (unchanged)
     if (playerData.mmr > playerData.peakMMR) {
         playerData.peakMMR = playerData.mmr;
-        // Save data after updating peak MMR
-        savePlayerData();
     }
     
     // If player is SSL and opponent is SSL AI, update AI's MMR
@@ -1814,9 +1378,8 @@ function simulateAIMatches() {
         coinsElement.textContent = "";
     }
     
-    // Update menu display and season display
+    // Update menu display (unchanged)
     updateMenu();
-    updateSeasonDisplay();
 }
   
   
