@@ -1531,7 +1531,7 @@ function loadLeaderboard() {
     allPlayers.sort((a, b) => b.mmr - a.mmr);
 
     // Take top 25
-    const top25 = allPlayers.slice(0, 25);
+    const top25 = allPlayers.slice(0, 50);
 
     // Create leaderboard entries
     top25.forEach((player, index) => {
