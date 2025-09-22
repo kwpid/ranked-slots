@@ -158,10 +158,10 @@ function startSeasonTimer() {
     if (seasonTimerInterval) {
         clearInterval(seasonTimerInterval);
     }
-    
+
     // Update immediately
     updateSeasonTimer();
-    
+
     // Then update every second
     seasonTimerInterval = setInterval(updateSeasonTimer, 1000);
 }
@@ -286,24 +286,29 @@ function getRankHierarchy() {
     // Returns ranks in order from lowest to highest
     return [
         "Bronze",
-        "Silver", 
+        "Silver",
         "Gold",
         "Platinum",
         "Diamond",
         "Champion",
         "Grand Champion",
-        "SuperSlot Legend"
+        "SuperSlot Legend",
     ];
 }
 
 function getAllSeasonTitlesUpToRank(rank, seasonNumber) {
     const hierarchy = getRankHierarchy();
-    const rankIndex = hierarchy.findIndex(r => r.toLowerCase() === rank.toLowerCase());
-    
+    const rankIndex = hierarchy.findIndex(
+        (r) => r.toLowerCase() === rank.toLowerCase(),
+    );
+
     if (rankIndex === -1) return []; // Unranked or invalid rank
-    
+
     // Return all ranks from Bronze up to and including the achieved rank
-    return hierarchy.slice(0, rankIndex + 1).map(r => createSeasonTitle(seasonNumber, r)).filter(title => title !== null);
+    return hierarchy
+        .slice(0, rankIndex + 1)
+        .map((r) => createSeasonTitle(seasonNumber, r))
+        .filter((title) => title !== null);
 }
 
 function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
@@ -312,10 +317,16 @@ function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
 
     if (oldRankBase !== newRankBase && newRankBase !== "Unranked") {
         // Get all season titles that should be awarded up to the new rank
-        const titlesToAward = getAllSeasonTitlesUpToRank(newRankBase, seasonNumber);
-        
-        titlesToAward.forEach(seasonTitle => {
-            if (seasonTitle && !playerData.ownedTitles.includes(seasonTitle.title)) {
+        const titlesToAward = getAllSeasonTitlesUpToRank(
+            newRankBase,
+            seasonNumber,
+        );
+
+        titlesToAward.forEach((seasonTitle) => {
+            if (
+                seasonTitle &&
+                !playerData.ownedTitles.includes(seasonTitle.title)
+            ) {
                 // Add to global titles array temporarily for notification system
                 titles.push(seasonTitle);
                 playerData.ownedTitles.push(seasonTitle.title);
@@ -323,7 +334,7 @@ function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
                 console.log(`Season title unlocked: ${seasonTitle.title}`);
             }
         });
-        
+
         if (titlesToAward.length > 0) {
             savePlayerData();
         }
@@ -788,14 +799,14 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS ELITE",
@@ -969,14 +980,14 @@ const titles = [
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 ELITE",
@@ -990,28 +1001,28 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 MAJOR FINALIST",
@@ -1054,70 +1065,70 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S4 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
 
     // SEASON 5
@@ -1126,14 +1137,14 @@ const titles = [
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 ELITE",
@@ -1147,14 +1158,14 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 REGIONAL CHAMPION",
@@ -1168,14 +1179,14 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 MAJOR CHAMPION",
@@ -1189,7 +1200,7 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 WORLD CHAMPION",
@@ -1204,14 +1215,14 @@ const titles = [
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 ELITE",
@@ -1225,7 +1236,7 @@ const titles = [
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"],
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 REGIONAL FINALIST",
@@ -1352,14 +1363,14 @@ const titles = [
         color: "red",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "S3 SUPERSLOT LEGEND",
         color: "white",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"],
+        wlUsers: [""],
     },
     {
         title: "S4 GRAND CHAMPION",
@@ -2050,7 +2061,7 @@ function showDesktopNotification() {
 function goToMenu() {
     // Ensure data is saved before refresh
     savePlayerData();
-    
+
     // Refresh page to fix bugs when returning to menu
     window.location.reload();
 }
