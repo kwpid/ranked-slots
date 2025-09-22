@@ -745,6 +745,59 @@
     font-weight: bold;
     text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
 }
+
+/* Rank Distribution Chart Styles */
+.rank-distribution-item {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    padding: 5px;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    border: 1px solid #333;
+}
+
+.rank-name {
+    width: 140px;
+    font-weight: bold;
+    font-size: 12px;
+    color: #fff;
+    text-align: left;
+}
+
+.rank-bar-container {
+    flex: 1;
+    height: 20px;
+    background-color: #2a2a2a;
+    border-radius: 10px;
+    margin: 0 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.rank-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    background: linear-gradient(90deg, #444 0%, #666 100%);
+}
+
+.rank-bar.bronze { background: linear-gradient(90deg, #8B4513 0%, #A0522D 100%); }
+.rank-bar.silver { background: linear-gradient(90deg, #C0C0C0 0%, #DCDCDC 100%); }
+.rank-bar.gold { background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%); }
+.rank-bar.platinum { background: linear-gradient(90deg, #40E0D0 0%, #48D1CC 100%); }
+.rank-bar.diamond { background: linear-gradient(90deg, #0066FF 0%, #4169E1 100%); }
+.rank-bar.champion { background: linear-gradient(90deg, #800080 0%, #9370DB 100%); }
+.rank-bar.grand-champion { background: linear-gradient(90deg, #FFD700 0%, #FF6347 100%); }
+.rank-bar.superslot-legend { background: linear-gradient(90deg, #FFFFFF 0%, #F0F8FF 100%); }
+
+.rank-count {
+    width: 60px;
+    text-align: right;
+    font-weight: bold;
+    color: #ffcc00;
+    font-size: 12px;
+}
     </style>
 </head>
 <body>
@@ -776,6 +829,7 @@
 
     <div class="button-container">
         <button class="button" onclick="openPopup('title-popup'); loadTitlesPopup();">Titles</button>
+        <button class="button" onclick="openPopup('rank-distribution-popup');">Rank Distribution</button>
     </div>
 </div>
 
@@ -863,6 +917,20 @@
         <div class="button-container">
             <button id="ok-button" class="button">OK</button>
             <button id="equip-now-button" class="button">EQUIP NOW</button>
+        </div>
+    </div>
+</div>
+
+<!-- Rank Distribution Popup -->
+<div id="rank-distribution-popup" class="popup hidden">
+    <div class="popup-content">
+        <h2>Rank Distribution</h2>
+        <p style="margin-bottom: 15px; color: #ccc; font-size: 14px;">Active Players: <span id="total-players">~3,000</span></p>
+        <div id="rank-distribution-chart" style="max-height: 400px; overflow-y: auto;">
+            <!-- Distribution bars will be inserted here -->
+        </div>
+        <div class="button-container" style="margin-top: 15px;">
+            <button class="close-button" onclick="closePopup('rank-distribution-popup')">Close</button>
         </div>
     </div>
 </div>

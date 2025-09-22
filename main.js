@@ -347,6 +347,103 @@ function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
         }
     }
 }
+
+// === RANK DISTRIBUTION SYSTEM ===
+function loadRankDistribution() {
+    const distribution = generateRankDistribution();
+    displayRankDistribution(distribution);
+}
+
+function generateRankDistribution() {
+    // Bell curve distribution with peak at Champion ranks
+    // Total target: ~3000 players
+    const baseDistribution = [
+        { rank: "Bronze I", count: 20, class: "bronze" },
+        { rank: "Bronze II", count: 25, class: "bronze" },
+        { rank: "Bronze III", count: 30, class: "bronze" },
+        { rank: "Silver I", count: 42, class: "silver" },
+        { rank: "Silver II", count: 56, class: "silver" },
+        { rank: "Silver III", count: 71, class: "silver" },
+        { rank: "Gold I", count: 90, class: "gold" },
+        { rank: "Gold II", count: 119, class: "gold" },
+        { rank: "Gold III", count: 143, class: "gold" },
+        { rank: "Platinum I", count: 177, class: "platinum" },
+        { rank: "Platinum II", count: 215, class: "platinum" },
+        { rank: "Platinum III", count: 247, class: "platinum" },
+        { rank: "Diamond I", count: 273, class: "diamond" },
+        { rank: "Diamond II", count: 287, class: "diamond" },
+        { rank: "Diamond III", count: 263, class: "diamond" },
+        { rank: "Champion I", count: 321, class: "champion" }, // Peak of bell curve
+        { rank: "Champion II", count: 297, class: "champion" }, // Peak of bell curve  
+        { rank: "Champion III", count: 273, class: "champion" }, // Peak of bell curve
+    ];
+
+    // Use actual AI data for Grand Champion and SuperSlot Legend counts
+    let gcCounts = { gc1: 0, gc2: 0, gc3: 0 };
+    let sslCount = 0;
+
+    // Safely check for specialAIs data and classify by MMR
+    if (Array.isArray(specialAIs?.superSlotLegends)) {
+        specialAIs.superSlotLegends.forEach(ai => {
+            if (ai.mmr >= 1864) {
+                sslCount++;
+            } else if (ai.mmr >= 1708) {
+                gcCounts.gc3++;
+            } else if (ai.mmr >= 1575) {
+                gcCounts.gc2++;
+            } else if (ai.mmr >= 1403) {
+                gcCounts.gc1++;
+            }
+        });
+    }
+
+    // Fallback to minimal counts if no AI data available
+    if (sslCount === 0) sslCount = 12;
+    if (gcCounts.gc1 === 0) gcCounts.gc1 = 8;
+    if (gcCounts.gc2 === 0) gcCounts.gc2 = 6;
+    if (gcCounts.gc3 === 0) gcCounts.gc3 = 4;
+
+    const gcData = [
+        { rank: "Grand Champion I", count: gcCounts.gc1, class: "grand-champion" },
+        { rank: "Grand Champion II", count: gcCounts.gc2, class: "grand-champion" },
+        { rank: "Grand Champion III", count: gcCounts.gc3, class: "grand-champion" },
+    ];
+
+    const sslData = [
+        { rank: "SuperSlot Legend", count: sslCount, class: "superslot-legend" }
+    ];
+
+    return [...baseDistribution, ...gcData, ...sslData];
+}
+
+function displayRankDistribution(distribution) {
+    const chartContainer = document.getElementById('rank-distribution-chart');
+    const totalPlayers = distribution.reduce((sum, item) => sum + item.count, 0);
+    const maxCount = Math.max(...distribution.map(item => item.count));
+    
+    // Update total players count
+    document.getElementById('total-players').textContent = `~${totalPlayers.toLocaleString()}`;
+
+    chartContainer.innerHTML = '';
+
+    distribution.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'rank-distribution-item';
+
+        const percentage = (item.count / maxCount) * 100;
+        
+        itemDiv.innerHTML = `
+            <div class="rank-name">${item.rank}</div>
+            <div class="rank-bar-container">
+                <div class="rank-bar ${item.class}" style="width: ${percentage}%"></div>
+            </div>
+            <div class="rank-count">${item.count}</div>
+        `;
+
+        chartContainer.appendChild(itemDiv);
+    });
+}
+
 const items = [
     {
         name: "Centio",
@@ -710,6 +807,8 @@ function editUsername() {
 function openPopup(popupId) {
     if (popupId === "title-popup") {
         loadTitlesPopup();
+    } else if (popupId === "rank-distribution-popup") {
+        loadRankDistribution();
     }
     document.getElementById(popupId).style.display = "block";
 }
