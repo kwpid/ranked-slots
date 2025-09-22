@@ -57,96 +57,96 @@ const aiNames = [
     "Bl1tz",
     "Echo",
     "Hover",
-    "PulseRider"
-  ];
-  
-  let playerData = {
-      username: "Player",
-      title: "NONE",
-      wins: 0,
-      losses: 0,
-      mmr: 600,
-      peakMMR: 600,
-      coins: 0,
-      ownedTitles: ["NONE"], // Track all titles the player owns
-      currentSeason: 1,
-      placementMatches: 0,
-      inPlacements: true,
-      seasonStats: {} // Track stats per season like { 1: { wins: 5, losses: 3, peakMMR: 850, seasonTitles: [] } }
-  };
-  let aiData = {
-      username: "",
-      mmr: 600
-  };
+    "PulseRider",
+];
 
-  // === SEASON SYSTEM ===
-  // Season 1 started on Sep 22, 2025
-  const SEASON_1_START = new Date('2025-09-22T00:00:00Z');
+let playerData = {
+    username: "Player",
+    title: "NONE",
+    wins: 0,
+    losses: 0,
+    mmr: 600,
+    peakMMR: 600,
+    coins: 0,
+    ownedTitles: ["NONE"], // Track all titles the player owns
+    currentSeason: 1,
+    placementMatches: 0,
+    inPlacements: true,
+    seasonStats: {}, // Track stats per season like { 1: { wins: 5, losses: 3, peakMMR: 850, seasonTitles: [] } }
+};
+let aiData = {
+    username: "",
+    mmr: 600,
+};
 
-  function getCurrentSeason() {
+// === SEASON SYSTEM ===
+// Season 1 started on Sep 22, 2025
+const SEASON_1_START = new Date("2025-09-22T00:00:00Z");
+
+function getCurrentSeason() {
     const now = new Date();
     const start = new Date(SEASON_1_START);
-    
+
     // Calculate months difference using calendar months
     const yearDiff = now.getUTCFullYear() - start.getUTCFullYear();
     const monthDiff = now.getUTCMonth() - start.getUTCMonth();
     const dayDiff = now.getUTCDate() - start.getUTCDate();
-    
+
     let totalMonths = yearDiff * 12 + monthDiff;
-    
+
     // If we haven't reached the start day of the month yet, subtract one month
     if (dayDiff < 0) {
-      totalMonths -= 1;
+        totalMonths -= 1;
     }
-    
-    return Math.max(1, totalMonths + 1);
-  }
 
-  function getSeasonStartDate(seasonNumber) {
+    return Math.max(1, totalMonths + 1);
+}
+
+function getSeasonStartDate(seasonNumber) {
     const startDate = new Date(SEASON_1_START);
     startDate.setUTCMonth(startDate.getUTCMonth() + (seasonNumber - 1));
     return startDate;
-  }
+}
 
-  function checkSeasonReset() {
+function checkSeasonReset() {
     const currentSeason = getCurrentSeason();
     if (playerData.currentSeason !== currentSeason) {
-      // Handle multiple season transitions
-      while (playerData.currentSeason < currentSeason) {
-        const nextSeason = playerData.currentSeason + 1;
-        performSeasonReset(nextSeason);
-      }
+        // Handle multiple season transitions
+        while (playerData.currentSeason < currentSeason) {
+            const nextSeason = playerData.currentSeason + 1;
+            performSeasonReset(nextSeason);
+        }
     }
-  }
+}
 
-  function performSeasonReset(newSeason) {
+function performSeasonReset(newSeason) {
     // Save previous season stats
     if (!playerData.seasonStats) playerData.seasonStats = {};
-    
+
     const prevSeason = playerData.currentSeason;
     if (prevSeason && prevSeason !== newSeason) {
-      playerData.seasonStats[prevSeason] = {
-        wins: playerData.wins,
-        losses: playerData.losses,
-        peakMMR: playerData.peakMMR,
-        finalMMR: playerData.mmr,
-        seasonTitles: getSeasonTitlesForSeason(prevSeason)
-      };
+        playerData.seasonStats[prevSeason] = {
+            wins: playerData.wins,
+            losses: playerData.losses,
+            peakMMR: playerData.peakMMR,
+            finalMMR: playerData.mmr,
+            seasonTitles: getSeasonTitlesForSeason(prevSeason),
+        };
     }
 
     // Perform soft reset similar to Rocket League
     const currentMMR = playerData.mmr;
     let newMMR;
-    
+
     if (currentMMR >= 1200) {
-      // High MMR players get larger reduction
-      newMMR = Math.max(800, currentMMR - (currentMMR - 800) * 0.5);
+        // High MMR players get larger reduction
+        newMMR = Math.max(800, currentMMR - (currentMMR - 800) * 0.5);
     } else if (currentMMR >= 800) {
-      // Mid MMR players get moderate reduction  
-      newMMR = Math.max(600, currentMMR - (currentMMR - 600) * 0.3);
+        // Mid MMR players get moderate reduction
+        newMMR = Math.max(600, currentMMR - (currentMMR - 600) * 0.3);
     } else {
-      // Low MMR players get small reduction
-      newMMR = Math.max(400, currentMMR - (currentMMR - 400) * 0.1);
+        // Low MMR players get small reduction
+        newMMR = Math.max(400, currentMMR - (currentMMR - 400) * 0.1);
     }
 
     // Update player data for new season
@@ -162,16 +162,19 @@ const aiNames = [
     aiData.mmr = Math.round(newMMR * 0.9); // AI starts slightly lower
 
     savePlayerData();
-    console.log(`Season ${newSeason} started! MMR reset from ${currentMMR} to ${newMMR}`);
-  }
-
-  function getSeasonTitlesForSeason(seasonNumber) {
-    return playerData.ownedTitles.filter(title => 
-      title.startsWith(`S${seasonNumber} `) && !title.includes("RSCS")
+    console.log(
+        `Season ${newSeason} started! MMR reset from ${currentMMR} to ${newMMR}`,
     );
-  }
+}
 
-  function getRankFromName(rankName) {
+function getSeasonTitlesForSeason(seasonNumber) {
+    return playerData.ownedTitles.filter(
+        (title) =>
+            title.startsWith(`S${seasonNumber} `) && !title.includes("RSCS"),
+    );
+}
+
+function getRankFromName(rankName) {
     // Convert full rank name to base rank for season titles
     if (rankName === "Unranked") return "Unranked";
     if (rankName.includes("SuperSlot Legend")) return "SuperSlot Legend";
@@ -183,202 +186,232 @@ const aiNames = [
     if (rankName.includes("Silver")) return "Silver";
     if (rankName.includes("Bronze")) return "Bronze";
     return "Unranked";
-  }
+}
 
-  function getSeasonTitleColor(rank, seasonNumber) {
+function getSeasonTitleColor(rank, seasonNumber) {
     // Colors based on rank (case-insensitive)
-    const normalizedRank = rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
+    const normalizedRank =
+        rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
     const colors = {
-      "Bronze": "#8B4513",           // brown
-      "Silver": "#C0C0C0",           // grey  
-      "Gold": "#FFD700",             // goldish yellow
-      "Platinum": "#40E0D0",         // light aqua
-      "Diamond": "#0066FF",          // blue
-      "Champion": "#800080",         // purple
-      "Grand champion": seasonNumber % 2 === 1 ? "#FFD700" : "#FF0000", // gold for odd, red for even
-      "Superslot legend": "#FFFFFF"  // white
+        Bronze: "#8B4513", // brown
+        Silver: "#C0C0C0", // grey
+        Gold: "#FFD700", // goldish yellow
+        Platinum: "#40E0D0", // light aqua
+        Diamond: "#0066FF", // blue
+        Champion: "#800080", // purple
+        "Grand champion": seasonNumber % 2 === 1 ? "#FFD700" : "#FF0000", // gold for odd, red for even
+        "Superslot legend": "#FFFFFF", // white
     };
     return colors[normalizedRank] || "#C0C0C0";
-  }
+}
 
-  function createSeasonTitle(seasonNumber, rank) {
+function createSeasonTitle(seasonNumber, rank) {
     if (rank === "Unranked") return null;
-    
-    // Normalize rank name to title case for color matching
-    const normalizedRank = rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
-    
-    return {
-      title: `S${seasonNumber} ${rank.toUpperCase()}`,
-      color: getSeasonTitleColor(normalizedRank, seasonNumber),
-      glow: false, // Season titles have no glow per requirements
-      minMMR: null,
-      wlUsers: [],
-      seasonTitle: true,
-      season: seasonNumber,
-      rank: normalizedRank
-    };
-  }
 
-  function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
+    // Normalize rank name to title case for color matching
+    const normalizedRank =
+        rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
+
+    return {
+        title: `S${seasonNumber} ${rank.toUpperCase()}`,
+        color: getSeasonTitleColor(normalizedRank, seasonNumber),
+        glow: false, // Season titles have no glow per requirements
+        minMMR: null,
+        wlUsers: [],
+        seasonTitle: true,
+        season: seasonNumber,
+        rank: normalizedRank,
+    };
+}
+
+function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
     const oldRankBase = getRankFromName(oldRank);
     const newRankBase = getRankFromName(newRank);
-    
+
     if (oldRankBase !== newRankBase && newRankBase !== "Unranked") {
-      const seasonTitle = createSeasonTitle(seasonNumber, newRankBase);
-      if (seasonTitle && !playerData.ownedTitles.includes(seasonTitle.title)) {
-        // Add to global titles array temporarily for notification system
-        titles.push(seasonTitle);
-        playerData.ownedTitles.push(seasonTitle.title);
-        showTitleNotification(seasonTitle);
-        savePlayerData();
-        console.log(`Season title unlocked: ${seasonTitle.title}`);
-      }
-    }
-  }
-  const items = [
-      {name: "Centio", type: "hero", price: 1500, rarity: "common", perks: {1: 35, 2: 10}},
-      {name: "20XX", type: "skin", price: 250, rarity: "common", perks: {1: 10, 2: 60}},
-  ];
-  let queueInterval;
-  let countdownInterval;
-  let spinInterval;
-  let gameActive = false; // Flag to control game state
-  let spacebarHeld = false; // Flag to track if spacebar is held
-  
-  const jackpotProbability = 0.29;
-  
-  document.addEventListener("keydown", (event) => {
-      if (event.code === "Space" && !event.repeat && gameActive && !spacebarHeld) {
-          spacebarHeld = true;
-          spin("player");
-          holdSpacebarToSpin();
-      }
-  });
-  function cancelQueue() {
-      // Clear the queue interval
-      clearInterval(queueInterval);
-      
-      // Hide queue screen and show menu
-      document.getElementById("queue-screen").classList.add("hidden");
-      document.getElementById("menu-screen").classList.remove("hidden");
-      
-      // Reset title in page tab
-      document.title = "Slot Machine Ranked";
-      
-      // Update menu display
-      updateMenu();
-      updateTitleDisplay();
-      
-      // Save data
-      savePlayerData();
-  }
-  document.addEventListener("keyup", (event) => {
-      if (event.code === "Space") {
-          spacebarHeld = false;
-      }
-  });
-  
-  function holdSpacebarToSpin() {
-      if (spacebarHeld && gameActive) {
-          setTimeout(() => {
-              spin("player");
-              holdSpacebarToSpin();
-          }, 111); // Adjust interval for repeated spins
-      }
-  }
-  function savePlayerData() {
-      console.log("Saving player data:", playerData); // Debug log
-      localStorage.setItem("playerData", JSON.stringify(playerData));
-  }
-  
-  function loadPlayerData() {
-      const savedData = localStorage.getItem("playerData");
-      if (savedData) {
-          playerData = JSON.parse(savedData);
-          // Initialize ownedTitles if it doesn't exist
-          if (!playerData.ownedTitles) {
-              playerData.ownedTitles = ["NONE"];
-              // Add current title to owned titles if it's not NONE
-              if (playerData.title && playerData.title !== "NONE") {
-                  playerData.ownedTitles.push(playerData.title);
-              }
-          }
-          
-          // Initialize season data if it doesn't exist
-          if (typeof playerData.currentSeason === 'undefined') {
-              playerData.currentSeason = 1;
-              playerData.placementMatches = 0;
-              playerData.inPlacements = true;
-              playerData.seasonStats = {};
-          }
-          
-          if (!playerData.seasonStats) {
-              playerData.seasonStats = {};
-          }
-          
-          // Rehydrate season titles from owned titles
-          rehydrateSeasonTitles();
-          
-          console.log("Loaded player data:", playerData); // Debug log
-          
-          // Check if we need a season reset
-          checkSeasonReset();
-      } else {
-          // New player - set current season
-          playerData.currentSeason = getCurrentSeason();
-          playerData.placementMatches = 0;
-          playerData.inPlacements = true;
-          playerData.seasonStats = {};
-          savePlayerData();
-      }
-  }
-  
-  function rehydrateSeasonTitles() {
-    // Recreate season titles from owned titles strings
-    playerData.ownedTitles.forEach(titleName => {
-      const seasonMatch = titleName.match(/^S(\d+) (.+)$/);
-      if (seasonMatch) {
-        const seasonNumber = parseInt(seasonMatch[1]);
-        const rank = seasonMatch[2]; // e.g., "GOLD", "GRAND CHAMPION"
-        
-        // Normalize rank from uppercase back to title case
-        const normalizedRank = rank.split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
-        
-        // Check if this title already exists in the titles array
-        if (!titles.find(t => t.title === titleName)) {
-          const seasonTitle = createSeasonTitle(seasonNumber, normalizedRank);
-          if (seasonTitle) {
+        const seasonTitle = createSeasonTitle(seasonNumber, newRankBase);
+        if (
+            seasonTitle &&
+            !playerData.ownedTitles.includes(seasonTitle.title)
+        ) {
+            // Add to global titles array temporarily for notification system
             titles.push(seasonTitle);
-          }
+            playerData.ownedTitles.push(seasonTitle.title);
+            showTitleNotification(seasonTitle);
+            savePlayerData();
+            console.log(`Season title unlocked: ${seasonTitle.title}`);
         }
-      }
+    }
+}
+const items = [
+    {
+        name: "Centio",
+        type: "hero",
+        price: 1500,
+        rarity: "common",
+        perks: { 1: 35, 2: 10 },
+    },
+    {
+        name: "20XX",
+        type: "skin",
+        price: 250,
+        rarity: "common",
+        perks: { 1: 10, 2: 60 },
+    },
+];
+let queueInterval;
+let countdownInterval;
+let spinInterval;
+let gameActive = false; // Flag to control game state
+let spacebarHeld = false; // Flag to track if spacebar is held
+
+const jackpotProbability = 0.29;
+
+document.addEventListener("keydown", (event) => {
+    if (
+        event.code === "Space" &&
+        !event.repeat &&
+        gameActive &&
+        !spacebarHeld
+    ) {
+        spacebarHeld = true;
+        spin("player");
+        holdSpacebarToSpin();
+    }
+});
+function cancelQueue() {
+    // Clear the queue interval
+    clearInterval(queueInterval);
+
+    // Hide queue screen and show menu
+    document.getElementById("queue-screen").classList.add("hidden");
+    document.getElementById("menu-screen").classList.remove("hidden");
+
+    // Reset title in page tab
+    document.title = "Slot Machine Ranked";
+
+    // Update menu display
+    updateMenu();
+    updateTitleDisplay();
+
+    // Save data
+    savePlayerData();
+}
+document.addEventListener("keyup", (event) => {
+    if (event.code === "Space") {
+        spacebarHeld = false;
+    }
+});
+
+function holdSpacebarToSpin() {
+    if (spacebarHeld && gameActive) {
+        setTimeout(() => {
+            spin("player");
+            holdSpacebarToSpin();
+        }, 111); // Adjust interval for repeated spins
+    }
+}
+function savePlayerData() {
+    console.log("Saving player data:", playerData); // Debug log
+    localStorage.setItem("playerData", JSON.stringify(playerData));
+}
+
+function loadPlayerData() {
+    const savedData = localStorage.getItem("playerData");
+    if (savedData) {
+        playerData = JSON.parse(savedData);
+        // Initialize ownedTitles if it doesn't exist
+        if (!playerData.ownedTitles) {
+            playerData.ownedTitles = ["NONE"];
+            // Add current title to owned titles if it's not NONE
+            if (playerData.title && playerData.title !== "NONE") {
+                playerData.ownedTitles.push(playerData.title);
+            }
+        }
+
+        // Initialize season data if it doesn't exist
+        if (typeof playerData.currentSeason === "undefined") {
+            playerData.currentSeason = 1;
+            playerData.placementMatches = 0;
+            playerData.inPlacements = true;
+            playerData.seasonStats = {};
+        }
+
+        if (!playerData.seasonStats) {
+            playerData.seasonStats = {};
+        }
+
+        // Rehydrate season titles from owned titles
+        rehydrateSeasonTitles();
+
+        console.log("Loaded player data:", playerData); // Debug log
+
+        // Check if we need a season reset
+        checkSeasonReset();
+    } else {
+        // New player - set current season
+        playerData.currentSeason = getCurrentSeason();
+        playerData.placementMatches = 0;
+        playerData.inPlacements = true;
+        playerData.seasonStats = {};
+        savePlayerData();
+    }
+}
+
+function rehydrateSeasonTitles() {
+    // Recreate season titles from owned titles strings
+    playerData.ownedTitles.forEach((titleName) => {
+        const seasonMatch = titleName.match(/^S(\d+) (.+)$/);
+        if (seasonMatch) {
+            const seasonNumber = parseInt(seasonMatch[1]);
+            const rank = seasonMatch[2]; // e.g., "GOLD", "GRAND CHAMPION"
+
+            // Normalize rank from uppercase back to title case
+            const normalizedRank = rank
+                .split(" ")
+                .map(
+                    (word) =>
+                        word.charAt(0).toUpperCase() +
+                        word.slice(1).toLowerCase(),
+                )
+                .join(" ");
+
+            // Check if this title already exists in the titles array
+            if (!titles.find((t) => t.title === titleName)) {
+                const seasonTitle = createSeasonTitle(
+                    seasonNumber,
+                    normalizedRank,
+                );
+                if (seasonTitle) {
+                    titles.push(seasonTitle);
+                }
+            }
+        }
     });
-  }
-  function loadShop() {
-      console.log("Loading Shop..."); // Debug log
-      const shopContainer = document.getElementById("shop-hero");
-      
-      if (!shopContainer) {
-          console.error("Shop container not found!");
-          return;
-      }
-      
-      shopContainer.innerHTML = ""; // Clear existing content
-  
-      const availableItems = items.filter(item => item.type === "hero");
-      console.log("Available Hero Items:", availableItems); // Debug log
-      
-      if (availableItems.length === 0) {
-          shopContainer.innerHTML = "<p>No heroes available for purchase.</p>";
-          return;
-      }
-  
-      availableItems.forEach(item => {
-          const itemElement = document.createElement("div");
-          itemElement.classList.add("shop-item");
-          itemElement.innerHTML = `
+}
+function loadShop() {
+    console.log("Loading Shop..."); // Debug log
+    const shopContainer = document.getElementById("shop-hero");
+
+    if (!shopContainer) {
+        console.error("Shop container not found!");
+        return;
+    }
+
+    shopContainer.innerHTML = ""; // Clear existing content
+
+    const availableItems = items.filter((item) => item.type === "hero");
+    console.log("Available Hero Items:", availableItems); // Debug log
+
+    if (availableItems.length === 0) {
+        shopContainer.innerHTML = "<p>No heroes available for purchase.</p>";
+        return;
+    }
+
+    availableItems.forEach((item) => {
+        const itemElement = document.createElement("div");
+        itemElement.classList.add("shop-item");
+        itemElement.innerHTML = `
               <h3>${item.name}</h3>
               <p>Perks: Click Boost ${item.perks[1]}%, Jackpot Increase ${item.perks[2]}%</p>
               <p class="price">${playerData.inventory.includes(item.name) ? "OWNED" : item.price + " Coins"}</p>
@@ -386,91 +419,100 @@ const aiNames = [
                   ${playerData.inventory.includes(item.name) ? "Owned" : "Buy"}
               </button>
           `;
-          shopContainer.appendChild(itemElement);
-      });
-  }
-  
-  
-  function loadInventory() {
-      const inventoryContainer = document.getElementById("inventory-hero");
-      inventoryContainer.innerHTML = "<p>Your owned heroes...</p>"; // Clear previous items
-  
-      if (playerData.inventory.length === 0) {
-          inventoryContainer.innerHTML += "<p>No heroes owned.</p>";
-          return;
-      }
-  
-      playerData.inventory.forEach(itemName => {
-          const item = items.find(i => i.name === itemName);
-          if (item) {
-              const itemElement = document.createElement("div");
-              itemElement.classList.add("inventory-item");
-              itemElement.innerHTML = `
+        shopContainer.appendChild(itemElement);
+    });
+}
+
+function loadInventory() {
+    const inventoryContainer = document.getElementById("inventory-hero");
+    inventoryContainer.innerHTML = "<p>Your owned heroes...</p>"; // Clear previous items
+
+    if (playerData.inventory.length === 0) {
+        inventoryContainer.innerHTML += "<p>No heroes owned.</p>";
+        return;
+    }
+
+    playerData.inventory.forEach((itemName) => {
+        const item = items.find((i) => i.name === itemName);
+        if (item) {
+            const itemElement = document.createElement("div");
+            itemElement.classList.add("inventory-item");
+            itemElement.innerHTML = `
                   <h3>${item.name}</h3>
                   <p>Perks: Click Boost ${item.perks[1]}%, Jackpot Increase ${item.perks[2]}%</p>
                   <button class="button">Equip</button>
               `;
-              inventoryContainer.appendChild(itemElement);
-          }
-      });
-  }
-  
-  function purchaseItem(itemName) {
-      const item = items.find(i => i.name === itemName);
-      if (!item || playerData.inventory.includes(itemName)) return;
-      
-      if (playerData.coins >= item.price) {
-          if (confirm(`Are you sure you want to buy ${item.name} for ${item.price} coins?`)) {
-              playerData.coins -= item.price;
-              playerData.inventory.push(item.name);
-              savePlayerData();
-              loadShop();
-          }
-      } else {
-          alert("Not enough coins!");
-      }
-  }
-  
-  function getDailyShopRotation() {
-      const date = new Date();
-      const seed = date.getDate() + date.getHours() >= 12 ? 1 : 0;
-      return items.filter((_, index) => index % 2 === seed);
-  }
- window.onload = () => {
+            inventoryContainer.appendChild(itemElement);
+        }
+    });
+}
+
+function purchaseItem(itemName) {
+    const item = items.find((i) => i.name === itemName);
+    if (!item || playerData.inventory.includes(itemName)) return;
+
+    if (playerData.coins >= item.price) {
+        if (
+            confirm(
+                `Are you sure you want to buy ${item.name} for ${item.price} coins?`,
+            )
+        ) {
+            playerData.coins -= item.price;
+            playerData.inventory.push(item.name);
+            savePlayerData();
+            loadShop();
+        }
+    } else {
+        alert("Not enough coins!");
+    }
+}
+
+function getDailyShopRotation() {
+    const date = new Date();
+    const seed = date.getDate() + date.getHours() >= 12 ? 1 : 0;
+    return items.filter((_, index) => index % 2 === seed);
+}
+window.onload = () => {
     loadPlayerData();
     updateMenu();
     // loadShop(); // Commented out - no shop elements in HTML
     updateTitleDisplay();
-     simulateAIMatches();
+    simulateAIMatches();
 
     // Proper close button binding
-    document.getElementById("close-title-popup").addEventListener("click", function(e) {
-        e.preventDefault();
-        closePopup("title-popup");
-    });
+    document
+        .getElementById("close-title-popup")
+        .addEventListener("click", function (e) {
+            e.preventDefault();
+            closePopup("title-popup");
+        });
 
     // Other existing code...
-    document.getElementById("ok-button").onclick = () => closePopup("notification-popup");
+    document.getElementById("ok-button").onclick = () =>
+        closePopup("notification-popup");
     document.getElementById("equip-now-button").onclick = () => {
         closePopup("notification-popup");
         openPopup("title-popup");
     };
 };
-  function editUsername() {
-      const newUsername = prompt("Enter your username (1-20 characters):", playerData.username);
-      if (newUsername && newUsername.length <= 20) {
-          playerData.username = newUsername;
-          document.getElementById("username-display").textContent = newUsername;
-      }
-  }
-  // Opens a popup
-  function openPopup(popupId) {
+function editUsername() {
+    const newUsername = prompt(
+        "Enter your username (1-20 characters):",
+        playerData.username,
+    );
+    if (newUsername && newUsername.length <= 20) {
+        playerData.username = newUsername;
+        document.getElementById("username-display").textContent = newUsername;
+    }
+}
+// Opens a popup
+function openPopup(popupId) {
     if (popupId === "title-popup") {
         loadTitlesPopup();
     }
     document.getElementById(popupId).style.display = "block";
 }
-  
+
 function closePopup(popupId) {
     const popup = document.getElementById(popupId);
     if (popup) {
@@ -480,62 +522,68 @@ function closePopup(popupId) {
     }
     return false; // Prevent default behavior
 }
-  
-  // Switches tabs inside Shop or Inventory
-  function switchTab(section, tab) {
-      // Get all tab contents in the section
-      let tabs = document.querySelectorAll(`#${section}-popup .tab-content`);
-      tabs.forEach(tabContent => tabContent.classList.add('hidden'));
-  
-      // Show the selected tab
-      document.getElementById(`${section}-${tab}`).classList.remove('hidden');
-  
-      // Update active button style
-      let buttons = document.querySelectorAll(`#${section}-popup .tab-button`);
-      buttons.forEach(button => button.classList.remove('active'));
-  
-      document.querySelector(`#${section}-popup .tab-button:nth-child(${tab === 'hero' ? 1 : tab === 'skin' ? 2 : 3})`).classList.add('active');
-  }
-        
-  
-  function startQueue() {
-      document.getElementById("menu-screen").classList.add("hidden");
-      document.getElementById("queue-screen").classList.remove("hidden");
-  
-      // Change the tab title
-      document.title = "SMR | Searching...";
-  
-      const currentHour = new Date().getHours();
-      let maxQueueTime = 2; // Default max queue time
-      let mmrFactor = Math.max(0, (playerData.mmr - 600) / 200); // Increase time by MMR difference above 600
-  
-      // Adjust max queue time based on time of day
-      if (currentHour >= 0 && currentHour < 6) {
-          maxQueueTime = 54; // Longer wait times at night
-      } else if (currentHour >= 18 && currentHour < 22) {
-          maxQueueTime = 33; // Shorter wait times in the evening
-      }
-  
-      maxQueueTime = Math.min(30, Math.round(maxQueueTime + mmrFactor * 2)); // Cap max time to 30 seconds
-      document.querySelector("#queue-screen p:nth-of-type(2)").textContent = `Estimated Time: ${maxQueueTime}s`;
-  
-      // Randomize the actual match start time (±20% of maxQueueTime)
-      const actualMatchTime = Math.floor(maxQueueTime * (0.8 + Math.random() * 0.2)); // Between 80% and 120% of maxQueueTime
-  
-      let queueTime = 0;
-      queueInterval = setInterval(() => {
-          queueTime++;
-          document.getElementById("queue-time").textContent = queueTime;
-  
-          // Match starts at the randomized actual time
-          if (queueTime >= actualMatchTime) {
-              clearInterval(queueInterval);
-              startMatch();
-          }
-      }, 1000);
-  }
-  
-  const titles = [
+
+// Switches tabs inside Shop or Inventory
+function switchTab(section, tab) {
+    // Get all tab contents in the section
+    let tabs = document.querySelectorAll(`#${section}-popup .tab-content`);
+    tabs.forEach((tabContent) => tabContent.classList.add("hidden"));
+
+    // Show the selected tab
+    document.getElementById(`${section}-${tab}`).classList.remove("hidden");
+
+    // Update active button style
+    let buttons = document.querySelectorAll(`#${section}-popup .tab-button`);
+    buttons.forEach((button) => button.classList.remove("active"));
+
+    document
+        .querySelector(
+            `#${section}-popup .tab-button:nth-child(${tab === "hero" ? 1 : tab === "skin" ? 2 : 3})`,
+        )
+        .classList.add("active");
+}
+
+function startQueue() {
+    document.getElementById("menu-screen").classList.add("hidden");
+    document.getElementById("queue-screen").classList.remove("hidden");
+
+    // Change the tab title
+    document.title = "SMR | Searching...";
+
+    const currentHour = new Date().getHours();
+    let maxQueueTime = 2; // Default max queue time
+    let mmrFactor = Math.max(0, (playerData.mmr - 600) / 200); // Increase time by MMR difference above 600
+
+    // Adjust max queue time based on time of day
+    if (currentHour >= 0 && currentHour < 6) {
+        maxQueueTime = 54; // Longer wait times at night
+    } else if (currentHour >= 18 && currentHour < 22) {
+        maxQueueTime = 33; // Shorter wait times in the evening
+    }
+
+    maxQueueTime = Math.min(30, Math.round(maxQueueTime + mmrFactor * 2)); // Cap max time to 30 seconds
+    document.querySelector("#queue-screen p:nth-of-type(2)").textContent =
+        `Estimated Time: ${maxQueueTime}s`;
+
+    // Randomize the actual match start time (±20% of maxQueueTime)
+    const actualMatchTime = Math.floor(
+        maxQueueTime * (0.8 + Math.random() * 0.2),
+    ); // Between 80% and 120% of maxQueueTime
+
+    let queueTime = 0;
+    queueInterval = setInterval(() => {
+        queueTime++;
+        document.getElementById("queue-time").textContent = queueTime;
+
+        // Match starts at the randomized actual time
+        if (queueTime >= actualMatchTime) {
+            clearInterval(queueInterval);
+            startMatch();
+        }
+    }, 1000);
+}
+
+const titles = [
     {
         title: "NONE",
         color: "grey",
@@ -550,28 +598,28 @@ function closePopup(popupId) {
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
 
     // SEASON 1
@@ -580,80 +628,78 @@ function closePopup(popupId) {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S1 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
-
-     
 
     // SEASON 2
     {
@@ -661,393 +707,392 @@ function closePopup(popupId) {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
 
-      // SEASON 3
-      {
+    // SEASON 3
+    {
         title: "RSCS S3 CHALLENGER",
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S2 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S3 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S3 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
-      // SEASON 4
-      {
+    // SEASON 4
+    {
         title: "RSCS S4 CHALLENGER",
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
     {
         title: "RSCS S4 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kwpid"]
+        wlUsers: ["kwpid"],
     },
 
-// SEASON 5
-{
+    // SEASON 5
+    {
         title: "RSCS S5 CHALLENGER",
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"]
+        wlUsers: ["kw7p"],
     },
     {
         title: "RSCS S5 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S5 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["newpo"],
     },
     {
         title: "RSCS S5 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
-      // SEASON 6
-{
+    // SEASON 6
+    {
         title: "RSCS S6 CHALLENGER",
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"]
+        wlUsers: ["kw7p"],
     },
     {
         title: "RSCS S6 CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"]
+        wlUsers: ["kw7p"],
     },
     {
         title: "RSCS S6 ELITE",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 REGIONAL CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: ["kw7p"]
+        wlUsers: ["kw7p"],
     },
     {
         title: "RSCS S6 REGIONAL FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 REGIONAL CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 MAJOR CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 MAJOR FINALIST",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 MAJOR CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 WORLDS CONTENDER",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
     {
         title: "RSCS S6 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
-        wlUsers: [""]
+        wlUsers: [""],
     },
-
 
     {
         title: "S1 GRAND CHAMPION",
@@ -1064,7 +1109,7 @@ function closePopup(popupId) {
         wlUsers: [""],
     },
 
-      {
+    {
         title: "S2 GRAND CHAMPION",
         color: "gold",
         glow: true,
@@ -1078,7 +1123,7 @@ function closePopup(popupId) {
         minMMR: null,
         wlUsers: [""],
     },
-      {
+    {
         title: "S3 GRAND CHAMPION",
         color: "red",
         glow: true,
@@ -1092,7 +1137,7 @@ function closePopup(popupId) {
         minMMR: null,
         wlUsers: ["kwpid"],
     },
-      {
+    {
         title: "S4 GRAND CHAMPION",
         color: "gold",
         glow: true,
@@ -1106,10 +1151,6 @@ function closePopup(popupId) {
         minMMR: 1864,
         wlUsers: [""],
     },
-      
-      
-
-
 
     {
         title: "OG",
@@ -1166,16 +1207,12 @@ function closePopup(popupId) {
         glow: false,
         minMMR: 1800,
         wlUsers: [],
-    }
+    },
 ];
-  
-  
-  
-  
-      function showNotification(title) {
-      }
-  
-  const specialAIs = {
+
+function showNotification(title) {}
+
+const specialAIs = {
     superSlotLegends: [
         { name: "yumi", title: "RSCS S1 MAJOR CONTENDER", mmr: 2166 },
         { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
@@ -1216,7 +1253,11 @@ function closePopup(popupId) {
         { name: "Darkmode", title: "RSCS S1 MAJOR CHAMPION", mmr: 2139 },
         { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1879 },
         { name: "LetsG0Brand0n", title: "RSCS S1 WORLDS CONTENDER", mmr: 1983 },
-        { name: "VAWQK.", title: "S1 GRAND CHAMPION TOURNAMENT WINNER", mmr: 1911 },
+        {
+            name: "VAWQK.",
+            title: "S1 GRAND CHAMPION TOURNAMENT WINNER",
+            mmr: 1911,
+        },
         { name: "helu30", title: "RSCS S1 MAJOR CHAMPION", mmr: 1998 },
         { name: "wizz", title: "S1 GRAND CHAMPION", mmr: 2101 },
         { name: "Sczribbles.", title: "RSCS S1 MAJOR CONTENDER", mmr: 1940 },
@@ -1269,7 +1310,11 @@ function closePopup(popupId) {
         { name: "sh4oud", title: "SALT MINE 1 CHAMPION", mmr: 2042 },
         { name: "vvv", title: "S1 SUPERSLOT LEGEND", mmr: 1884 },
         { name: "critt", title: "S1 SUPERSLOT LEGEND", mmr: 1930 },
-        { name: "darkandlost2009", title: "RSCS S1 MAJOR CONTENDER", mmr: 1989 },
+        {
+            name: "darkandlost2009",
+            title: "RSCS S1 MAJOR CONTENDER",
+            mmr: 1989,
+        },
         { name: "pulse jubbo", title: "S1 GRAND CHAMPION", mmr: 1917 },
         { name: "pl havicic", title: "RSCS S1 REGIONAL CHAMPION", mmr: 2006 },
         { name: "ryft.", title: "S1 SUPERSLOT LEGEND", mmr: 1895 },
@@ -1313,39 +1358,38 @@ function closePopup(popupId) {
         { name: "eecipe", title: "RSCS S1 CHALLENGER", mmr: 1888 },
         { name: "quantum", title: "S1 SUPERSLOT LEGEND", mmr: 1867 },
         { name: "vexz", title: "S1 GRAND CHAMPION", mmr: 1945 },
-    { name: "zylo", title: "RSCS S1 CHALLENGER", mmr: 1923 },
-    { name: "frzno", title: "S1 SUPERSLOT LEGEND", mmr: 1889 },
-    { name: "blurr", title: "NONE", mmr: 1955 },
-    { name: "scythe!", title: "S1 GRAND CHAMPION", mmr: 1977 },
-    { name: "wvr", title: "RSCS S1 CHALLENGER", mmr: 1904 },
-    { name: "nxt", title: "S1 SUPERSLOT LEGEND", mmr: 1876 },
-    { name: "griz", title: "S1 GRAND CHAMPION", mmr: 1932 },
-    { name: "jolt", title: "RSCS S1 CHALLENGER", mmr: 1915 },
-    { name: "sift", title: "NONE", mmr: 1968 },
-    { name: "kryo", title: "S1 SUPERSLOT LEGEND", mmr: 1890 },
-    { name: "wvn", title: "S1 GRAND CHAMPION", mmr: 1947 },
-    { name: "brixx", title: "RSCS S1 CHALLENGER", mmr: 1926 },
-    { name: "twixt", title: "NONE", mmr: 1971 },
-    { name: "nyx", title: "S1 SUPERSLOT LEGEND", mmr: 1885 },
-    { name: "slyth", title: "S1 GRAND CHAMPION", mmr: 1936 },
-    { name: "drex", title: "RSCS S1 CHALLENGER", mmr: 1912 },
-    { name: "qwi", title: "NONE", mmr: 1960 },
-    { name: "voxx", title: "S1 SUPERSLOT LEGEND", mmr: 1877 },
-    { name: "triz", title: "S1 GRAND CHAMPION", mmr: 1944 },
-    { name: "jynx", title: "RSCS S1 CHALLENGER", mmr: 1909 },
-    { name: "plyx", title: "NONE", mmr: 1974 },
-    { name: "kryp", title: "S1 SUPERSLOT LEGEND", mmr: 1880 },
-    { name: "zex", title: "S1 GRAND CHAMPION", mmr: 1937 },
-    { name: "brix", title: "RSCS S1 CHALLENGER", mmr: 1921 },
-    { name: "twixz", title: "NONE", mmr: 1963 },
-    { name: "vyn", title: "S1 SUPERSLOT LEGEND", mmr: 1874 },
-    { name: "sypher", title: "S1 GRAND CHAMPION", mmr: 1949 },
-    { name: "jyn", title: "RSCS S1 CHALLENGER", mmr: 1916 },
-    { name: "qry", title: "NONE", mmr: 1967 },
-    { name: "neoo", title: "NONE", mmr: 1967 },
-    { name: "kwpid", title: "NONE", mmr: 2145 }
-    
-    ].map(ai => {
+        { name: "zylo", title: "RSCS S1 CHALLENGER", mmr: 1923 },
+        { name: "frzno", title: "S1 SUPERSLOT LEGEND", mmr: 1889 },
+        { name: "blurr", title: "NONE", mmr: 1955 },
+        { name: "scythe!", title: "S1 GRAND CHAMPION", mmr: 1977 },
+        { name: "wvr", title: "RSCS S1 CHALLENGER", mmr: 1904 },
+        { name: "nxt", title: "S1 SUPERSLOT LEGEND", mmr: 1876 },
+        { name: "griz", title: "S1 GRAND CHAMPION", mmr: 1932 },
+        { name: "jolt", title: "RSCS S1 CHALLENGER", mmr: 1915 },
+        { name: "sift", title: "NONE", mmr: 1968 },
+        { name: "kryo", title: "S1 SUPERSLOT LEGEND", mmr: 1890 },
+        { name: "wvn", title: "S1 GRAND CHAMPION", mmr: 1947 },
+        { name: "brixx", title: "RSCS S1 CHALLENGER", mmr: 1926 },
+        { name: "twixt", title: "NONE", mmr: 1971 },
+        { name: "nyx", title: "S1 SUPERSLOT LEGEND", mmr: 1885 },
+        { name: "slyth", title: "S1 GRAND CHAMPION", mmr: 1936 },
+        { name: "drex", title: "RSCS S1 CHALLENGER", mmr: 1912 },
+        { name: "qwi", title: "NONE", mmr: 1960 },
+        { name: "voxx", title: "S1 SUPERSLOT LEGEND", mmr: 1877 },
+        { name: "triz", title: "S1 GRAND CHAMPION", mmr: 1944 },
+        { name: "jynx", title: "RSCS S1 CHALLENGER", mmr: 1909 },
+        { name: "plyx", title: "NONE", mmr: 1974 },
+        { name: "kryp", title: "S1 SUPERSLOT LEGEND", mmr: 1880 },
+        { name: "zex", title: "S1 GRAND CHAMPION", mmr: 1937 },
+        { name: "brix", title: "RSCS S1 CHALLENGER", mmr: 1921 },
+        { name: "twixz", title: "NONE", mmr: 1963 },
+        { name: "vyn", title: "S1 SUPERSLOT LEGEND", mmr: 1874 },
+        { name: "sypher", title: "S1 GRAND CHAMPION", mmr: 1949 },
+        { name: "jyn", title: "RSCS S1 CHALLENGER", mmr: 1916 },
+        { name: "qry", title: "NONE", mmr: 1967 },
+        { name: "neoo", title: "NONE", mmr: 1967 },
+        { name: "kwpid", title: "NONE", mmr: 2145 },
+    ].map((ai) => {
         // Try to load saved MMR from localStorage
         const savedAI = localStorage.getItem(`ssl_ai_${ai.name}`);
         if (savedAI) {
@@ -1355,74 +1399,81 @@ function closePopup(popupId) {
             return parsed;
         }
         return ai;
-    })
+    }),
 };
-  function saveAIData(ai) {
+function saveAIData(ai) {
     localStorage.setItem(`ssl_ai_${ai.name}`, JSON.stringify(ai));
 }
 function getRandomOpponent(currentAI) {
-    const opponents = specialAIs.superSlotLegends.filter(a => a.name !== currentAI.name);
-    if (opponents.length === 0) return null;
-    
-    // Weight towards opponents with similar MMR
-    const viableOpponents = opponents.filter(opp => 
-        Math.abs(opp.mmr - currentAI.mmr) <= 400
+    const opponents = specialAIs.superSlotLegends.filter(
+        (a) => a.name !== currentAI.name,
     );
-    
+    if (opponents.length === 0) return null;
+
+    // Weight towards opponents with similar MMR
+    const viableOpponents = opponents.filter(
+        (opp) => Math.abs(opp.mmr - currentAI.mmr) <= 400,
+    );
+
     const pool = viableOpponents.length > 0 ? viableOpponents : opponents;
     return pool[Math.floor(Math.random() * pool.length)];
 }
 function simulateAIMatches() {
-    const lastSimulation = localStorage.getItem('last_ai_simulation');
+    const lastSimulation = localStorage.getItem("last_ai_simulation");
     const now = new Date().getTime();
-    
+
     // Only simulate if at least 1 hour has passed since last simulation
-    if (lastSimulation && (now - parseInt(lastSimulation)) < 3600000) {
+    if (lastSimulation && now - parseInt(lastSimulation) < 3600000) {
         return;
     }
-    
+
     // Update all SSL AIs
-    specialAIs.superSlotLegends.forEach(ai => {
+    specialAIs.superSlotLegends.forEach((ai) => {
         // Determine how many matches to simulate (0-3)
         const matchesToPlay = Math.floor(Math.random() * 4);
-        
+
         for (let i = 0; i < matchesToPlay; i++) {
             const opponent = getRandomOpponent(ai);
             if (!opponent) continue;
-            
+
             // Simulate match outcome (weighted toward higher MMR player winning)
-            const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
+            const aiWinProbability =
+                1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
             const aiWon = Math.random() < aiWinProbability;
-            
+
             // Calculate MMR change
             const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
-            
+
             // Update MMR (keeping within bounds)
             ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
-            
+
             // If opponent is another AI, update their MMR too
             if (aiWon) {
-                opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
+                opponent.mmr = Math.max(
+                    1864,
+                    Math.min(2400, opponent.mmr - mmrChange),
+                );
                 saveAIData(opponent);
             }
         }
-        
+
         // Save this AI's data
         saveAIData(ai);
     });
-    
+
     // Record when we last simulated matches
-    localStorage.setItem('last_ai_simulation', now.toString());
+    localStorage.setItem("last_ai_simulation", now.toString());
 }
-  function startMatch() {
+function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
     document.getElementById("match-screen").classList.remove("hidden");
-    
+
     // Set player info (unchanged)
-    document.getElementById("player-username").textContent = playerData.username;
+    document.getElementById("player-username").textContent =
+        playerData.username;
     const playerTitleElement = document.getElementById("player-title");
     playerTitleElement.textContent = playerData.title;
-    const playerTitle = titles.find(t => t.title === playerData.title);
+    const playerTitle = titles.find((t) => t.title === playerData.title);
     if (playerTitle) {
         playerTitleElement.style.color = playerTitle.color;
         if (playerTitle.glow) {
@@ -1431,7 +1482,9 @@ function simulateAIMatches() {
             playerTitleElement.classList.remove("glowing-title");
         }
     }
-    document.getElementById("player-rank").textContent = getRank(playerData.mmr);
+    document.getElementById("player-rank").textContent = getRank(
+        playerData.mmr,
+    );
     document.getElementById("player-mmr").textContent = playerData.mmr;
 
     // Set AI info based on player's MMR
@@ -1439,26 +1492,33 @@ function simulateAIMatches() {
         // SuperSlot Legend rank - can face SSL AIs
         // Filter AIs within a reasonable MMR range (±200) of the player
         const eligibleAIs = specialAIs.superSlotLegends.filter(
-            ai => Math.abs(ai.mmr - playerData.mmr) <= 200
+            (ai) => Math.abs(ai.mmr - playerData.mmr) <= 200,
         );
-        
+
         // If no AIs in range, expand to ±300, then any SSL
         let selectedAI;
         if (eligibleAIs.length > 0) {
-            selectedAI = eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
+            selectedAI =
+                eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
         } else {
             const widerPool = specialAIs.superSlotLegends.filter(
-                ai => Math.abs(ai.mmr - playerData.mmr) <= 300
+                (ai) => Math.abs(ai.mmr - playerData.mmr) <= 300,
             );
-            selectedAI = widerPool.length > 0 
-                ? widerPool[Math.floor(Math.random() * widerPool.length)]
-                : specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
+            selectedAI =
+                widerPool.length > 0
+                    ? widerPool[Math.floor(Math.random() * widerPool.length)]
+                    : specialAIs.superSlotLegends[
+                          Math.floor(
+                              Math.random() *
+                                  specialAIs.superSlotLegends.length,
+                          )
+                      ];
         }
-        
+
         aiData = {
             username: selectedAI.name,
             title: selectedAI.title,
-            mmr: selectedAI.mmr
+            mmr: selectedAI.mmr,
         };
     } else {
         // Regular AI with random grey title
@@ -1466,15 +1526,15 @@ function simulateAIMatches() {
         aiData = {
             username: aiName,
             mmr: playerData.mmr + (Math.random() * 200 - 100),
-            title: getRandomGreyTitle()
+            title: getRandomGreyTitle(),
         };
     }
-    
+
     // Set AI display info (unchanged)
     document.getElementById("ai-username").textContent = aiData.username;
     const aiTitleElement = document.getElementById("ai-title");
     aiTitleElement.textContent = aiData.title;
-    const aiTitle = titles.find(t => t.title === aiData.title);
+    const aiTitle = titles.find((t) => t.title === aiData.title);
     if (aiTitle) {
         aiTitleElement.style.color = aiTitle.color;
         if (aiTitle.glow) {
@@ -1485,15 +1545,15 @@ function simulateAIMatches() {
     }
     document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
     document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
-    
+
     // Start countdown (unchanged)
     let countdown = 5;
     document.getElementById("countdown").textContent = countdown;
-    
+
     countdownInterval = setInterval(() => {
         countdown--;
         document.getElementById("countdown").textContent = countdown;
-        
+
         if (countdown <= 0) {
             clearInterval(countdownInterval);
             document.getElementById("countdown").style.display = "none";
@@ -1502,140 +1562,158 @@ function simulateAIMatches() {
         }
     }, 1000);
 }
-  
-  function getRandomGreyTitle() {
-      const greyTitles = titles.filter(title => title.color === "grey" && title.title !== "NONE");
-      return greyTitles[Math.floor(Math.random() * greyTitles.length)].title;
-  }
-  
-  function checkForNewTitles() {
-      const availableTitles = getAvailableTitles();
-      
-      // Check if player has unlocked any new titles
-      availableTitles.forEach(title => {
-          if (title && title.title && 
-              title.title !== "NONE" && 
-              !playerData.ownedTitles.includes(title.title)) {
-              showTitleNotification(title);
-              playerData.ownedTitles.push(title.title);
-              savePlayerData();
-          }
-      });
-  }
-  
-  function spin(player) {
-      if (!gameActive) return; // Prevent spinning outside active game
-  
-      const results = Array.from({ length: 3 }, () => Math.random() < jackpotProbability ? "J" : "-");
-      const slots = player === "player" ? ["player-slot-1", "player-slot-2", "player-slot-3"] : ["ai-slot-1", "ai-slot-2", "ai-slot-3"];
-      slots.forEach((slot, index) => {
-          document.getElementById(slot).textContent = results[index];
-      });
-      const jackpotCount = results.filter(r => r === "J").length;
-      if (jackpotCount === 3) {
-          updateDots(player);
-      }
-      if (checkWinCondition()) {
-          clearInterval(spinInterval);
-          endGame(player === "player");
-      }
-  }
-  
-  // Add event listener to the spin button
-  // Note: Spin button uses inline onclick handler in HTML, no getElementById("spin-button") exists
-  // document.getElementById("spin-button").addEventListener("click", () => {
-  //     if (gameActive) {
-  //         spin("player");
-  //     }
-  // });
-  
-  
-  function getSpinInterval(mmr) {
+
+function getRandomGreyTitle() {
+    const greyTitles = titles.filter(
+        (title) => title.color === "grey" && title.title !== "NONE",
+    );
+    return greyTitles[Math.floor(Math.random() * greyTitles.length)].title;
+}
+
+function checkForNewTitles() {
+    const availableTitles = getAvailableTitles();
+
+    // Check if player has unlocked any new titles
+    availableTitles.forEach((title) => {
+        if (
+            title &&
+            title.title &&
+            title.title !== "NONE" &&
+            !playerData.ownedTitles.includes(title.title)
+        ) {
+            showTitleNotification(title);
+            playerData.ownedTitles.push(title.title);
+            savePlayerData();
+        }
+    });
+}
+
+function spin(player) {
+    if (!gameActive) return; // Prevent spinning outside active game
+
+    const results = Array.from({ length: 3 }, () =>
+        Math.random() < jackpotProbability ? "J" : "-",
+    );
+    const slots =
+        player === "player"
+            ? ["player-slot-1", "player-slot-2", "player-slot-3"]
+            : ["ai-slot-1", "ai-slot-2", "ai-slot-3"];
+    slots.forEach((slot, index) => {
+        document.getElementById(slot).textContent = results[index];
+    });
+    const jackpotCount = results.filter((r) => r === "J").length;
+    if (jackpotCount === 3) {
+        updateDots(player);
+    }
+    if (checkWinCondition()) {
+        clearInterval(spinInterval);
+        endGame(player === "player");
+    }
+}
+
+// Add event listener to the spin button
+// Note: Spin button uses inline onclick handler in HTML, no getElementById("spin-button") exists
+// document.getElementById("spin-button").addEventListener("click", () => {
+//     if (gameActive) {
+//         spin("player");
+//     }
+// });
+
+function getSpinInterval(mmr) {
     if (mmr >= 1400) return 110;
-      if (mmr >= 1314) return 130; // S1 GRAND CHAMPION
-      if (mmr >= 994) return 170;  // S1 CHAMPION
-      if (mmr >= 754) return 190;  // S1 DIAMOND
-      if (mmr >= 594) return 200;  // S1 PLATINUM
-      if (mmr >= 414) return 250;  // S1 GOLD
-      if (mmr >= 231) return 270;  // S1 SILVER
-      return 400;                  // S1 BRONZE and below
-  }
-  
-  function aiAutoSpin() {
-      const spinSpeed = getSpinInterval(aiData.mmr); // Get spin interval based on AI rank
-      spinInterval = setInterval(() => {
-          spin("ai");
-      }, spinSpeed);
-  }
-  
-  
-  function updateDots(player) {
-      const dots = player === "player" ? "player-dots" : "ai-dots";
-      const dotElements = document.getElementById(dots).getElementsByClassName("dot");
-      for (let dot of dotElements) {
-          if (!dot.classList.contains("active")) {
-              dot.classList.remove("inactive");
-              dot.classList.add("active");
-              break;
-          }
-      }
-  }
-  
-  function checkWinCondition() {
-      const playerDots = document.getElementById("player-dots").getElementsByClassName("active").length;
-      const aiDots = document.getElementById("ai-dots").getElementsByClassName("active").length;
-      return playerDots === 5 || aiDots === 5;
-  }
-  
-  function calculateMMRChange(playerMMR, opponentMMR, playerWon) {
-      // Constants for MMR calculation
-      const K = 32; // Base K-factor
-      const MMR_SCALE = 400; // Scale factor for MMR difference
-      const MIN_MMR_CHANGE = 8; // Minimum MMR change
-      const MAX_MMR_CHANGE = 50; // Maximum MMR change
-      
-      // Calculate expected score using logistic function
-      const expectedScore = 1 / (1 + Math.pow(10, (opponentMMR - playerMMR) / MMR_SCALE));
-      
-      // Calculate actual score (1 for win, 0 for loss)
-      const actualScore = playerWon ? 1 : 0;
-      
-      // Calculate base MMR change
-      let mmrChange = Math.round(K * (actualScore - expectedScore));
-      
-      // Apply scaling based on MMR difference
-      const mmrDiff = Math.abs(playerMMR - opponentMMR);
-      if (mmrDiff > 200) {
-          // Scale down MMR changes for large MMR differences
-          const scaleFactor = Math.max(0.5, 1 - (mmrDiff - 200) / 1000);
-          mmrChange = Math.round(mmrChange * scaleFactor);
-      }
-      
-      // Ensure MMR change stays within bounds
-      mmrChange = Math.max(MIN_MMR_CHANGE, Math.min(MAX_MMR_CHANGE, Math.abs(mmrChange)));
-      
-      // Return positive or negative based on win/loss
-      return playerWon ? mmrChange : -mmrChange;
-  }
-  
-  function endGame(playerWon) {
+    if (mmr >= 1314) return 130; // S1 GRAND CHAMPION
+    if (mmr >= 994) return 170; // S1 CHAMPION
+    if (mmr >= 754) return 190; // S1 DIAMOND
+    if (mmr >= 594) return 200; // S1 PLATINUM
+    if (mmr >= 414) return 250; // S1 GOLD
+    if (mmr >= 231) return 270; // S1 SILVER
+    return 400; // S1 BRONZE and below
+}
+
+function aiAutoSpin() {
+    const spinSpeed = getSpinInterval(aiData.mmr); // Get spin interval based on AI rank
+    spinInterval = setInterval(() => {
+        spin("ai");
+    }, spinSpeed);
+}
+
+function updateDots(player) {
+    const dots = player === "player" ? "player-dots" : "ai-dots";
+    const dotElements = document
+        .getElementById(dots)
+        .getElementsByClassName("dot");
+    for (let dot of dotElements) {
+        if (!dot.classList.contains("active")) {
+            dot.classList.remove("inactive");
+            dot.classList.add("active");
+            break;
+        }
+    }
+}
+
+function checkWinCondition() {
+    const playerDots = document
+        .getElementById("player-dots")
+        .getElementsByClassName("active").length;
+    const aiDots = document
+        .getElementById("ai-dots")
+        .getElementsByClassName("active").length;
+    return playerDots === 5 || aiDots === 5;
+}
+
+function calculateMMRChange(playerMMR, opponentMMR, playerWon) {
+    // Constants for MMR calculation
+    const K = 32; // Base K-factor
+    const MMR_SCALE = 400; // Scale factor for MMR difference
+    const MIN_MMR_CHANGE = 8; // Minimum MMR change
+    const MAX_MMR_CHANGE = 50; // Maximum MMR change
+
+    // Calculate expected score using logistic function
+    const expectedScore =
+        1 / (1 + Math.pow(10, (opponentMMR - playerMMR) / MMR_SCALE));
+
+    // Calculate actual score (1 for win, 0 for loss)
+    const actualScore = playerWon ? 1 : 0;
+
+    // Calculate base MMR change
+    let mmrChange = Math.round(K * (actualScore - expectedScore));
+
+    // Apply scaling based on MMR difference
+    const mmrDiff = Math.abs(playerMMR - opponentMMR);
+    if (mmrDiff > 200) {
+        // Scale down MMR changes for large MMR differences
+        const scaleFactor = Math.max(0.5, 1 - (mmrDiff - 200) / 1000);
+        mmrChange = Math.round(mmrChange * scaleFactor);
+    }
+
+    // Ensure MMR change stays within bounds
+    mmrChange = Math.max(
+        MIN_MMR_CHANGE,
+        Math.min(MAX_MMR_CHANGE, Math.abs(mmrChange)),
+    );
+
+    // Return positive or negative based on win/loss
+    return playerWon ? mmrChange : -mmrChange;
+}
+
+function endGame(playerWon) {
     if (!gameActive) return;
-    
+
     gameActive = false;
     clearInterval(spinInterval);
     clearInterval(countdownInterval);
-    
+
     // Store old rank for season title comparison
     const oldRank = getRank(playerData.mmr);
-    
+
     // Calculate MMR change using the new system
     const oldMMR = playerData.mmr;
     const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
     playerData.mmr += mmrChange;
-    
+
     // Get new rank for season title comparison
     const newRank = getRank(playerData.mmr);
-    
+
     // Update stats and coins (unchanged)
     let coinsEarned = 0;
     if (playerWon) {
@@ -1645,7 +1723,7 @@ function simulateAIMatches() {
     } else {
         playerData.losses++;
     }
-    
+
     // Handle placement matches
     if (playerData.inPlacements) {
         playerData.placementMatches++;
@@ -1654,43 +1732,50 @@ function simulateAIMatches() {
             console.log("Placement matches completed!");
         }
     }
-    
+
     // Update peak MMR (unchanged)
     if (playerData.mmr > playerData.peakMMR) {
         playerData.peakMMR = playerData.mmr;
     }
-    
+
     // Check for season title unlocks when rank changes
     checkForSeasonTitleUnlock(oldRank, newRank, playerData.currentSeason);
-    
+
     // If player is SSL and opponent is SSL AI, update AI's MMR
-    if (playerData.mmr >= 1864 && aiData.username && 
-        specialAIs.superSlotLegends.some(ai => ai.name === aiData.username)) {
-        
-        const ai = specialAIs.superSlotLegends.find(ai => ai.name === aiData.username);
+    if (
+        playerData.mmr >= 1864 &&
+        aiData.username &&
+        specialAIs.superSlotLegends.some((ai) => ai.name === aiData.username)
+    ) {
+        const ai = specialAIs.superSlotLegends.find(
+            (ai) => ai.name === aiData.username,
+        );
         if (ai) {
             const aiMMRChange = calculateMMRChange(ai.mmr, oldMMR, !playerWon);
             ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + aiMMRChange));
             saveAIData(ai);
         }
     }
-    
+
     // Check for new titles (unchanged)
     checkForNewTitles();
-    
+
     // Save data (unchanged)
     savePlayerData();
-    
+
     // Show end screen (unchanged)
     document.getElementById("match-screen").classList.add("hidden");
     document.getElementById("end-screen").classList.remove("hidden");
-    
+
     // Update end screen info (unchanged)
-    document.getElementById("result").textContent = playerWon ? "Victory!" : "Defeat";
+    document.getElementById("result").textContent = playerWon
+        ? "Victory!"
+        : "Defeat";
     document.getElementById("old-mmr").textContent = oldMMR;
     document.getElementById("new-mmr").textContent = playerData.mmr;
-    document.getElementById("mmr-change").textContent = `MMR Change: ${mmrChange > 0 ? "+" : ""}${mmrChange}`;
-    
+    document.getElementById("mmr-change").textContent =
+        `MMR Change: ${mmrChange > 0 ? "+" : ""}${mmrChange}`;
+
     if (playerWon) {
         const coinsElement = document.getElementById("player-coins");
         coinsElement.textContent = `Coins Earned: +${coinsEarned}`;
@@ -1699,165 +1784,190 @@ function simulateAIMatches() {
         const coinsElement = document.getElementById("player-coins");
         coinsElement.textContent = "";
     }
-    
+
     // Update menu display (unchanged)
     updateMenu();
 }
-  
-  
-  
-  if ("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission().then(permission => {
-          if (permission === "granted") {
-              console.log("Notification permission granted.");
-          } else {
-              console.log("Notification permission denied.");
-          }
-      });
-  }
-  
-  function showDesktopNotification() {
-      if ("Notification" in window && Notification.permission === "granted") {
-          const notification = new Notification("Match Found!", {
-              body: "A match has been found. Get ready to play!",
-              icon: "images/match-icon.png", // Replace with your own icon path
-          });
-  
-          notification.onclick = () => {
-              // Bring the tab to focus when notification is clicked
-              window.focus();
-          };
-      } else if ("Notification" in window && Notification.permission !== "denied") {
-          // Ask for permission again if it was not denied previously
-          Notification.requestPermission().then(permission => {
-              if (permission === "granted") {
-                  showDesktopNotification();
-              }
-          });
-      }
-  }
-  
-  function goToMenu() {
-      // Hide all screens
-      document.getElementById("end-screen").classList.add("hidden");
-      document.getElementById("match-screen").classList.add("hidden");
-      document.getElementById("queue-screen").classList.add("hidden");
-      
-      // Show menu screen
-      document.getElementById("menu-screen").classList.remove("hidden");
-      
-      // Update menu with current data
-      updateMenu();
-      updateTitleDisplay();
-      
-      // Reset title in page tab
-      document.title = "Slot Machine Ranked";
-      
-      // Ensure data is saved
-      savePlayerData();
-  }
-  function getRankImage(rank) {
-      // Remove division info if present (e.g., "Gold III - Div 2" → "Gold III")
-      const baseRank = rank.split(" - ")[0];
-  
-      const rankImages = {
-          "Bronze I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/939597fb-c29f-4607-9a76-9a6c5f1edf48.image.png?v=1724334781837",
-          "Bronze II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/9965effe-4989-4504-9200-7f04b6b665a2.image.png?v=1724334793116",
-          "Bronze III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a274e890-4257-4cd9-a02a-56bc80be47d3.image.png?v=1724334816902",
-          "Silver I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/28b40287-5562-45ab-a236-5647e96f1d48.image.png?v=1724334852235",
-          "Silver II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/6caddf21-bee3-46c3-9d27-05823806cb67.image.png?v=1724334861872",
-          "Silver III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/faa8edc7-b482-4cc4-b5b0-ceed84627079.image.png?v=1724334871163",
-          "Gold I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/df499a57-8fc0-4524-bdd0-2fae76ec9301.image.png?v=1724334902060",
-          "Gold II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a0dedb5b-6bc3-4322-afbb-77cc07184fec.image.png?v=1724334909730",
-          "Gold III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/d3a3b2fc-6fcf-4bdc-85cc-8da4f40b2993.image.png?v=1724334914955",
-          "Platinum I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/2f23a5f7-efe3-45ee-9cb8-acd533b0d6c4.image.png?v=1724335263302",
-          "Platinum II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3103ab33-c432-43ff-93c3-69a08d1ca602.image.png?v=1724335271866",
-          "Platinum III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c0fa94d0-d195-42d1-92f1-cb082976bdff.image.png?v=1724335280781",
-          "Diamond I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/db671aad-2dd6-4328-897f-3f259be82fc5.image.png?v=1724335489836",
-          "Diamond II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/76c9b43e-d0f6-4b05-9f32-7243d522c5f1.image.png?v=1724335504082",
-          "Diamond III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/07082c63-cce6-4ff1-bff3-c3fceedf2e54.image.png?v=1724335508559",
-          "Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a10c88af-e70d-4891-99e7-57abf90002d5.image.png?v=1724335525065",
-          "Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3d397ae6-e026-45af-b4e3-180318bd415a.image.png?v=1724335551068",
-          "Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c28f3b1a-1396-4f24-aec7-f289695e5695.image.png?v=1724335556235",
-          "Grand Champion I": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/90ecba8a-55f9-457c-8834-2ec4ee1c97fe.image.png?v=1724335571459",
-          "Grand Champion II": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a90fa27e-2330-45d1-8b74-377fb4028842.image.png?v=1724335635668",
-          "Grand Champion III": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/30d7ef7b-605e-4830-aa4d-153e5f77d67b.image.png?v=1724335639506",
-        "SuperSlot Legend": "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/21405196-dbc9-4527-91e7-9a41abc6a698.image.png?v=1724335671471",
-      };
-  
-      return rankImages[baseRank] || rankImages["Unranked"];
-  }
-  
-  
-  function getPlayerWorldRank() {
-      // Get all SSL AIs and sort by MMR
-      const allPlayers = [...specialAIs.superSlotLegends];
-      
-      // Add player if they're SSL
-      if (playerData.mmr >= 1864) {
-          allPlayers.push({
-              name: playerData.username,
-              mmr: playerData.mmr,
-              isPlayer: true
-          });
-      }
 
-      // Sort by MMR (highest to lowest)
-      allPlayers.sort((a, b) => b.mmr - a.mmr);
+if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+            console.log("Notification permission granted.");
+        } else {
+            console.log("Notification permission denied.");
+        }
+    });
+}
 
-      // Find player's rank
-      const playerIndex = allPlayers.findIndex(p => p.name === playerData.username);
-      return playerIndex !== -1 ? playerIndex + 1 : null;
-  }
-  
-  function updateMenu() {
-      document.getElementById("username-display").textContent = playerData.username;
-    
-      // Update season information
-      document.getElementById("current-season").textContent = playerData.currentSeason;
-      const placementStatus = document.getElementById("placement-status");
-      if (playerData.inPlacements) {
-          placementStatus.textContent = `Placement matches: ${playerData.placementMatches}/5`;
-          placementStatus.style.display = "block";
-      } else {
-          placementStatus.style.display = "none";
-      }
+function showDesktopNotification() {
+    if ("Notification" in window && Notification.permission === "granted") {
+        const notification = new Notification("Match Found!", {
+            body: "A match has been found. Get ready to play!",
+            icon: "images/match-icon.png", // Replace with your own icon path
+        });
 
-      document.getElementById("wins").textContent = playerData.wins;
-      document.getElementById("losses").textContent = playerData.losses;
-      const totalGames = playerData.wins + playerData.losses;
-      const winRate = totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
-      document.getElementById("winrate").textContent = `${winRate}%`;
-      document.getElementById("peak-mmr").textContent = playerData.peakMMR;
-    document.getElementById("peak-rank").textContent = getRank(playerData.peakMMR);
-      const rank = getRank(playerData.mmr);
-      document.getElementById("current-rank").textContent = rank;
-      document.getElementById("current-mmr").textContent = playerData.mmr;
-      document.getElementById("rank-image").src = getRankImage(rank);
-      document.getElementById("player-coins").textContent = playerData.coins;
-  
-      // Add leaderboard button if not already present
-      if (!document.getElementById("leaderboard-button")) {
-          const menuButtons = document.querySelector("#menu-screen .button-container");
-          const leaderboardButton = document.createElement("button");
-          leaderboardButton.id = "leaderboard-button";
-          leaderboardButton.className = "button";
-          leaderboardButton.textContent = "Leaderboard";
-          leaderboardButton.onclick = () => {
-              loadLeaderboard();
-              openPopup("leaderboard-popup");
-          };
-          menuButtons.appendChild(leaderboardButton);
-      }
+        notification.onclick = () => {
+            // Bring the tab to focus when notification is clicked
+            window.focus();
+        };
+    } else if (
+        "Notification" in window &&
+        Notification.permission !== "denied"
+    ) {
+        // Ask for permission again if it was not denied previously
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                showDesktopNotification();
+            }
+        });
+    }
+}
 
-      savePlayerData();
-  }
+function goToMenu() {
+    // Hide all screens
+    document.getElementById("end-screen").classList.add("hidden");
+    document.getElementById("match-screen").classList.add("hidden");
+    document.getElementById("queue-screen").classList.add("hidden");
 
+    // Show menu screen
+    document.getElementById("menu-screen").classList.remove("hidden");
 
+    // Update menu with current data
+    updateMenu();
+    updateTitleDisplay();
 
-  
+    // Reset title in page tab
+    document.title = "Slot Machine Ranked";
 
-  
+    // Ensure data is saved
+    savePlayerData();
+}
+function getRankImage(rank) {
+    // Remove division info if present (e.g., "Gold III - Div 2" → "Gold III")
+    const baseRank = rank.split(" - ")[0];
+
+    const rankImages = {
+        "Bronze I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/939597fb-c29f-4607-9a76-9a6c5f1edf48.image.png?v=1724334781837",
+        "Bronze II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/9965effe-4989-4504-9200-7f04b6b665a2.image.png?v=1724334793116",
+        "Bronze III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a274e890-4257-4cd9-a02a-56bc80be47d3.image.png?v=1724334816902",
+        "Silver I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/28b40287-5562-45ab-a236-5647e96f1d48.image.png?v=1724334852235",
+        "Silver II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/6caddf21-bee3-46c3-9d27-05823806cb67.image.png?v=1724334861872",
+        "Silver III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/faa8edc7-b482-4cc4-b5b0-ceed84627079.image.png?v=1724334871163",
+        "Gold I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/df499a57-8fc0-4524-bdd0-2fae76ec9301.image.png?v=1724334902060",
+        "Gold II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a0dedb5b-6bc3-4322-afbb-77cc07184fec.image.png?v=1724334909730",
+        "Gold III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/d3a3b2fc-6fcf-4bdc-85cc-8da4f40b2993.image.png?v=1724334914955",
+        "Platinum I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/2f23a5f7-efe3-45ee-9cb8-acd533b0d6c4.image.png?v=1724335263302",
+        "Platinum II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3103ab33-c432-43ff-93c3-69a08d1ca602.image.png?v=1724335271866",
+        "Platinum III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c0fa94d0-d195-42d1-92f1-cb082976bdff.image.png?v=1724335280781",
+        "Diamond I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/db671aad-2dd6-4328-897f-3f259be82fc5.image.png?v=1724335489836",
+        "Diamond II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/76c9b43e-d0f6-4b05-9f32-7243d522c5f1.image.png?v=1724335504082",
+        "Diamond III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/07082c63-cce6-4ff1-bff3-c3fceedf2e54.image.png?v=1724335508559",
+        "Champion I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a10c88af-e70d-4891-99e7-57abf90002d5.image.png?v=1724335525065",
+        "Champion II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/3d397ae6-e026-45af-b4e3-180318bd415a.image.png?v=1724335551068",
+        "Champion III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/c28f3b1a-1396-4f24-aec7-f289695e5695.image.png?v=1724335556235",
+        "Grand Champion I":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/90ecba8a-55f9-457c-8834-2ec4ee1c97fe.image.png?v=1724335571459",
+        "Grand Champion II":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/a90fa27e-2330-45d1-8b74-377fb4028842.image.png?v=1724335635668",
+        "Grand Champion III":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/30d7ef7b-605e-4830-aa4d-153e5f77d67b.image.png?v=1724335639506",
+        "SuperSlot Legend":
+            "https://cdn.glitch.global/c16ac13c-9db1-4fbb-a599-4c729f45d485/21405196-dbc9-4527-91e7-9a41abc6a698.image.png?v=1724335671471",
+    };
+
+    return rankImages[baseRank] || rankImages["Unranked"];
+}
+
+function getPlayerWorldRank() {
+    // Get all SSL AIs and sort by MMR
+    const allPlayers = [...specialAIs.superSlotLegends];
+
+    // Add player if they're SSL
+    if (playerData.mmr >= 1864) {
+        allPlayers.push({
+            name: playerData.username,
+            mmr: playerData.mmr,
+            isPlayer: true,
+        });
+    }
+
+    // Sort by MMR (highest to lowest)
+    allPlayers.sort((a, b) => b.mmr - a.mmr);
+
+    // Find player's rank
+    const playerIndex = allPlayers.findIndex(
+        (p) => p.name === playerData.username,
+    );
+    return playerIndex !== -1 ? playerIndex + 1 : null;
+}
+
+function updateMenu() {
+    document.getElementById("username-display").textContent =
+        playerData.username;
+
+    // Update season information
+    document.getElementById("current-season").textContent =
+        playerData.currentSeason;
+    const placementStatus = document.getElementById("placement-status");
+    if (playerData.inPlacements) {
+        placementStatus.textContent = `Placement matches: ${playerData.placementMatches}/5`;
+        placementStatus.style.display = "block";
+    } else {
+        placementStatus.style.display = "none";
+    }
+
+    document.getElementById("wins").textContent = playerData.wins;
+    document.getElementById("losses").textContent = playerData.losses;
+    const totalGames = playerData.wins + playerData.losses;
+    const winRate =
+        totalGames > 0 ? ((playerData.wins / totalGames) * 100).toFixed(1) : 0;
+    document.getElementById("winrate").textContent = `${winRate}%`;
+    document.getElementById("peak-mmr").textContent = playerData.peakMMR;
+    document.getElementById("peak-rank").textContent = getRank(
+        playerData.peakMMR,
+    );
+    const rank = getRank(playerData.mmr);
+    document.getElementById("current-rank").textContent = rank;
+    document.getElementById("current-mmr").textContent = playerData.mmr;
+    document.getElementById("rank-image").src = getRankImage(rank);
+    document.getElementById("player-coins").textContent = playerData.coins;
+
+    // Add leaderboard button if not already present
+    if (!document.getElementById("leaderboard-button")) {
+        const menuButtons = document.querySelector(
+            "#menu-screen .button-container",
+        );
+        const leaderboardButton = document.createElement("button");
+        leaderboardButton.id = "leaderboard-button";
+        leaderboardButton.className = "button";
+        leaderboardButton.textContent = "Leaderboard";
+        leaderboardButton.onclick = () => {
+            loadLeaderboard();
+            openPopup("leaderboard-popup");
+        };
+        menuButtons.appendChild(leaderboardButton);
+    }
+
+    savePlayerData();
+}
 
 function loadLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
@@ -1865,13 +1975,13 @@ function loadLeaderboard() {
 
     // Get all SSL AIs and sort by current MMR
     const allPlayers = [...specialAIs.superSlotLegends];
-    
+
     // Add player if they're SSL
     if (playerData.mmr >= 1864) {
         allPlayers.push({
             name: playerData.username,
             mmr: playerData.mmr,
-            isPlayer: true
+            isPlayer: true,
         });
     }
 
@@ -1884,8 +1994,8 @@ function loadLeaderboard() {
     // Create leaderboard entries
     top25.forEach((player, index) => {
         const entry = document.createElement("div");
-        entry.className = `leaderboard-entry${player.isPlayer ? ' player-entry' : ''}`;
-        
+        entry.className = `leaderboard-entry${player.isPlayer ? " player-entry" : ""}`;
+
         entry.innerHTML = `
             <div class="leaderboard-rank">#${index + 1}</div>
             <div class="leaderboard-player">
@@ -1893,17 +2003,20 @@ function loadLeaderboard() {
             </div>
             <div class="leaderboard-mmr">${Math.round(player.mmr)}</div>
         `;
-        
+
         leaderboardList.appendChild(entry);
     });
 
     // Find player's rank in the full list
-    const playerRank = allPlayers.findIndex(p => p.name === playerData.username) + 1;
+    const playerRank =
+        allPlayers.findIndex((p) => p.name === playerData.username) + 1;
 
     // Add player stats above the close button
-    const popupContent = document.querySelector("#leaderboard-popup .popup-content");
+    const popupContent = document.querySelector(
+        "#leaderboard-popup .popup-content",
+    );
     const closeButton = popupContent.querySelector(".close-button");
-    
+
     // Remove existing player stats if they exist
     const existingStats = popupContent.querySelector(".player-stats");
     if (existingStats) {
@@ -1915,11 +2028,11 @@ function loadLeaderboard() {
     playerStats.innerHTML = `
         <div class="player-stats-header">Your Stats</div>
         <div class="player-stats-content">
-            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : '--'}</div>
+            <div class="player-stats-rank">Rank: ${playerRank ? `#${playerRank}` : "--"}</div>
             <div class="player-stats-mmr">MMR: ${Math.round(playerData.mmr)}</div>
         </div>
     `;
-    
+
     // Insert player stats before the close button
     closeButton.parentNode.insertBefore(playerStats, closeButton);
 }
@@ -1927,55 +2040,57 @@ function loadLeaderboard() {
 function getTrendIndicator(player) {
     // For simplicity, we'll randomly show trends for AIs
     if (player.isPlayer) return ""; // Don't show for player
-    
+
     const trend = Math.random();
     if (trend > 0.7) return "↑"; // Up trend
     if (trend < 0.3) return "↓"; // Down trend
     return "→"; // Neutral
 }
-  function getRank(mmr) {
-      const ranks = [
-          { name: "Bronze I", min: 0, max: 173 },
-          { name: "Bronze II", min: 174, max: 233 },
-          { name: "Bronze III", min: 234, max: 293 },
-          { name: "Silver I", min: 294, max: 354 },
-          { name: "Silver II", min: 355, max: 414 },
-          { name: "Silver III", min: 415, max: 474 },
-          { name: "Gold I", min: 475, max: 534 },
-          { name: "Gold II", min: 546, max: 594 },
-          { name: "Gold III", min: 595, max: 654 },
-          { name: "Platinum I", min: 655, max: 714 },
-          { name: "Platinum II", min: 715, max: 763 },
-          { name: "Platinum III", min: 764, max: 834 },
-          { name: "Diamond I", min: 835, max: 892 },
-          { name: "Diamond II", min: 893, max: 981 },
-          { name: "Diamond III", min: 995, max: 1074 },
-          { name: "Champion I", min: 1075, max: 1185 },
-          { name: "Champion II", min: 1186, max: 1299 },
-          { name: "Champion III", min: 1300, max: 1402 },
-          { name: "Grand Champion I", min: 1403, max: 1574 },
-          { name: "Grand Champion II", min: 1575, max: 1699 },
-          { name: "Grand Champion III", min: 1708, max: 1864 },
-          { name: "SuperSlot Legend", min: 1864, max: 9999 }
-      ];
+function getRank(mmr) {
+    const ranks = [
+        { name: "Bronze I", min: 0, max: 173 },
+        { name: "Bronze II", min: 174, max: 233 },
+        { name: "Bronze III", min: 234, max: 293 },
+        { name: "Silver I", min: 294, max: 354 },
+        { name: "Silver II", min: 355, max: 414 },
+        { name: "Silver III", min: 415, max: 474 },
+        { name: "Gold I", min: 475, max: 534 },
+        { name: "Gold II", min: 546, max: 594 },
+        { name: "Gold III", min: 595, max: 654 },
+        { name: "Platinum I", min: 655, max: 714 },
+        { name: "Platinum II", min: 715, max: 763 },
+        { name: "Platinum III", min: 764, max: 834 },
+        { name: "Diamond I", min: 835, max: 892 },
+        { name: "Diamond II", min: 893, max: 981 },
+        { name: "Diamond III", min: 995, max: 1074 },
+        { name: "Champion I", min: 1075, max: 1185 },
+        { name: "Champion II", min: 1186, max: 1299 },
+        { name: "Champion III", min: 1300, max: 1402 },
+        { name: "Grand Champion I", min: 1403, max: 1574 },
+        { name: "Grand Champion II", min: 1575, max: 1699 },
+        { name: "Grand Champion III", min: 1708, max: 1864 },
+        { name: "SuperSlot Legend", min: 1864, max: 9999 },
+    ];
     // Find the rank based on MMR
-      for (const rank of ranks) {
-          if (mmr >= rank.min && mmr <= rank.max) {
-              if (rank.name === "SuperSlot Legend") {
-                  return rank.name; // No divisions for this rank
-              }
-              // Calculate division (5 divisions)
-              const divisionSize = Math.floor((rank.max - rank.min + 1) / 5);
-              const division = Math.min(5, Math.floor((mmr - rank.min) / divisionSize) + 1);
-              return `${rank.name} - Div ${division}`;
-          }
-      }
-  
-      return "Unranked";
-  }
-  
-  
-  function getAvailableTitles() {
+    for (const rank of ranks) {
+        if (mmr >= rank.min && mmr <= rank.max) {
+            if (rank.name === "SuperSlot Legend") {
+                return rank.name; // No divisions for this rank
+            }
+            // Calculate division (5 divisions)
+            const divisionSize = Math.floor((rank.max - rank.min + 1) / 5);
+            const division = Math.min(
+                5,
+                Math.floor((mmr - rank.min) / divisionSize) + 1,
+            );
+            return `${rank.name} - Div ${division}`;
+        }
+    }
+
+    return "Unranked";
+}
+
+function getAvailableTitles() {
     const rscsOrder = [
         "WORLD CHAMPION",
         "WORLDS CONTENDER",
@@ -1987,160 +2102,161 @@ function getTrendIndicator(player) {
         "REGIONAL CONTENDER",
         "ELITE",
         "CONTENDER",
-        "CHALLENGER"
+        "CHALLENGER",
     ];
 
-    const rankedOrder = [
-        "SUPERSLOT LEGEND",
-        "GRAND CHAMPION"
-    ];
+    const rankedOrder = ["SUPERSLOT LEGEND", "GRAND CHAMPION"];
 
-    return titles.filter(title => {
-        if (title.title === "NONE") return true;
-        if (title.wlUsers.includes(playerData.username)) return true;
-        if (title.minMMR && playerData.mmr >= title.minMMR) return true;
-        if (playerData.ownedTitles && playerData.ownedTitles.includes(title.title)) return true;
-        return false;
-    }).sort((a, b) => {
-        if (a.title === "NONE") return -1;
-        if (b.title === "NONE") return 1;
+    return titles
+        .filter((title) => {
+            if (title.title === "NONE") return true;
+            if (title.wlUsers.includes(playerData.username)) return true;
+            if (title.minMMR && playerData.mmr >= title.minMMR) return true;
+            if (
+                playerData.ownedTitles &&
+                playerData.ownedTitles.includes(title.title)
+            )
+                return true;
+            return false;
+        })
+        .sort((a, b) => {
+            if (a.title === "NONE") return -1;
+            if (b.title === "NONE") return 1;
 
-        // Helper to classify title category
-        const getCategory = (title) => {
-            const isRSCS = title.startsWith("RSCS");
-            const hasSeason = /S\d+/.test(title);
-            const isChallenger = title.includes("CHALLENGER");
-            const isRanked = /^S\d+/.test(title) && rankedOrder.some(t => title.includes(t));
+            // Helper to classify title category
+            const getCategory = (title) => {
+                const isRSCS = title.startsWith("RSCS");
+                const hasSeason = /S\d+/.test(title);
+                const isChallenger = title.includes("CHALLENGER");
+                const isRanked =
+                    /^S\d+/.test(title) &&
+                    rankedOrder.some((t) => title.includes(t));
 
-            if (isRSCS && !hasSeason) return 0; // RSCS global
-            if (isRSCS && hasSeason && isChallenger) return 2; // RSCS Challenger
-            if (isRSCS && hasSeason) return 1; // RSCS S# Season
-            if (isRanked) return 3; // Ranked
-            return 4; // Other
-        };
+                if (isRSCS && !hasSeason) return 0; // RSCS global
+                if (isRSCS && hasSeason && isChallenger) return 2; // RSCS Challenger
+                if (isRSCS && hasSeason) return 1; // RSCS S# Season
+                if (isRanked) return 3; // Ranked
+                return 4; // Other
+            };
 
-        const catA = getCategory(a.title);
-        const catB = getCategory(b.title);
-        if (catA !== catB) return catA - catB;
+            const catA = getCategory(a.title);
+            const catB = getCategory(b.title);
+            if (catA !== catB) return catA - catB;
 
-        // Sort inside same category
-        if (catA === 0) {
-            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
-            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
-            return aTier - bTier;
-        }
+            // Sort inside same category
+            if (catA === 0) {
+                const aTier = rscsOrder.findIndex((t) => a.title.includes(t));
+                const bTier = rscsOrder.findIndex((t) => b.title.includes(t));
+                return aTier - bTier;
+            }
 
-        if (catA === 1 || catA === 2) {
-            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
-            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
-            if (aSeason !== bSeason) return bSeason - aSeason;
+            if (catA === 1 || catA === 2) {
+                const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
+                const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
+                if (aSeason !== bSeason) return bSeason - aSeason;
 
-            const aTier = rscsOrder.findIndex(t => a.title.includes(t));
-            const bTier = rscsOrder.findIndex(t => b.title.includes(t));
-            return aTier - bTier;
-        }
+                const aTier = rscsOrder.findIndex((t) => a.title.includes(t));
+                const bTier = rscsOrder.findIndex((t) => b.title.includes(t));
+                return aTier - bTier;
+            }
 
-        if (catA === 3) {
-            const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
-            const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
-            if (aSeason !== bSeason) return bSeason - aSeason;
+            if (catA === 3) {
+                const aSeason = parseInt(a.title.match(/S(\d+)/)?.[1] || 0);
+                const bSeason = parseInt(b.title.match(/S(\d+)/)?.[1] || 0);
+                if (aSeason !== bSeason) return bSeason - aSeason;
 
-            const aRank = rankedOrder.findIndex(t => a.title.includes(t));
-            const bRank = rankedOrder.findIndex(t => b.title.includes(t));
-            return aRank - bRank;
-        }
+                const aRank = rankedOrder.findIndex((t) => a.title.includes(t));
+                const bRank = rankedOrder.findIndex((t) => b.title.includes(t));
+                return aRank - bRank;
+            }
 
-        // Grey last
-        if (a.color === "grey" && b.color !== "grey") return 1;
-        if (a.color !== "grey" && b.color === "grey") return -1;
+            // Grey last
+            if (a.color === "grey" && b.color !== "grey") return 1;
+            if (a.color !== "grey" && b.color === "grey") return -1;
 
-        // Fallback alphabetical
-        return a.title.localeCompare(b.title);
-    });
+            // Fallback alphabetical
+            return a.title.localeCompare(b.title);
+        });
 }
 
+function showTitleNotification(title) {
+    const popup = document.getElementById("notification-popup");
+    const titleElement = document.getElementById("new-title");
 
-  
-  function showTitleNotification(title) {
-      const popup = document.getElementById("notification-popup");
-      const titleElement = document.getElementById("new-title");
-      
-      // Set title text and style
-      titleElement.textContent = title.title;
-      titleElement.style.color = title.color;
-      
-      // Handle glow effect
-      if (title.glow) {
-          titleElement.classList.add("glowing-title");
-      } else {
-          titleElement.classList.remove("glowing-title");
-      }
-      
-      // Show popup with animation
-      popup.classList.remove("hidden");
-      
-  
-      
-      // Add event listeners for buttons
-      document.getElementById("ok-button").onclick = () => {
-          popup.classList.add("hidden");
-      };
-      
-      document.getElementById("equip-now-button").onclick = () => {
-          equipTitle(title.title);
-          popup.classList.add("hidden");
-      };
-  }
-  
-  function equipTitle(title) {
-      if (title === "NONE") {
-          playerData.title = "NONE"; // Set to "NONE" instead of empty string
-      } else {
-          playerData.title = title;
-      }
-      savePlayerData();
-      updateTitleDisplay();
-      closePopup("title-popup");
-  }
-  
-  function updateTitleDisplay() {
-      const titleDisplay = document.getElementById("title-display");
-      const currentTitleName = playerData.title || "NONE";
-      const currentTitle = titles.find(t => t.title === currentTitleName);
-      
-      if (currentTitle) {
-          titleDisplay.textContent = currentTitle.title;
-          titleDisplay.style.color = currentTitle.color;
-          if (currentTitle.glow) {
-              titleDisplay.classList.add("glowing-title");
-          } else {
-              titleDisplay.classList.remove("glowing-title");
-          }
-      }
-  }
-  
-  function loadTitlesPopup() {
+    // Set title text and style
+    titleElement.textContent = title.title;
+    titleElement.style.color = title.color;
+
+    // Handle glow effect
+    if (title.glow) {
+        titleElement.classList.add("glowing-title");
+    } else {
+        titleElement.classList.remove("glowing-title");
+    }
+
+    // Show popup with animation
+    popup.classList.remove("hidden");
+
+    // Add event listeners for buttons
+    document.getElementById("ok-button").onclick = () => {
+        popup.classList.add("hidden");
+    };
+
+    document.getElementById("equip-now-button").onclick = () => {
+        equipTitle(title.title);
+        popup.classList.add("hidden");
+    };
+}
+
+function equipTitle(title) {
+    if (title === "NONE") {
+        playerData.title = "NONE"; // Set to "NONE" instead of empty string
+    } else {
+        playerData.title = title;
+    }
+    savePlayerData();
+    updateTitleDisplay();
+    closePopup("title-popup");
+}
+
+function updateTitleDisplay() {
+    const titleDisplay = document.getElementById("title-display");
+    const currentTitleName = playerData.title || "NONE";
+    const currentTitle = titles.find((t) => t.title === currentTitleName);
+
+    if (currentTitle) {
+        titleDisplay.textContent = currentTitle.title;
+        titleDisplay.style.color = currentTitle.color;
+        if (currentTitle.glow) {
+            titleDisplay.classList.add("glowing-title");
+        } else {
+            titleDisplay.classList.remove("glowing-title");
+        }
+    }
+}
+
+function loadTitlesPopup() {
     const titlesList = document.getElementById("titles-list");
     titlesList.innerHTML = "";
-    
+
     const availableTitles = getAvailableTitles();
-    
+
     if (availableTitles.length === 0) {
         titlesList.innerHTML = "<p>No titles available</p>";
         return;
     }
-    
-    availableTitles.forEach(title => {
+
+    availableTitles.forEach((title) => {
         const titleElement = document.createElement("div");
         titleElement.classList.add("title-item");
-        
+
         const titleSpan = document.createElement("span");
         titleSpan.textContent = title.title;
         titleSpan.style.color = title.color;
         if (title.glow) {
             titleSpan.classList.add("glowing-title");
         }
-        
+
         // Add a checkmark if this is the currently equipped title
         if (title.title === playerData.title) {
             const checkmark = document.createElement("span");
@@ -2148,12 +2264,12 @@ function getTrendIndicator(player) {
             checkmark.style.color = "#00ff00";
             titleSpan.appendChild(checkmark);
         }
-        
+
         titleElement.appendChild(titleSpan);
         titleElement.onclick = () => equipTitle(title.title);
-        
+
         titlesList.appendChild(titleElement);
     });
 }
-  
-  updateMenu();
+
+updateMenu();
