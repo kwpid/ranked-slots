@@ -68,11 +68,12 @@ let playerData = {
     mmr: 600,
     peakMMR: 600,
     coins: 0,
-    ownedTitles: ["NONE"], // Track all titles the player owns
+    ownedTitles: ["NONE"],
+    inventory: [], // Add this line
     currentSeason: 1,
     placementMatches: 0,
     inPlacements: true,
-    seasonStats: {}, // Track stats per season like { 1: { wins: 5, losses: 3, peakMMR: 850, seasonTitles: [] } }
+    seasonStats: {},
 };
 let aiData = {
     username: "",
@@ -312,39 +313,66 @@ function holdSpacebarToSpin() {
     }
 }
 function savePlayerData() {
-    console.log("Saving player data:", playerData); // Debug log
-    localStorage.setItem("playerData", JSON.stringify(playerData));
+    try {
+        console.log("Saving player data:", playerData);
+        localStorage.setItem("playerData", JSON.stringify(playerData));
+        console.log("Data saved successfully");
+    } catch (error) {
+        console.error("Error saving data:", error);
+        // Fallback: try saving minimal data
+        const minimalData = {
+            username: playerData.username,
+            title: playerData.title,
+            wins: playerData.wins,
+            losses: playerData.losses,
+            mmr: playerData.mmr,
+            peakMMR: playerData.peakMMR,
+            coins: playerData.coins,
+            ownedTitles: playerData.ownedTitles,
+            inventory: playerData.inventory
+        };
+        localStorage.setItem("playerData", JSON.stringify(minimalData));
+    }
 }
 
 function loadPlayerData() {
     const savedData = localStorage.getItem("playerData");
     if (savedData) {
         playerData = JSON.parse(savedData);
-        // Initialize ownedTitles if it doesn't exist
-        if (!playerData.ownedTitles) {
+        
+        // Initialize missing properties with defaults
+        const defaultData = {
+            username: "Player",
+            title: "NONE",
+            wins: 0,
+            losses: 0,
+            mmr: 600,
+            peakMMR: 600,
+            coins: 0,
+            ownedTitles: ["NONE"],
+            inventory: [],
+            currentSeason: 1,
+            placementMatches: 0,
+            inPlacements: true,
+            seasonStats: {}
+        };
+        
+        // Merge saved data with defaults
+        playerData = { ...defaultData, ...playerData };
+        
+        // Ensure ownedTitles array exists and contains "NONE"
+        if (!playerData.ownedTitles || !Array.isArray(playerData.ownedTitles)) {
             playerData.ownedTitles = ["NONE"];
-            // Add current title to owned titles if it's not NONE
-            if (playerData.title && playerData.title !== "NONE") {
-                playerData.ownedTitles.push(playerData.title);
-            }
+        } else if (!playerData.ownedTitles.includes("NONE")) {
+            playerData.ownedTitles.unshift("NONE");
+        }
+        
+        // Initialize inventory if missing
+        if (!playerData.inventory || !Array.isArray(playerData.inventory)) {
+            playerData.inventory = [];
         }
 
-        // Initialize season data if it doesn't exist
-        if (typeof playerData.currentSeason === "undefined") {
-            playerData.currentSeason = 1;
-            playerData.placementMatches = 0;
-            playerData.inPlacements = true;
-            playerData.seasonStats = {};
-        }
-
-        if (!playerData.seasonStats) {
-            playerData.seasonStats = {};
-        }
-
-        // Rehydrate season titles from owned titles
-        rehydrateSeasonTitles();
-
-        console.log("Loaded player data:", playerData); // Debug log
+        console.log("Loaded player data:", playerData);
 
         // Check if we need a season reset
         checkSeasonReset();
@@ -354,6 +382,7 @@ function loadPlayerData() {
         playerData.placementMatches = 0;
         playerData.inPlacements = true;
         playerData.seasonStats = {};
+        playerData.inventory = []; // Add this
         savePlayerData();
     }
 }
