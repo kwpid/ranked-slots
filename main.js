@@ -313,78 +313,124 @@ function holdSpacebarToSpin() {
     }
 }
 function savePlayerData() {
+    console.log("=== SAVING PLAYER DATA ===");
     try {
-        console.log("Saving player data:", playerData);
-        localStorage.setItem("playerData", JSON.stringify(playerData));
-        console.log("Data saved successfully");
+        console.log("Data to save:", playerData);
+        
+        const dataString = JSON.stringify(playerData);
+        console.log("Serialized data length:", dataString.length);
+        
+        localStorage.setItem("playerData", dataString);
+        
+        // Verify the save worked
+        const verification = localStorage.getItem("playerData");
+        console.log("Verification - saved data matches:", verification === dataString);
+        console.log("Data saved successfully to localStorage");
+        
     } catch (error) {
         console.error("Error saving data:", error);
-        // Fallback: try saving minimal data
-        const minimalData = {
-            username: playerData.username,
-            title: playerData.title,
-            wins: playerData.wins,
-            losses: playerData.losses,
-            mmr: playerData.mmr,
-            peakMMR: playerData.peakMMR,
-            coins: playerData.coins,
-            ownedTitles: playerData.ownedTitles,
-            inventory: playerData.inventory
-        };
-        localStorage.setItem("playerData", JSON.stringify(minimalData));
+        console.log("Attempting fallback save...");
+        
+        try {
+            // Fallback: try saving minimal data
+            const minimalData = {
+                username: playerData.username,
+                title: playerData.title,
+                wins: playerData.wins,
+                losses: playerData.losses,
+                mmr: playerData.mmr,
+                peakMMR: playerData.peakMMR,
+                coins: playerData.coins,
+                ownedTitles: playerData.ownedTitles,
+                inventory: playerData.inventory
+            };
+            localStorage.setItem("playerData", JSON.stringify(minimalData));
+            console.log("Fallback save successful");
+        } catch (fallbackError) {
+            console.error("Fallback save also failed:", fallbackError);
+        }
     }
+    console.log("=== SAVE COMPLETE ===");
 }
 
 function loadPlayerData() {
+    console.log("=== LOADING PLAYER DATA ===");
+    
+    // Debug localStorage availability
+    console.log("localStorage available:", typeof(Storage) !== "undefined" && localStorage);
+    
     const savedData = localStorage.getItem("playerData");
+    console.log("Raw saved data:", savedData);
+    console.log("Saved data exists:", !!savedData);
+    
     if (savedData) {
-        playerData = JSON.parse(savedData);
-        
-        // Initialize missing properties with defaults
-        const defaultData = {
-            username: "Player",
-            title: "NONE",
-            wins: 0,
-            losses: 0,
-            mmr: 600,
-            peakMMR: 600,
-            coins: 0,
-            ownedTitles: ["NONE"],
-            inventory: [],
-            currentSeason: 1,
-            placementMatches: 0,
-            inPlacements: true,
-            seasonStats: {}
-        };
-        
-        // Merge saved data with defaults
-        playerData = { ...defaultData, ...playerData };
-        
-        // Ensure ownedTitles array exists and contains "NONE"
-        if (!playerData.ownedTitles || !Array.isArray(playerData.ownedTitles)) {
-            playerData.ownedTitles = ["NONE"];
-        } else if (!playerData.ownedTitles.includes("NONE")) {
-            playerData.ownedTitles.unshift("NONE");
-        }
-        
-        // Initialize inventory if missing
-        if (!playerData.inventory || !Array.isArray(playerData.inventory)) {
-            playerData.inventory = [];
-        }
+        try {
+            const parsedData = JSON.parse(savedData);
+            console.log("Parsed saved data:", parsedData);
+            
+            playerData = parsedData;
+            
+            // Initialize missing properties with defaults
+            const defaultData = {
+                username: "Player",
+                title: "NONE",
+                wins: 0,
+                losses: 0,
+                mmr: 600,
+                peakMMR: 600,
+                coins: 0,
+                ownedTitles: ["NONE"],
+                inventory: [],
+                currentSeason: 1,
+                placementMatches: 0,
+                inPlacements: true,
+                seasonStats: {}
+            };
+            
+            console.log("Before merge - playerData:", playerData);
+            console.log("Default data:", defaultData);
+            
+            // Merge defaults with saved data - saved data should win
+            playerData = { ...defaultData, ...playerData };
+            
+            console.log("After merge - playerData:", playerData);
+            
+            // Ensure ownedTitles array exists and contains "NONE"
+            if (!playerData.ownedTitles || !Array.isArray(playerData.ownedTitles)) {
+                playerData.ownedTitles = ["NONE"];
+            } else if (!playerData.ownedTitles.includes("NONE")) {
+                playerData.ownedTitles.unshift("NONE");
+            }
+            
+            // Initialize inventory if missing
+            if (!playerData.inventory || !Array.isArray(playerData.inventory)) {
+                playerData.inventory = [];
+            }
 
-        console.log("Loaded player data:", playerData);
+            console.log("Final loaded player data:", playerData);
 
-        // Check if we need a season reset
-        checkSeasonReset();
+            // Check if we need a season reset
+            checkSeasonReset();
+        } catch (error) {
+            console.error("Error parsing saved data:", error);
+            // Fall back to new player setup
+            initializeNewPlayer();
+        }
     } else {
-        // New player - set current season
-        playerData.currentSeason = getCurrentSeason();
-        playerData.placementMatches = 0;
-        playerData.inPlacements = true;
-        playerData.seasonStats = {};
-        playerData.inventory = []; // Add this
-        savePlayerData();
+        console.log("No saved data found, initializing new player");
+        initializeNewPlayer();
     }
+    console.log("=== LOAD COMPLETE ===");
+}
+
+function initializeNewPlayer() {
+    console.log("Initializing new player data");
+    playerData.currentSeason = getCurrentSeason();
+    playerData.placementMatches = 0;
+    playerData.inPlacements = true;
+    playerData.seasonStats = {};
+    playerData.inventory = [];
+    savePlayerData();
 }
 
 function rehydrateSeasonTitles() {
@@ -525,15 +571,29 @@ window.onload = () => {
     };
 };
 function editUsername() {
+    console.log("=== EDIT USERNAME STARTED ===");
+    console.log("Current playerData before edit:", playerData);
+    
     const newUsername = prompt(
         "Enter your username (1-20 characters):",
         playerData.username,
     );
+    console.log("User entered username:", newUsername);
+    
     if (newUsername && newUsername.length <= 20) {
+        console.log("Username is valid, updating playerData");
         playerData.username = newUsername;
+        console.log("playerData after username change:", playerData);
+        
         document.getElementById("username-display").textContent = newUsername;
+        console.log("Updated display element");
+        
         savePlayerData(); // Save the data after username change
+        console.log("Called savePlayerData");
+    } else {
+        console.log("Username was invalid or cancelled");
     }
+    console.log("=== EDIT USERNAME COMPLETE ===");
 }
 // Opens a popup
 function openPopup(popupId) {
@@ -2308,6 +2368,7 @@ window.addEventListener("beforeunload", savePlayerData);
 
 // Auto-save every 30 seconds to ensure data persistence
 setInterval(() => {
+    console.log("Auto-save triggered, current playerData:", playerData);
     savePlayerData();
     console.log("Auto-save: Player data saved");
 }, 30000);
