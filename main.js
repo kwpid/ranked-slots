@@ -2273,3 +2273,4 @@ function loadTitlesPopup() {
 }
 
 updateMenu();
+window.addEventListener("beforeunload", savePlayerData);
