@@ -145,15 +145,11 @@ function updateSeasonTimer() {
         if (timeRemaining > 0) {
             const formattedTime = formatTimeRemaining(timeRemaining);
             timerElement.textContent = `Season ends in: ${formattedTime}`;
-            console.log(`Season timer updated: ${formattedTime}`);
         } else {
             timerElement.textContent = "Season ending...";
-            console.log("Season ending - checking for reset");
             // Check for season reset
             checkSeasonReset();
         }
-    } else {
-        console.log("Season timer element not found!");
     }
 }
 
@@ -645,14 +641,11 @@ function getDailyShopRotation() {
     return items.filter((_, index) => index % 2 === seed);
 }
 window.onload = () => {
-    console.log("=== WINDOW.ONLOAD STARTING ===");
     loadPlayerData();
-    console.log("=== CALLING UPDATE MENU ===");
     updateMenu();
     // loadShop(); // Commented out - no shop elements in HTML
     updateTitleDisplay();
     simulateAIMatches();
-    console.log("=== WINDOW.ONLOAD COMPLETE ===");
 
     // Proper close button binding
     document
