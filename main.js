@@ -214,7 +214,7 @@ const aiNames = [
  window.onload = () => {
     loadPlayerData();
     updateMenu();
-    loadShop();
+    // loadShop(); // Commented out - no shop elements in HTML
     updateTitleDisplay();
      simulateAIMatches();
 
@@ -1317,11 +1317,12 @@ function simulateAIMatches() {
   }
   
   // Add event listener to the spin button
-  document.getElementById("spin-button").addEventListener("click", () => {
-      if (gameActive) {
-          spin("player");
-      }
-  });
+  // Note: Spin button uses inline onclick handler in HTML, no getElementById("spin-button") exists
+  // document.getElementById("spin-button").addEventListener("click", () => {
+  //     if (gameActive) {
+  //         spin("player");
+  //     }
+  // });
   
   
   function getSpinInterval(mmr) {
