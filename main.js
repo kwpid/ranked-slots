@@ -68,12 +68,173 @@ const aiNames = [
       mmr: 600,
       peakMMR: 600,
       coins: 0,
-      ownedTitles: ["NONE"] // Track all titles the player owns
+      ownedTitles: ["NONE"], // Track all titles the player owns
+      currentSeason: 1,
+      placementMatches: 0,
+      inPlacements: true,
+      seasonStats: {} // Track stats per season like { 1: { wins: 5, losses: 3, peakMMR: 850, seasonTitles: [] } }
   };
   let aiData = {
       username: "",
       mmr: 600
   };
+
+  // === SEASON SYSTEM ===
+  // Season 1 started on Sep 22, 2025
+  const SEASON_1_START = new Date('2025-09-22T00:00:00Z');
+
+  function getCurrentSeason() {
+    const now = new Date();
+    const start = new Date(SEASON_1_START);
+    
+    // Calculate months difference using calendar months
+    const yearDiff = now.getUTCFullYear() - start.getUTCFullYear();
+    const monthDiff = now.getUTCMonth() - start.getUTCMonth();
+    const dayDiff = now.getUTCDate() - start.getUTCDate();
+    
+    let totalMonths = yearDiff * 12 + monthDiff;
+    
+    // If we haven't reached the start day of the month yet, subtract one month
+    if (dayDiff < 0) {
+      totalMonths -= 1;
+    }
+    
+    return Math.max(1, totalMonths + 1);
+  }
+
+  function getSeasonStartDate(seasonNumber) {
+    const startDate = new Date(SEASON_1_START);
+    startDate.setUTCMonth(startDate.getUTCMonth() + (seasonNumber - 1));
+    return startDate;
+  }
+
+  function checkSeasonReset() {
+    const currentSeason = getCurrentSeason();
+    if (playerData.currentSeason !== currentSeason) {
+      // Handle multiple season transitions
+      while (playerData.currentSeason < currentSeason) {
+        const nextSeason = playerData.currentSeason + 1;
+        performSeasonReset(nextSeason);
+      }
+    }
+  }
+
+  function performSeasonReset(newSeason) {
+    // Save previous season stats
+    if (!playerData.seasonStats) playerData.seasonStats = {};
+    
+    const prevSeason = playerData.currentSeason;
+    if (prevSeason && prevSeason !== newSeason) {
+      playerData.seasonStats[prevSeason] = {
+        wins: playerData.wins,
+        losses: playerData.losses,
+        peakMMR: playerData.peakMMR,
+        finalMMR: playerData.mmr,
+        seasonTitles: getSeasonTitlesForSeason(prevSeason)
+      };
+    }
+
+    // Perform soft reset similar to Rocket League
+    const currentMMR = playerData.mmr;
+    let newMMR;
+    
+    if (currentMMR >= 1200) {
+      // High MMR players get larger reduction
+      newMMR = Math.max(800, currentMMR - (currentMMR - 800) * 0.5);
+    } else if (currentMMR >= 800) {
+      // Mid MMR players get moderate reduction  
+      newMMR = Math.max(600, currentMMR - (currentMMR - 600) * 0.3);
+    } else {
+      // Low MMR players get small reduction
+      newMMR = Math.max(400, currentMMR - (currentMMR - 400) * 0.1);
+    }
+
+    // Update player data for new season
+    playerData.currentSeason = newSeason;
+    playerData.mmr = Math.round(newMMR);
+    playerData.peakMMR = Math.round(newMMR);
+    playerData.placementMatches = 0;
+    playerData.inPlacements = true;
+    playerData.wins = 0;
+    playerData.losses = 0;
+
+    // AI also gets reset
+    aiData.mmr = Math.round(newMMR * 0.9); // AI starts slightly lower
+
+    savePlayerData();
+    console.log(`Season ${newSeason} started! MMR reset from ${currentMMR} to ${newMMR}`);
+  }
+
+  function getSeasonTitlesForSeason(seasonNumber) {
+    return playerData.ownedTitles.filter(title => 
+      title.startsWith(`S${seasonNumber} `) && !title.includes("RSCS")
+    );
+  }
+
+  function getRankFromName(rankName) {
+    // Convert full rank name to base rank for season titles
+    if (rankName === "Unranked") return "Unranked";
+    if (rankName.includes("SuperSlot Legend")) return "SuperSlot Legend";
+    if (rankName.includes("Grand Champion")) return "Grand Champion";
+    if (rankName.includes("Champion")) return "Champion";
+    if (rankName.includes("Diamond")) return "Diamond";
+    if (rankName.includes("Platinum")) return "Platinum";
+    if (rankName.includes("Gold")) return "Gold";
+    if (rankName.includes("Silver")) return "Silver";
+    if (rankName.includes("Bronze")) return "Bronze";
+    return "Unranked";
+  }
+
+  function getSeasonTitleColor(rank, seasonNumber) {
+    // Colors based on rank (case-insensitive)
+    const normalizedRank = rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
+    const colors = {
+      "Bronze": "#8B4513",           // brown
+      "Silver": "#C0C0C0",           // grey  
+      "Gold": "#FFD700",             // goldish yellow
+      "Platinum": "#40E0D0",         // light aqua
+      "Diamond": "#0066FF",          // blue
+      "Champion": "#800080",         // purple
+      "Grand champion": seasonNumber % 2 === 1 ? "#FFD700" : "#FF0000", // gold for odd, red for even
+      "Superslot legend": "#FFFFFF"  // white
+    };
+    return colors[normalizedRank] || "#C0C0C0";
+  }
+
+  function createSeasonTitle(seasonNumber, rank) {
+    if (rank === "Unranked") return null;
+    
+    // Normalize rank name to title case for color matching
+    const normalizedRank = rank.charAt(0).toUpperCase() + rank.slice(1).toLowerCase();
+    
+    return {
+      title: `S${seasonNumber} ${rank.toUpperCase()}`,
+      color: getSeasonTitleColor(normalizedRank, seasonNumber),
+      glow: false, // Season titles have no glow per requirements
+      minMMR: null,
+      wlUsers: [],
+      seasonTitle: true,
+      season: seasonNumber,
+      rank: normalizedRank
+    };
+  }
+
+  function checkForSeasonTitleUnlock(oldRank, newRank, seasonNumber) {
+    const oldRankBase = getRankFromName(oldRank);
+    const newRankBase = getRankFromName(newRank);
+    
+    if (oldRankBase !== newRankBase && newRankBase !== "Unranked") {
+      const seasonTitle = createSeasonTitle(seasonNumber, newRankBase);
+      if (seasonTitle && !playerData.ownedTitles.includes(seasonTitle.title)) {
+        // Add to global titles array temporarily for notification system
+        titles.push(seasonTitle);
+        playerData.ownedTitles.push(seasonTitle.title);
+        showTitleNotification(seasonTitle);
+        savePlayerData();
+        console.log(`Season title unlocked: ${seasonTitle.title}`);
+      }
+    }
+  }
   const items = [
       {name: "Centio", type: "hero", price: 1500, rarity: "common", perks: {1: 35, 2: 10}},
       {name: "20XX", type: "skin", price: 250, rarity: "common", perks: {1: 10, 2: 60}},
@@ -126,10 +287,59 @@ const aiNames = [
               if (playerData.title && playerData.title !== "NONE") {
                   playerData.ownedTitles.push(playerData.title);
               }
-              savePlayerData();
           }
+          
+          // Initialize season data if it doesn't exist
+          if (typeof playerData.currentSeason === 'undefined') {
+              playerData.currentSeason = 1;
+              playerData.placementMatches = 0;
+              playerData.inPlacements = true;
+              playerData.seasonStats = {};
+          }
+          
+          if (!playerData.seasonStats) {
+              playerData.seasonStats = {};
+          }
+          
+          // Rehydrate season titles from owned titles
+          rehydrateSeasonTitles();
+          
           console.log("Loaded player data:", playerData); // Debug log
+          
+          // Check if we need a season reset
+          checkSeasonReset();
+      } else {
+          // New player - set current season
+          playerData.currentSeason = getCurrentSeason();
+          playerData.placementMatches = 0;
+          playerData.inPlacements = true;
+          playerData.seasonStats = {};
+          savePlayerData();
       }
+  }
+  
+  function rehydrateSeasonTitles() {
+    // Recreate season titles from owned titles strings
+    playerData.ownedTitles.forEach(titleName => {
+      const seasonMatch = titleName.match(/^S(\d+) (.+)$/);
+      if (seasonMatch) {
+        const seasonNumber = parseInt(seasonMatch[1]);
+        const rank = seasonMatch[2]; // e.g., "GOLD", "GRAND CHAMPION"
+        
+        // Normalize rank from uppercase back to title case
+        const normalizedRank = rank.split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+        
+        // Check if this title already exists in the titles array
+        if (!titles.find(t => t.title === titleName)) {
+          const seasonTitle = createSeasonTitle(seasonNumber, normalizedRank);
+          if (seasonTitle) {
+            titles.push(seasonTitle);
+          }
+        }
+      }
+    });
   }
   function loadShop() {
       console.log("Loading Shop..."); // Debug log
@@ -1400,10 +1610,16 @@ function simulateAIMatches() {
     clearInterval(spinInterval);
     clearInterval(countdownInterval);
     
+    // Store old rank for season title comparison
+    const oldRank = getRank(playerData.mmr);
+    
     // Calculate MMR change using the new system
     const oldMMR = playerData.mmr;
     const mmrChange = calculateMMRChange(playerData.mmr, aiData.mmr, playerWon);
     playerData.mmr += mmrChange;
+    
+    // Get new rank for season title comparison
+    const newRank = getRank(playerData.mmr);
     
     // Update stats and coins (unchanged)
     let coinsEarned = 0;
@@ -1415,10 +1631,22 @@ function simulateAIMatches() {
         playerData.losses++;
     }
     
+    // Handle placement matches
+    if (playerData.inPlacements) {
+        playerData.placementMatches++;
+        if (playerData.placementMatches >= 5) {
+            playerData.inPlacements = false;
+            console.log("Placement matches completed!");
+        }
+    }
+    
     // Update peak MMR (unchanged)
     if (playerData.mmr > playerData.peakMMR) {
         playerData.peakMMR = playerData.mmr;
     }
+    
+    // Check for season title unlocks when rank changes
+    checkForSeasonTitleUnlock(oldRank, newRank, playerData.currentSeason);
     
     // If player is SSL and opponent is SSL AI, update AI's MMR
     if (playerData.mmr >= 1864 && aiData.username && 
@@ -1554,6 +1782,16 @@ function simulateAIMatches() {
   function updateMenu() {
       document.getElementById("username-display").textContent = playerData.username;
     
+      // Update season information
+      document.getElementById("current-season").textContent = playerData.currentSeason;
+      const placementStatus = document.getElementById("placement-status");
+      if (playerData.inPlacements) {
+          placementStatus.textContent = `Placement matches: ${playerData.placementMatches}/5`;
+          placementStatus.style.display = "block";
+      } else {
+          placementStatus.style.display = "none";
+      }
+
       document.getElementById("wins").textContent = playerData.wins;
       document.getElementById("losses").textContent = playerData.losses;
       const totalGames = playerData.wins + playerData.losses;
