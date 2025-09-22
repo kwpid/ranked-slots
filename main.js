@@ -672,7 +672,7 @@ function closePopup(popupId) {
         color: "#4da1f6",
         glow: true,
         minMMR: null,
-        wlUsers: ["newpo"]
+        wlUsers: ["kw7p"]
     },
     {
         title: "RSCS S5 CONTENDER",
@@ -738,7 +738,85 @@ function closePopup(popupId) {
         wlUsers: ["newpo"]
     },
     {
-        title: "RSCS S4 WORLD CHAMPION",
+        title: "RSCS S5 WORLD CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+      // SEASON 6
+{
+        title: "RSCS S6 CHALLENGER",
+        color: "#4da1f6",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kw7p"]
+    },
+    {
+        title: "RSCS S6 CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kw7p"]
+    },
+    {
+        title: "RSCS S6 ELITE",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 REGIONAL CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: ["kw7p"]
+    },
+    {
+        title: "RSCS S6 REGIONAL FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 REGIONAL CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 MAJOR CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 MAJOR FINALIST",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 MAJOR CHAMPION",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 WORLDS CONTENDER",
+        color: "aqua",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""]
+    },
+    {
+        title: "RSCS S6 WORLD CHAMPION",
         color: "aqua",
         glow: true,
         minMMR: null,
