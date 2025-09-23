@@ -761,7 +761,7 @@ window.onload = () => {
     updateMenu();
     // loadShop(); // Commented out - no shop elements in HTML
     updateTitleDisplay();
-    simulateAIMatches();
+    startAISimulation();
 
     // Proper close button binding
     document
@@ -1725,51 +1725,48 @@ function getRandomOpponent(currentAI) {
     const pool = viableOpponents.length > 0 ? viableOpponents : opponents;
     return pool[Math.floor(Math.random() * pool.length)];
 }
-function simulateAIMatches() {
-    const lastSimulation = localStorage.getItem("last_ai_simulation");
-    const now = new Date().getTime();
+let aiSimulationInterval;
 
-    // Only simulate if at least 1 hour has passed since last simulation
-    if (lastSimulation && now - parseInt(lastSimulation) < 3600000) {
-        return;
+function startAISimulation() {
+    // Clear any existing interval
+    if (aiSimulationInterval) {
+        clearInterval(aiSimulationInterval);
     }
+    
+    // Simulate matches every 20 seconds (180 matches per hour)
+    aiSimulationInterval = setInterval(() => {
+        simulateAIBatch();
+    }, 20000);
+    
+    // Also run once immediately
+    simulateAIBatch();
+}
 
-    // Update all SSL AIs
+function simulateAIBatch() {
+    // Simulate 3-5 matches per AI per batch
+    const matchesPerAI = 3 + Math.floor(Math.random() * 3);
+    
     specialAIs.superSlotLegends.forEach((ai) => {
-        // Determine how many matches to simulate (0-3)
-        const matchesToPlay = Math.floor(Math.random() * 4);
-
-        for (let i = 0; i < matchesToPlay; i++) {
+        for (let i = 0; i < matchesPerAI; i++) {
             const opponent = getRandomOpponent(ai);
             if (!opponent) continue;
 
-            // Simulate match outcome (weighted toward higher MMR player winning)
-            const aiWinProbability =
-                1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
+            const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
             const aiWon = Math.random() < aiWinProbability;
-
-            // Calculate MMR change
             const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
 
-            // Update MMR (keeping within bounds)
             ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
 
-            // If opponent is another AI, update their MMR too
             if (aiWon) {
-                opponent.mmr = Math.max(
-                    1864,
-                    Math.min(2400, opponent.mmr - mmrChange),
-                );
+                opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
                 saveAIData(opponent);
             }
         }
 
-        // Save this AI's data
         saveAIData(ai);
     });
-
-    // Record when we last simulated matches
-    localStorage.setItem("last_ai_simulation", now.toString());
+    
+    console.log(`Simulated batch of ~${matchesPerAI * specialAIs.superSlotLegends.length} matches`);
 }
 function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
