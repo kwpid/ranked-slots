@@ -382,7 +382,7 @@ function generateRankDistribution() {
     let gcCounts = { gc1: 0, gc2: 0, gc3: 0 };
     let sslCount = 0;
 
-    // Safely check for specialAIs data and classify by MMR
+
     if (Array.isArray(specialAIs?.superSlotLegends)) {
         specialAIs.superSlotLegends.forEach(ai => {
             if (ai.mmr >= 1864) {
@@ -394,6 +394,7 @@ function generateRankDistribution() {
             } else if (ai.mmr >= 1403) {
                 gcCounts.gc1++;
             }
+            // AIs below 1403 won't be counted in GC/SSL distribution
         });
     }
 
