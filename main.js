@@ -1450,6 +1450,20 @@ const titles = [
         minMMR: null,
         wlUsers: [""],
     },
+    {
+        title: "S2 GRAND CHAMPION",
+        color: "gold",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""],
+    },
+    {
+        title: "S2 SUPERSLOT LEGEND",
+        color: "white",
+        glow: true,
+        minMMR: null,
+        wlUsers: [""],
+    },
 
     
 
