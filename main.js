@@ -74,14 +74,6 @@ let playerData = {
     placementMatches: 0,
     inPlacements: true,
     seasonStats: {},
-    tournaments: {
-        qualifierProgress: [],    // Track which qualifiers completed
-        regionalProgress: [],     // Track regional events
-        majorProgress: [],        // Track major events
-        worldsProgress: null,     // Track worlds participation
-        currentEvent: null,       // Currently active tournament
-        eventHistory: []          // Historical tournament results
-    }
 };
 let aiData = {
     username: "",
@@ -91,608 +83,6 @@ let aiData = {
 // === SEASON SYSTEM ===
 // Season 1 started on Sep 22, 2025
 const SEASON_1_START = new Date("2025-09-22T00:00:00Z");
-
-// === TOURNAMENT SYSTEM ===
-let currentTournaments = {
-    qualifiers: [],    // 4 qualifiers per season
-    regionals: [],     // 4 regionals per season
-    majors: [],        // 2 majors per season  
-    worlds: null       // 1 worlds per season
-};
-
-const TOURNAMENT_CONFIG = {
-    // Tournament formats and settings
-    qualifier: {
-        name: "Open Qualifier",
-        format: "single_elimination",
-        bestOf: 3,
-        maxPlayers: 128,
-        advanceTo: "regional",
-        advanceCount: 32,
-        durationDays: 2
-    },
-    regional: {
-        name: "Regional Championship", 
-        format: "double_elimination",
-        bestOf: 5,
-        maxPlayers: 32,
-        advanceTo: "major",
-        advanceCount: 8,
-        durationDays: 3
-    },
-    major: {
-        name: "Major Championship",
-        format: "double_elimination", 
-        bestOf: 7,
-        maxPlayers: 32, // 8 from each of 4 regionals
-        advanceTo: "worlds",
-        advanceCount: 4,
-        durationDays: 4
-    },
-    worlds: {
-        name: "World Championship",
-        format: "double_elimination",
-        bestOf: 9,
-        maxPlayers: 4,
-        advanceTo: null,
-        advanceCount: 1,
-        durationDays: 3
-    }
-};
-
-function isTournamentPeriod() {
-    // Tournament period is the last 7 days of the season
-    const currentSeason = getCurrentSeason();
-    const seasonEnd = getSeasonEndDate(currentSeason);
-    const now = new Date();
-    const timeDiff = seasonEnd.getTime() - now.getTime();
-    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    
-    return daysRemaining <= 7 && daysRemaining > 0;
-}
-
-function getTournamentSchedule() {
-    // Returns which tournaments should be active during tournament period
-    const currentSeason = getCurrentSeason();
-    const seasonEnd = getSeasonEndDate(currentSeason);
-    const now = new Date();
-    const timeDiff = seasonEnd.getTime() - now.getTime();
-    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    
-    const schedule = {
-        active: [],
-        upcoming: [],
-        completed: []
-    };
-    
-    if (daysRemaining === 7) {
-        // Day 1: Start Qualifier 1 & 2
-        schedule.active.push("qualifier_1", "qualifier_2");
-    } else if (daysRemaining === 6) {
-        // Day 2: Continue Q1&Q2, Start Q3&Q4  
-        schedule.active.push("qualifier_1", "qualifier_2", "qualifier_3", "qualifier_4");
-    } else if (daysRemaining === 5) {
-        // Day 3: Complete Qualifiers, Start Regionals 1&2
-        schedule.completed.push("qualifier_1", "qualifier_2", "qualifier_3", "qualifier_4");
-        schedule.active.push("regional_1", "regional_2");
-    } else if (daysRemaining === 4) {
-        // Day 4: Continue R1&R2, Start R3&R4
-        schedule.active.push("regional_1", "regional_2", "regional_3", "regional_4");
-    } else if (daysRemaining === 3) {
-        // Day 5: Complete Regionals, Start Major 1
-        schedule.completed.push("regional_1", "regional_2", "regional_3", "regional_4");
-        schedule.active.push("major_1");
-    } else if (daysRemaining === 2) {
-        // Day 6: Complete Major 1, Start Major 2
-        schedule.completed.push("major_1");
-        schedule.active.push("major_2");
-    } else if (daysRemaining === 1) {
-        // Day 7: Complete Major 2, Start Worlds
-        schedule.completed.push("major_2");
-        schedule.active.push("worlds");
-    }
-    
-    return schedule;
-}
-
-function createTournament(type, id, season) {
-    const config = TOURNAMENT_CONFIG[type.split('_')[0]]; // Get base type (qualifier, regional, etc)
-    
-    return {
-        id: id,
-        type: type,
-        season: season,
-        name: `${config.name} ${id.split('_')[1] || ''}`.trim(),
-        status: "registration", // registration, active, completed
-        format: config.format,
-        bestOf: config.bestOf,
-        maxPlayers: config.maxPlayers,
-        players: [], // Will be populated with AI + player
-        bracket: null,
-        matches: [],
-        results: null,
-        startDate: null,
-        endDate: null,
-        prizes: getTournamentPrizes(type)
-    };
-}
-
-function getTournamentPrizes(tournamentType) {
-    const baseType = tournamentType.split('_')[0];
-    const season = getCurrentSeason();
-    
-    const prizes = {
-        qualifier: {
-            68: `RSCS S${season} CHALLENGER`,    // Top 68
-            32: `RSCS S${season} CONTENDER`      // Top 32 (qualify for regional)
-        },
-        regional: {
-            16: `RSCS S${season} REGIONAL CONTENDER`,  // Top 16
-            6: `RSCS S${season} REGIONAL FINALIST`,    // Top 6  
-            1: `RSCS S${season} REGIONAL CHAMPION`     // Winner
-        },
-        major: {
-            32: `RSCS S${season} MAJOR CONTENDER`,     // All participants
-            6: `RSCS S${season} MAJOR FINALIST`,       // Top 6
-            1: `RSCS S${season} MAJOR CHAMPION`        // Winner
-        },
-        worlds: {
-            4: `RSCS S${season} WORLDS CONTENDER`,     // All participants  
-            1: `RSCS S${season} WORLD CHAMPION`        // Winner
-        }
-    };
-    
-    return prizes[baseType] || {};
-}
-
-function generateBracket(players, format) {
-    if (format === "single_elimination") {
-        return generateSingleElimBracket(players);
-    } else if (format === "double_elimination") {
-        return generateDoubleElimBracket(players);
-    }
-}
-
-function generateSingleElimBracket(players) {
-    // Seed players by MMR (highest first)
-    const seededPlayers = players.slice().sort((a, b) => b.mmr - a.mmr);
-    
-    // Create rounds structure
-    const rounds = [];
-    const totalRounds = Math.ceil(Math.log2(players.length));
-    
-    // First round setup
-    const firstRoundMatches = [];
-    for (let i = 0; i < seededPlayers.length; i += 2) {
-        if (i + 1 < seededPlayers.length) {
-            firstRoundMatches.push({
-                id: `R1_M${Math.floor(i/2) + 1}`,
-                round: 1,
-                player1: seededPlayers[i],
-                player2: seededPlayers[i + 1],
-                winner: null,
-                status: "pending", // pending, active, completed
-                score: { p1: 0, p2: 0 },
-                matches: [] // Individual games in the best-of series
-            });
-        } else {
-            // Bye for odd number of players
-            firstRoundMatches.push({
-                id: `R1_M${Math.floor(i/2) + 1}`,
-                round: 1,
-                player1: seededPlayers[i],
-                player2: null, // Bye
-                winner: seededPlayers[i],
-                status: "completed",
-                score: { p1: 1, p2: 0 },
-                matches: []
-            });
-        }
-    }
-    
-    rounds.push(firstRoundMatches);
-    
-    // Generate subsequent rounds (empty for now, will be filled as matches complete)
-    for (let round = 2; round <= totalRounds; round++) {
-        const prevRoundMatches = rounds[round - 2].length;
-        const thisRoundMatches = Math.ceil(prevRoundMatches / 2);
-        const roundMatches = [];
-        
-        for (let i = 0; i < thisRoundMatches; i++) {
-            roundMatches.push({
-                id: `R${round}_M${i + 1}`,
-                round: round,
-                player1: null, // Will be filled when previous round completes
-                player2: null,
-                winner: null,
-                status: "pending",
-                score: { p1: 0, p2: 0 },
-                matches: []
-            });
-        }
-        rounds.push(roundMatches);
-    }
-    
-    return {
-        format: "single_elimination",
-        rounds: rounds,
-        currentRound: 1
-    };
-}
-
-function generateDoubleElimBracket(players) {
-    // Simplified double elimination - upper and lower brackets
-    const seededPlayers = players.slice().sort((a, b) => b.mmr - a.mmr);
-    
-    return {
-        format: "double_elimination", 
-        upperBracket: generateSingleElimBracket(seededPlayers),
-        lowerBracket: { rounds: [], currentRound: 1 },
-        grandFinal: null,
-        eliminatedPlayers: []
-    };
-}
-
-function simulateMatch(player1, player2, bestOf) {
-    // Simulate a best-of series between two players
-    const gamesNeeded = Math.ceil(bestOf / 2);
-    let p1Wins = 0;
-    let p2Wins = 0;
-    const games = [];
-    
-    while (p1Wins < gamesNeeded && p2Wins < gamesNeeded) {
-        // Calculate win probability based on MMR difference
-        const mmrDiff = player1.mmr - player2.mmr;
-        const winProbability = 0.5 + (mmrDiff / 800) * 0.3; // Max 30% advantage for big MMR gaps
-        const clampedProb = Math.max(0.1, Math.min(0.9, winProbability));
-        
-        const p1Wins_game = Math.random() < clampedProb;
-        
-        if (p1Wins_game) {
-            p1Wins++;
-            games.push({ winner: player1.name, loser: player2.name });
-        } else {
-            p2Wins++;
-            games.push({ winner: player2.name, loser: player1.name });
-        }
-    }
-    
-    return {
-        winner: p1Wins > p2Wins ? player1 : player2,
-        loser: p1Wins > p2Wins ? player2 : player1,
-        score: { p1: p1Wins, p2: p2Wins },
-        games: games
-    };
-}
-
-function playTournamentMatch(tournamentId, matchId) {
-    // Find the tournament and match
-    const tournament = findTournamentById(tournamentId);
-    if (!tournament || !tournament.bracket) return;
-    
-    const match = findMatchInBracket(tournament.bracket, matchId);
-    if (!match || match.status !== "pending" || !match.player1 || !match.player2) return;
-    
-    // Simulate the match
-    const result = simulateMatch(match.player1, match.player2, tournament.bestOf);
-    
-    // Update match with results
-    match.winner = result.winner;
-    match.status = "completed";
-    match.score = result.score;
-    match.matches = result.games;
-    
-    // Advance winner to next round if applicable
-    advanceWinnerToNextRound(tournament, match);
-    
-    console.log(`Tournament match completed: ${result.winner.name} beat ${result.loser.name} ${result.score.p1}-${result.score.p2}`);
-    
-    return result;
-}
-
-function findTournamentById(id) {
-    // Search through all tournament arrays
-    const allTournaments = [
-        ...currentTournaments.qualifiers,
-        ...currentTournaments.regionals,
-        ...currentTournaments.majors
-    ];
-    
-    if (currentTournaments.worlds) {
-        allTournaments.push(currentTournaments.worlds);
-    }
-    
-    return allTournaments.find(t => t.id === id);
-}
-
-function findMatchInBracket(bracket, matchId) {
-    if (bracket.format === "single_elimination") {
-        for (let round of bracket.rounds) {
-            const match = round.find(m => m.id === matchId);
-            if (match) return match;
-        }
-    } else if (bracket.format === "double_elimination") {
-        // Check upper bracket
-        for (let round of bracket.upperBracket.rounds) {
-            const match = round.find(m => m.id === matchId);
-            if (match) return match;
-        }
-        // Check lower bracket
-        for (let round of bracket.lowerBracket.rounds) {
-            const match = round.find(m => m.id === matchId);
-            if (match) return match;
-        }
-    }
-    return null;
-}
-
-function advanceWinnerToNextRound(tournament, completedMatch) {
-    const bracket = tournament.bracket;
-    
-    if (bracket.format === "single_elimination") {
-        const nextRound = completedMatch.round + 1;
-        if (nextRound <= bracket.rounds.length) {
-            const nextRoundMatches = bracket.rounds[nextRound - 1];
-            const matchIndex = Math.floor((parseInt(completedMatch.id.split('_M')[1]) - 1) / 2);
-            
-            if (nextRoundMatches[matchIndex]) {
-                const nextMatch = nextRoundMatches[matchIndex];
-                if (!nextMatch.player1) {
-                    nextMatch.player1 = completedMatch.winner;
-                } else if (!nextMatch.player2) {
-                    nextMatch.player2 = completedMatch.winner;
-                }
-            }
-        }
-    }
-    
-    // Check if tournament is complete
-    checkTournamentCompletion(tournament);
-}
-
-function checkTournamentCompletion(tournament) {
-    const bracket = tournament.bracket;
-    
-    if (bracket.format === "single_elimination") {
-        const finalRound = bracket.rounds[bracket.rounds.length - 1];
-        if (finalRound.length === 1 && finalRound[0].status === "completed") {
-            tournament.status = "completed";
-            tournament.results = {
-                winner: finalRound[0].winner,
-                finalMatch: finalRound[0]
-            };
-            
-            // Award titles
-            awardTournamentTitles(tournament);
-            console.log(`Tournament ${tournament.name} completed! Winner: ${finalRound[0].winner.name}`);
-        }
-    }
-}
-
-function awardTournamentTitles(tournament) {
-    const prizes = tournament.prizes;
-    const participants = tournament.players;
-    
-    // Award titles based on final placement
-    const bracket = tournament.bracket;
-    
-    if (bracket.format === "single_elimination") {
-        // Award winner title
-        if (tournament.results && tournament.results.winner) {
-            const winnerTitle = prizes[1];
-            if (winnerTitle) {
-                awardTitle(tournament.results.winner, winnerTitle);
-            }
-        }
-        
-        // Award placement titles based on tournament type
-        if (tournament.type.includes("qualifier")) {
-            // Top 68 get Challenger, Top 32 get Contender
-            participants.slice(0, Math.min(68, participants.length)).forEach(player => {
-                if (prizes[68]) awardTitle(player, prizes[68]);
-            });
-            
-            participants.slice(0, Math.min(32, participants.length)).forEach(player => {
-                if (prizes[32]) awardTitle(player, prizes[32]);
-            });
-        } else if (tournament.type.includes("regional")) {
-            // Award based on bracket progression  
-            participants.slice(0, Math.min(16, participants.length)).forEach(player => {
-                if (prizes[16]) awardTitle(player, prizes[16]);
-            });
-            
-            participants.slice(0, Math.min(6, participants.length)).forEach(player => {
-                if (prizes[6]) awardTitle(player, prizes[6]);
-            });
-        } else if (tournament.type.includes("major")) {
-            // All participants get MAJOR CONTENDER
-            participants.forEach(player => {
-                if (prizes[32]) awardTitle(player, prizes[32]);
-            });
-            
-            participants.slice(0, Math.min(6, participants.length)).forEach(player => {
-                if (prizes[6]) awardTitle(player, prizes[6]);
-            });
-        } else if (tournament.type.includes("worlds")) {
-            // All 4 participants get WORLDS CONTENDER
-            participants.forEach(player => {
-                if (prizes[4]) awardTitle(player, prizes[4]);
-            });
-        }
-    }
-}
-
-function awardTitle(player, titleName) {
-    // Award title to player (handle both human player and AI)
-    if (player.name === playerData.username) {
-        // Award to human player
-        if (!playerData.ownedTitles.includes(titleName)) {
-            playerData.ownedTitles.push(titleName);
-            
-            // Find title object for notification
-            const titleObj = titles.find(t => t.title === titleName);
-            if (titleObj) {
-                showTitleNotification(titleObj);
-            }
-            
-            console.log(`Tournament title awarded to player: ${titleName}`);
-            savePlayerData();
-        }
-    } else {
-        // Award to AI (update their title display)
-        const aiEntry = specialAIs.superSlotLegends.find(ai => ai.name === player.name);
-        if (aiEntry) {
-            aiEntry.title = titleName;
-            saveAIData(aiEntry);
-            console.log(`Tournament title awarded to AI ${player.name}: ${titleName}`);
-        }
-    }
-}
-
-function updateTournamentSystem() {
-    // Called regularly to manage tournament lifecycle
-    if (!isTournamentPeriod()) {
-        return; // Not in tournament period
-    }
-    
-    const schedule = getTournamentSchedule();
-    const currentSeason = getCurrentSeason();
-    
-    // Create new tournaments that should be active
-    schedule.active.forEach(eventId => {
-        if (!findTournamentById(eventId)) {
-            createAndStartTournament(eventId, currentSeason);
-        }
-    });
-    
-    // Progress active tournaments
-    progressActiveTournaments();
-}
-
-function createAndStartTournament(eventId, season) {
-    const [type, number] = eventId.split('_');
-    const tournament = createTournament(type, eventId, season);
-    
-    // Populate with players (AI + human if qualified)
-    populateTournamentPlayers(tournament);
-    
-    // Generate bracket
-    tournament.bracket = generateBracket(tournament.players, tournament.format);
-    tournament.status = "active";
-    tournament.startDate = new Date();
-    
-    // Add to appropriate tournament array
-    if (type === "qualifier") {
-        currentTournaments.qualifiers.push(tournament);
-    } else if (type === "regional") {
-        currentTournaments.regionals.push(tournament);
-    } else if (type === "major") {
-        currentTournaments.majors.push(tournament);
-    } else if (type === "worlds") {
-        currentTournaments.worlds = tournament;
-    }
-    
-    console.log(`Tournament started: ${tournament.name} with ${tournament.players.length} players`);
-}
-
-function populateTournamentPlayers(tournament) {
-    const players = [];
-    
-    // Add AI players from SSL tier
-    const availableAIs = specialAIs.superSlotLegends.slice();
-    
-    // Shuffle and select AIs based on tournament capacity
-    const shuffledAIs = availableAIs.sort(() => Math.random() - 0.5);
-    
-    let aiCount = tournament.maxPlayers - 1; // Reserve 1 spot for human player
-    
-    // For regionals/majors/worlds, need qualified players only
-    if (tournament.type.includes("regional")) {
-        // Would get qualified players from qualifiers, for now use top AIs
-        aiCount = 31; // 32 total, 1 for human
-    } else if (tournament.type.includes("major")) {
-        aiCount = 31; // 32 total from 4 regionals
-    } else if (tournament.type.includes("worlds")) {
-        aiCount = 3; // 4 total from 2 majors
-    }
-    
-    // Add AIs
-    for (let i = 0; i < Math.min(aiCount, shuffledAIs.length); i++) {
-        const ai = shuffledAIs[i];
-        players.push({
-            name: ai.name,
-            mmr: ai.mmr,
-            title: ai.title,
-            isAI: true
-        });
-    }
-    
-    // Add human player if they can participate
-    if (canPlayerParticipate(tournament)) {
-        players.push({
-            name: playerData.username,
-            mmr: playerData.mmr,
-            title: playerData.title,
-            isAI: false
-        });
-    }
-    
-    tournament.players = players;
-}
-
-function canPlayerParticipate(tournament) {
-    // Check if player meets requirements for tournament
-    if (tournament.type.includes("qualifier")) {
-        return true; // Anyone can enter qualifiers
-    } else if (tournament.type.includes("regional")) {
-        // Check if player qualified from any qualifier
-        return playerData.tournaments.qualifierProgress.length > 0;
-    } else if (tournament.type.includes("major")) {
-        // Check if player advanced from any regional
-        return playerData.tournaments.regionalProgress.length > 0;
-    } else if (tournament.type.includes("worlds")) {
-        // Check if player advanced from any major
-        return playerData.tournaments.majorProgress.length > 0;
-    }
-    
-    return false;
-}
-
-function progressActiveTournaments() {
-    // Simulate tournament progression for active tournaments
-    const allTournaments = [
-        ...currentTournaments.qualifiers,
-        ...currentTournaments.regionals,
-        ...currentTournaments.majors
-    ];
-    
-    if (currentTournaments.worlds) {
-        allTournaments.push(currentTournaments.worlds);
-    }
-    
-    allTournaments.forEach(tournament => {
-        if (tournament.status === "active") {
-            progressTournament(tournament);
-        }
-    });
-}
-
-function progressTournament(tournament) {
-    const bracket = tournament.bracket;
-    
-    if (bracket.format === "single_elimination") {
-        // Find next pending match and simulate it
-        for (let round of bracket.rounds) {
-            for (let match of round) {
-                if (match.status === "pending" && match.player1 && match.player2) {
-                    // Simulate this match
-                    playTournamentMatch(tournament.id, match.id);
-                    return; // Only do one match per update
-                }
-            }
-        }
-    }
-}
 
 function getCurrentSeason() {
     const now = new Date();
@@ -754,24 +144,13 @@ function updateSeasonTimer() {
     if (timerElement) {
         if (timeRemaining > 0) {
             const formattedTime = formatTimeRemaining(timeRemaining);
-            const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
-            
-            if (daysRemaining <= 7) {
-                timerElement.textContent = `🏆 TOURNAMENT PERIOD - Season ends in: ${formattedTime}`;
-                timerElement.style.color = "#ff6b35"; // Orange for tournament period
-            } else {
-                timerElement.textContent = `Season ends in: ${formattedTime}`;
-                timerElement.style.color = ""; // Default color
-            }
+            timerElement.textContent = `Season ends in: ${formattedTime}`;
         } else {
             timerElement.textContent = "Season ending...";
             // Check for season reset
             checkSeasonReset();
         }
     }
-    
-    // Update tournament system
-    updateTournamentSystem();
 }
 
 function startSeasonTimer() {
@@ -836,24 +215,6 @@ function performSeasonReset(newSeason) {
     playerData.inPlacements = true;
     playerData.wins = 0;
     playerData.losses = 0;
-
-    // Reset tournament progress for new season
-    playerData.tournaments = {
-        qualifierProgress: [],
-        regionalProgress: [],
-        majorProgress: [],
-        worldsProgress: null,
-        currentEvent: null,
-        eventHistory: playerData.tournaments.eventHistory || [] // Preserve history
-    };
-
-    // Reset tournament system
-    currentTournaments = {
-        qualifiers: [],
-        regionals: [],
-        majors: [],
-        worlds: null
-    };
 
     // AI also gets reset
     aiData.mmr = Math.round(newMMR * 0.9); // AI starts slightly lower
@@ -1449,8 +810,6 @@ function openPopup(popupId) {
         loadTitlesPopup();
     } else if (popupId === "rank-distribution-popup") {
         loadRankDistribution();
-    } else if (popupId === "tournament-popup") {
-        loadTournamentPopup();
     }
     document.getElementById(popupId).style.display = "block";
 }
@@ -2170,83 +1529,83 @@ function showNotification(title) {}
 
 const specialAIs = {
     superSlotLegends: [
-        { name: "yumi", title: "S1 GRAND CHAMPION", mmr: 1504, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1559, streakType: "win", streakCount: 3, grindiness: 1.2, personality: "grinder" },
-        { name: "wez", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
-        { name: "brickbybrick", title: "S1 GRAND CHAMPION", mmr: 1533, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
-        { name: "Rw9", title: "S1 GRAND CHAMPION", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.1, personality: "hot_streak" },
-        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1521, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
-        { name: "mawykzy!", title: "S1 GRAND CHAMPION", mmr: 1514, streakType: "neutral", streakCount: 0, grindiness: 0.7, personality: "casual" },
-        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 1570, streakType: "win", streakCount: 7, grindiness: 1.3, personality: "grinder" },
-        { name: ".", title: "S1 GRAND CHAMPION", mmr: 1548, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "koto", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
-        { name: "dani", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
-        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 1530, streakType: "win", streakCount: 2, grindiness: 1.0, personality: "comeback" },
-        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1565, streakType: "win", streakCount: 4, grindiness: 1.2, personality: "grinder" },
-        { name: "Void", title: "S1 GRAND CHAMPION", mmr: 1540, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "moon.", title: "S1 GRAND CHAMPION", mmr: 1531, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
-        { name: "Lru", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 5, grindiness: 0.3, personality: "struggling" },
-        { name: "Kha0s", title: "S1 GRAND CHAMPION", mmr: 1549, streakType: "win", streakCount: 6, grindiness: 1.1, personality: "hot_streak" },
-        { name: "rising.", title: "S1 GRAND CHAMPION", mmr: 1508, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
-        { name: "?", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
-        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 1573, streakType: "win", streakCount: 8, grindiness: 1.4, personality: "grinder" },
-        { name: "f", title: "S1 GRAND CHAMPION", mmr: 1560, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
-        { name: "Hawk!", title: "S1 GRAND CHAMPION", mmr: 1555, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "zen", title: "S1 GRAND CHAMPION", mmr: 1538, streakType: "win", streakCount: 2, grindiness: 0.9, personality: "comeback" },
-        { name: "v", title: "S1 GRAND CHAMPION", mmr: 1516, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
-        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1542, streakType: "neutral", streakCount: 0, grindiness: 1.1, personality: "consistent" },
-        { name: "sieko", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
-        { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
-        { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1531, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "toxin", title: "S1 GRAND CHAMPION", mmr: 1525, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
-        { name: "Bez", title: "S1 GRAND CHAMPION", mmr: 1542, streakType: "win", streakCount: 4, grindiness: 1.0, personality: "comeback" },
-        { name: "velocity", title: "S1 SUPERSLOT LEGEND", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.2, personality: "grinder" },
-        { name: "Chronic", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
-        { name: "Flinch", title: "S1 GRAND CHAMPION", mmr: 1544, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
-        { name: "vatsi", title: "NONE", mmr: 1517, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
-        { name: "Xyzle", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "ca$h", title: "S1 GRAND CHAMPION", mmr: 1506, streakType: "loss", streakCount: 6, grindiness: 0.3, personality: "struggling" },
-        { name: "Darkmode", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
-        { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1540, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
-        { name: "LetsG0Brand0n", title: "S1 GRAND CHAMPION", mmr: 1504, streakType: "loss", streakCount: 5, grindiness: 0.4, personality: "struggling" },
-        { name: "VAWQK.", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "helu30", title: "S1 GRAND CHAMPION", mmr: 1519, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "wizz", title: "S1 GRAND CHAMPION", mmr: 1521, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
-        { name: "Sczribbles.", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "7up", title: "S1 GRAND CHAMPION", mmr: 1538, streakType: "win", streakCount: 2, grindiness: 1.0, personality: "comeback" },
-        { name: "unkown", title: "S1 GRAND CHAMPION", mmr: 1502, streakType: "loss", streakCount: 7, grindiness: 0.2, personality: "struggling" },
-        { name: "t0es", title: "S1 GRAND CHAMPION", mmr: 1551, streakType: "win", streakCount: 4, grindiness: 1.0, personality: "comeback" },
-        { name: "Jynx.", title: "S1 GRAND CHAMPION", mmr: 1514, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
-        { name: "Zapz", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
-        { name: "Aur0", title: "S1 SUPERSLOT LEGEND", mmr: 1546, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
-        { name: "Knight", title: "S1 GRAND CHAMPION", mmr: 1525, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
-        { name: "Cliqz", title: "NONE", mmr: 1512, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
-        { name: "Pyro.", title: "S1 GRAND CHAMPION", mmr: 1507, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
-        { name: "dash!", title: "S1 GRAND CHAMPION", mmr: 1536, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
-        { name: "ven", title: "S1 GRAND CHAMPION", mmr: 1541, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
-        { name: "flow.", title: "S1 GRAND CHAMPION", mmr: 1508, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
-        { name: "zenith", title: "S1 GRAND CHAMPION", mmr: 1532, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "volty", title: "S1 GRAND CHAMPION", mmr: 1507, streakType: "loss", streakCount: 5, grindiness: 0.3, personality: "struggling" },
-        { name: "Aqua!", title: "S1 GRAND CHAMPION", mmr: 1549, streakType: "win", streakCount: 5, grindiness: 1.1, personality: "hot_streak" },
-        { name: "Styx", title: "S1 SUPERSLOT LEGEND", mmr: 1563, streakType: "win", streakCount: 6, grindiness: 1.2, personality: "grinder" },
-        { name: "cheeseboi", title: "S1 SUPERSLOT LEGEND", mmr: 1557, streakType: "win", streakCount: 3, grindiness: 1.1, personality: "comeback" },
-        { name: "Heat.", title: "S1 GRAND CHAMPION", mmr: 1524, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
-        { name: "Slyde", title: "S1 SUPERSLOT LEGEND", mmr: 1543, streakType: "neutral", streakCount: 0, grindiness: 1.0, personality: "consistent" },
-        { name: "fl1p", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
-        { name: "Otto", title: "S1 SUPERSLOT LEGEND", mmr: 1566, streakType: "win", streakCount: 4, grindiness: 1.2, personality: "grinder" },
-        { name: "jetz", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "Crisp", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
-        { name: "snailracer", title: "S1 GRAND CHAMPION", mmr: 1503, streakType: "loss", streakCount: 6, grindiness: 0.3, personality: "struggling" },
-        { name: "Flickz", title: "S1 GRAND CHAMPION", mmr: 1516, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "tempo", title: "S1 SUPERSLOT LEGEND", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.2, personality: "grinder" },
-        { name: "Blaze.", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
-        { name: "skyfall", title: "S1 GRAND CHAMPION", mmr: 1533, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "steam", title: "S1 SUPERSLOT LEGEND", mmr: 1555, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
-        { name: "storm", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
-        { name: "rek:3", title: "S1 GRAND CHAMPION", mmr: 1518, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
-        { name: "vyna1", title: "S1 GRAND CHAMPION", mmr: 1502, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
-        { name: "deltairlines", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
-        { name: "ph", title: "S1 SUPERSLOT LEGEND", mmr: 1541, streakType: "neutral", streakCount: 0, grindiness: 1.0, personality: "consistent" },
+        { name: "yumi", title: "S1 GRAND CHAMPION", mmr: 1504 },
+        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1559 },
+        { name: "wez", title: "S1 GRAND CHAMPION", mmr: 1522 },
+        { name: "brickbybrick", title: "S1 GRAND CHAMPION", mmr: 1533 },
+        { name: "Rw9", title: "S1 GRAND CHAMPION", mmr: 1568 },
+        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1521 },
+        { name: "mawykzy!", title: "S1 GRAND CHAMPION", mmr: 1514 },
+        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 1570 },
+        { name: ".", title: "S1 GRAND CHAMPION", mmr: 1548 },
+        { name: "koto", title: "S1 GRAND CHAMPION", mmr: 1509 },
+        { name: "dani", title: "S1 GRAND CHAMPION", mmr: 1520 },
+        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 1530 },
+        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1565 },
+        { name: "Void", title: "S1 GRAND CHAMPION", mmr: 1540 },
+        { name: "moon.", title: "S1 GRAND CHAMPION", mmr: 1531 },
+        { name: "Lru", title: "S1 GRAND CHAMPION", mmr: 1511 },
+        { name: "Kha0s", title: "S1 GRAND CHAMPION", mmr: 1549 },
+        { name: "rising.", title: "S1 GRAND CHAMPION", mmr: 1508 },
+        { name: "?", title: "S1 GRAND CHAMPION", mmr: 1528 },
+        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 1573 },
+        { name: "f", title: "S1 GRAND CHAMPION", mmr: 1560 },
+        { name: "Hawk!", title: "S1 GRAND CHAMPION", mmr: 1555 },
+        { name: "zen", title: "S1 GRAND CHAMPION", mmr: 1538 },
+        { name: "v", title: "S1 GRAND CHAMPION", mmr: 1516 },
+        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1542 },
+        { name: "sieko", title: "S1 GRAND CHAMPION", mmr: 1522 },
+        { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1509 },
+        { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1531 },
+        { name: "toxin", title: "S1 GRAND CHAMPION", mmr: 1525 },
+        { name: "Bez", title: "S1 GRAND CHAMPION", mmr: 1542 },
+        { name: "velocity", title: "S1 SUPERSLOT LEGEND", mmr: 1568 },
+        { name: "Chronic", title: "S1 GRAND CHAMPION", mmr: 1522 },
+        { name: "Flinch", title: "S1 GRAND CHAMPION", mmr: 1544 },
+        { name: "vatsi", title: "NONE", mmr: 1517 },
+        { name: "Xyzle", title: "S1 GRAND CHAMPION", mmr: 1520 },
+        { name: "ca$h", title: "S1 GRAND CHAMPION", mmr: 1506 },
+        { name: "Darkmode", title: "S1 GRAND CHAMPION", mmr: 1528 },
+        { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1540 },
+        { name: "LetsG0Brand0n", title: "S1 GRAND CHAMPION", mmr: 1504 },
+        { name: "VAWQK.", title: "S1 GRAND CHAMPION", mmr: 1520 },
+        { name: "helu30", title: "S1 GRAND CHAMPION", mmr: 1519 },
+        { name: "wizz", title: "S1 GRAND CHAMPION", mmr: 1521 },
+        { name: "Sczribbles.", title: "S1 GRAND CHAMPION", mmr: 1527 },
+        { name: "7up", title: "S1 GRAND CHAMPION", mmr: 1538 },
+        { name: "unkown", title: "S1 GRAND CHAMPION", mmr: 1502 },
+        { name: "t0es", title: "S1 GRAND CHAMPION", mmr: 1551 },
+        { name: "Jynx.", title: "S1 GRAND CHAMPION", mmr: 1514 },
+        { name: "Zapz", title: "S1 GRAND CHAMPION", mmr: 1509 },
+        { name: "Aur0", title: "S1 SUPERSLOT LEGEND", mmr: 1546 },
+        { name: "Knight", title: "S1 GRAND CHAMPION", mmr: 1525 },
+        { name: "Cliqz", title: "NONE", mmr: 1512 },
+        { name: "Pyro.", title: "S1 GRAND CHAMPION", mmr: 1507 },
+        { name: "dash!", title: "S1 GRAND CHAMPION", mmr: 1536 },
+        { name: "ven", title: "S1 GRAND CHAMPION", mmr: 1541 },
+        { name: "flow.", title: "S1 GRAND CHAMPION", mmr: 1508 },
+        { name: "zenith", title: "S1 GRAND CHAMPION", mmr: 1532 },
+        { name: "volty", title: "S1 GRAND CHAMPION", mmr: 1507 },
+        { name: "Aqua!", title: "S1 GRAND CHAMPION", mmr: 1549 },
+        { name: "Styx", title: "S1 SUPERSLOT LEGEND", mmr: 1563 },
+        { name: "cheeseboi", title: "S1 SUPERSLOT LEGEND", mmr: 1557 },
+        { name: "Heat.", title: "S1 GRAND CHAMPION", mmr: 1524 },
+        { name: "Slyde", title: "S1 SUPERSLOT LEGEND", mmr: 1543 },
+        { name: "fl1p", title: "S1 GRAND CHAMPION", mmr: 1509 },
+        { name: "Otto", title: "S1 SUPERSLOT LEGEND", mmr: 1566 },
+        { name: "jetz", title: "S1 GRAND CHAMPION", mmr: 1527 },
+        { name: "Crisp", title: "S1 GRAND CHAMPION", mmr: 1511 },
+        { name: "snailracer", title: "S1 GRAND CHAMPION", mmr: 1503 },
+        { name: "Flickz", title: "S1 GRAND CHAMPION", mmr: 1516 },
+        { name: "tempo", title: "S1 SUPERSLOT LEGEND", mmr: 1568 },
+        { name: "Blaze.", title: "S1 GRAND CHAMPION", mmr: 1528 },
+        { name: "skyfall", title: "S1 GRAND CHAMPION", mmr: 1533 },
+        { name: "steam", title: "S1 SUPERSLOT LEGEND", mmr: 1555 },
+        { name: "storm", title: "S1 GRAND CHAMPION", mmr: 1511 },
+        { name: "rek:3", title: "S1 GRAND CHAMPION", mmr: 1518 },
+        { name: "vyna1", title: "S1 GRAND CHAMPION", mmr: 1502 },
+        { name: "deltairlines", title: "S1 GRAND CHAMPION", mmr: 1527 },
+        { name: "ph", title: "S1 SUPERSLOT LEGEND", mmr: 1541 },
         { name: "trace", title: "S1 GRAND CHAMPION", mmr: 1516 },
         { name: "avidic", title: "S1 SUPERSLOT LEGEND", mmr: 1567 },
         { name: "tekk!", title: "S1 GRAND CHAMPION", mmr: 1539 },
@@ -2384,229 +1743,45 @@ function startAISimulation() {
 }
 
 function simulateAIBatch() {
-    // Initialize streak properties for AIs that don't have them yet
-    specialAIs.superSlotLegends.forEach(ai => {
-        if (!ai.hasOwnProperty('streakType')) {
-            ai.streakType = Math.random() < 0.3 ? "win" : Math.random() < 0.5 ? "loss" : "neutral";
-            ai.streakCount = ai.streakType === "neutral" ? 0 : Math.floor(Math.random() * 5) + 1;
-            ai.grindiness = 0.4 + Math.random() * 0.8; // 0.4 to 1.2
-            ai.personality = ai.streakType === "win" ? (Math.random() < 0.5 ? "grinder" : "hot_streak") 
-                           : ai.streakType === "loss" ? (Math.random() < 0.5 ? "struggling" : "tilted")
-                           : "consistent";
-        }
-    });
+    // Select only 30-50% of AIs per batch (random selection)
+    const selectionPercentage = 0.3 + (Math.random() * 0.2); // 30% to 50%
+    const selectedAIs = [...specialAIs.superSlotLegends]
+        .sort(() => 0.5 - Math.random()) // Shuffle array
+        .slice(0, Math.floor(specialAIs.superSlotLegends.length * selectionPercentage));
     
-    // Enhanced AI selection based on grindiness (more active AIs play more)
-    const weightedAIs = [];
-    specialAIs.superSlotLegends.forEach(ai => {
-        const weight = Math.max(1, Math.floor(ai.grindiness * 3)); // Grinders get 3x more games
-        for (let i = 0; i < weight; i++) {
-            weightedAIs.push(ai);
-        }
-    });
+    // Simulate only 10-20 games total (not per AI)
+    const totalGames = 10 + Math.floor(Math.random() * 11); // 10-20 games
     
-    // Simulate 20-40 games total (increased from 10-20 to create more movement)
-    const totalGames = 20 + Math.floor(Math.random() * 21); // 20-40 games
+    console.log(`Simulating ${totalGames} games with ${selectedAIs.length} selected AIs`);
     
-    console.log(`Simulating ${totalGames} games with streak-based selection`);
-    
+    // Distribute games among selected AIs
     let gamesSimulated = 0;
-    const gameResults = [];
     
     while (gamesSimulated < totalGames) {
-        // Select AI based on grindiness weighting
-        const ai = weightedAIs[Math.floor(Math.random() * weightedAIs.length)];
+        // Pick a random AI from the selected ones
+        const ai = selectedAIs[Math.floor(Math.random() * selectedAIs.length)];
         const opponent = getRandomOpponent(ai);
         
         if (!opponent) continue;
         
-        // Calculate base win probability
-        let aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
-        
-        // Apply streak bias to create realistic patterns
-        aiWinProbability = applyStreakBias(ai, aiWinProbability);
-        
+        // Simulate one match
+        const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
         const aiWon = Math.random() < aiWinProbability;
+        const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
         
-        // Enhanced MMR changes to create bigger gaps
-        let mmrChange = calculateEnhancedMMRChange(ai.mmr, opponent.mmr, aiWon, ai);
-        
-        // Update streaks based on result
-        updateAIStreak(ai, aiWon);
-        if (opponent.hasOwnProperty('streakType')) {
-            updateAIStreak(opponent, !aiWon);
-        }
-        
-        // Apply MMR changes with enhanced bounds for bigger gaps
-        const oldAIMMR = ai.mmr;
-        ai.mmr = Math.max(1400, Math.min(2000, ai.mmr + mmrChange)); // Wider MMR range
+        ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
         
         if (aiWon) {
-            const oldOpponentMMR = opponent.mmr;
-            opponent.mmr = Math.max(1400, Math.min(2000, opponent.mmr - mmrChange));
+            opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
             saveAIData(opponent);
-            
-            gameResults.push(`${ai.name} beat ${opponent.name} (${oldAIMMR}→${ai.mmr}, ${oldOpponentMMR}→${opponent.mmr})`);
-        } else {
-            gameResults.push(`${opponent.name} beat ${ai.name} (${ai.mmr}→${ai.mmr - mmrChange})`);
         }
         
         saveAIData(ai);
         gamesSimulated++;
     }
     
-    console.log(`Simulated ${gamesSimulated} matches with enhanced streak system`);
-    
-    // Enhanced observability - log MMR distribution stats
-    if (Math.random() < 0.15) { // Log stats 15% of the time to monitor gaps
-        logMMRDistributionStats();
-    }
-    
-    if (Math.random() < 0.08) { // Log sample results 8% of the time to avoid spam
-        console.log("Sample results:", gameResults.slice(0, 3));
-    }
+    console.log(`Simulated ${gamesSimulated} matches with ${selectedAIs.length} selected AIs`);
 }
-
-function applyStreakBias(ai, baseWinProbability) {
-    // Apply streak-based bias to create realistic performance patterns
-    let biasModifier = 0;
-    
-    if (ai.streakType === "win") {
-        // Players on win streaks get momentum bonus
-        biasModifier = Math.min(0.25, ai.streakCount * 0.04); // Up to +25% win rate
-        
-        // Hot streak personalities get even more momentum
-        if (ai.personality === "hot_streak" && ai.streakCount >= 4) {
-            biasModifier += 0.1;
-        }
-        // Grinders maintain consistency during win streaks
-        if (ai.personality === "grinder") {
-            biasModifier += 0.05;
-        }
-    } else if (ai.streakType === "loss") {
-        // Players on loss streaks get penalties (tilt effect)
-        biasModifier = -Math.min(0.3, ai.streakCount * 0.05); // Up to -30% win rate
-        
-        // Struggling players tilt harder
-        if (ai.personality === "struggling" && ai.streakCount >= 3) {
-            biasModifier -= 0.1;
-        }
-        // Tilted players get worse penalties
-        if (ai.personality === "tilted") {
-            biasModifier -= 0.05;
-        }
-    }
-    // Neutral streak players get small random variations
-    else {
-        biasModifier = (Math.random() - 0.5) * 0.1; // ±5% random variation
-    }
-    
-    // Apply the bias and clamp between 0.1 and 0.9
-    return Math.max(0.1, Math.min(0.9, baseWinProbability + biasModifier));
-}
-
-function calculateEnhancedMMRChange(playerMMR, opponentMMR, playerWon, ai) {
-    // Start with base MMR calculation
-    let mmrChange = calculateMMRChange(playerMMR, opponentMMR, playerWon);
-    
-    // Apply personality-based multipliers to create bigger gaps
-    let multiplier = 1.0;
-    
-    if (ai.personality === "grinder") {
-        // Grinders gain/lose more MMR (they're trying harder)
-        multiplier = 1.3;
-    } else if (ai.personality === "hot_streak" && ai.streakType === "win") {
-        // Hot streak players gain more when winning
-        multiplier = playerWon ? 1.5 : 1.0;
-    } else if (ai.personality === "struggling") {
-        // Struggling players lose more MMR when losing
-        multiplier = playerWon ? 1.0 : 1.4;
-    } else if (ai.personality === "tilted") {
-        // Tilted players have volatile MMR swings
-        multiplier = 1.2;
-    }
-    
-    // Streak bonus/penalty for MMR changes
-    if (ai.streakType === "win" && ai.streakCount >= 3) {
-        // Win streaks increase MMR gains
-        multiplier += 0.2;
-    } else if (ai.streakType === "loss" && ai.streakCount >= 3) {
-        // Loss streaks increase MMR losses
-        multiplier += 0.2;
-    }
-    
-    // Apply grindiness factor (more active = more volatile)
-    multiplier *= (0.8 + ai.grindiness * 0.4); // 0.8x to 1.2x based on grindiness
-    
-    // Apply multiplier and ensure minimum change for gaps
-    mmrChange = Math.round(mmrChange * multiplier);
-    
-    // Ensure minimum MMR changes to create gaps (instead of 1-2 point changes)
-    const minChange = 12;
-    const maxChange = 80;
-    
-    if (Math.abs(mmrChange) < minChange) {
-        mmrChange = playerWon ? minChange : -minChange;
-    } else if (Math.abs(mmrChange) > maxChange) {
-        mmrChange = playerWon ? maxChange : -maxChange;
-    }
-    
-    return mmrChange;
-}
-
-function updateAIStreak(ai, won) {
-    if (!ai.hasOwnProperty('streakType')) return;
-    
-    if (won) {
-        if (ai.streakType === "loss") {
-            // Breaking a loss streak
-            ai.streakType = "neutral";
-            ai.streakCount = 0;
-        } else if (ai.streakType === "neutral") {
-            // Starting a win streak
-            ai.streakType = "win";
-            ai.streakCount = 1;
-        } else if (ai.streakType === "win") {
-            // Extending win streak
-            ai.streakCount++;
-            
-            // Cap win streaks at 10 to prevent infinite momentum
-            if (ai.streakCount > 10) {
-                ai.streakType = "neutral";
-                ai.streakCount = 0;
-            }
-        }
-    } else {
-        if (ai.streakType === "win") {
-            // Breaking a win streak
-            ai.streakType = "neutral";
-            ai.streakCount = 0;
-        } else if (ai.streakType === "neutral") {
-            // Starting a loss streak
-            ai.streakType = "loss";
-            ai.streakCount = 1;
-        } else if (ai.streakType === "loss") {
-            // Extending loss streak
-            ai.streakCount++;
-            
-            // Cap loss streaks at 8 to prevent players from completely tanking
-            if (ai.streakCount > 8) {
-                ai.streakType = "neutral";
-                ai.streakCount = 0;
-            }
-        }
-    }
-    
-    // Update personality based on new streak state
-    if (ai.streakType === "win" && ai.streakCount >= 4) {
-        ai.personality = Math.random() < 0.6 ? "hot_streak" : "grinder";
-    } else if (ai.streakType === "loss" && ai.streakCount >= 3) {
-        ai.personality = Math.random() < 0.6 ? "struggling" : "tilted";
-    } else if (ai.streakType === "neutral") {
-        ai.personality = "consistent";
-    }
-}
-
 function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
     document.getElementById("match-screen").classList.remove("hidden");
@@ -3399,193 +2574,6 @@ function loadTitlesPopup() {
 
         titlesList.appendChild(titleElement);
     });
-}
-
-function loadTournamentPopup() {
-    const statusDiv = document.getElementById("tournament-status");
-    const scheduleDiv = document.getElementById("tournament-schedule");
-    const eventsDiv = document.getElementById("tournament-events");
-    const historyDiv = document.getElementById("tournament-history");
-    
-    // Clear existing content
-    statusDiv.innerHTML = "";
-    scheduleDiv.innerHTML = "";
-    eventsDiv.innerHTML = "";
-    historyDiv.innerHTML = "";
-    
-    const currentSeason = getCurrentSeason();
-    const inTournamentPeriod = isTournamentPeriod();
-    
-    // Tournament Status
-    if (inTournamentPeriod) {
-        const schedule = getTournamentSchedule();
-        const daysRemaining = Math.ceil((getSeasonEndDate(currentSeason).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-        
-        statusDiv.innerHTML = `
-            <div style="background-color: #ff6b35; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: white;">🔥 TOURNAMENT PERIOD ACTIVE</h3>
-                <p style="margin: 5px 0 0 0; color: white;">Season ${currentSeason} Championships - Day ${8 - daysRemaining}/7</p>
-            </div>
-        `;
-        
-        // Active tournaments
-        if (schedule.active.length > 0) {
-            eventsDiv.innerHTML = `<h3>🏆 Active Tournaments</h3>`;
-            schedule.active.forEach(eventId => {
-                const tournament = findTournamentById(eventId);
-                if (tournament) {
-                    eventsDiv.innerHTML += createTournamentCard(tournament, "active");
-                } else {
-                    // Tournament should exist but doesn't, create placeholder
-                    const [type, num] = eventId.split('_');
-                    eventsDiv.innerHTML += `
-                        <div style="background-color: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #ffcc00;">
-                            <strong>${type.charAt(0).toUpperCase() + type.slice(1)} ${num}</strong> - Starting soon...
-                        </div>
-                    `;
-                }
-            });
-        }
-        
-        // Schedule
-        scheduleDiv.innerHTML = createTournamentSchedule(schedule, daysRemaining);
-        
-    } else {
-        statusDiv.innerHTML = `
-            <div style="background-color: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: #ccc;">⏳ Off-Season Period</h3>
-                <p style="margin: 5px 0 0 0; color: #ccc;">Tournaments begin in the final 7 days of each season</p>
-            </div>
-        `;
-        
-        scheduleDiv.innerHTML = `
-            <h3>🗓️ Next Tournament Schedule</h3>
-            <p style="color: #ccc;">Season ${currentSeason} Championships will begin when 7 days remain in the season</p>
-            <div style="background-color: #333; padding: 10px; border-radius: 8px; margin: 10px 0;">
-                <strong>Tournament Format:</strong><br>
-                • Days 1-2: Open Qualifiers (4 events)<br>
-                • Days 3-4: Regional Championships (4 events)<br>  
-                • Days 5-6: Major Championships (2 events)<br>
-                • Day 7: World Championship (1 event)
-            </div>
-        `;
-    }
-    
-    // Tournament History
-    if (playerData.tournaments.eventHistory.length > 0) {
-        historyDiv.innerHTML = `<h3>📊 Your Tournament History</h3>`;
-        playerData.tournaments.eventHistory.slice(-5).reverse().forEach(event => {
-            historyDiv.innerHTML += createHistoryCard(event);
-        });
-    } else {
-        historyDiv.innerHTML = `
-            <h3>📊 Tournament History</h3>
-            <p style="color: #ccc;">No tournament history yet. Compete in tournaments to see your results here!</p>
-        `;
-    }
-}
-
-function createTournamentCard(tournament, status) {
-    const canParticipate = canPlayerParticipate(tournament);
-    const isParticipating = tournament.players.some(p => p.name === playerData.username);
-    
-    let statusColor = "#ffcc00";
-    let statusText = "Active";
-    
-    if (tournament.status === "completed") {
-        statusColor = "#4CAF50";
-        statusText = "Completed";
-    } else if (tournament.status === "registration") {
-        statusColor = "#ff9900";
-        statusText = "Registration";
-    }
-    
-    let actionButton = "";
-    if (tournament.status === "registration" && canParticipate && !isParticipating) {
-        actionButton = `<button class="button" onclick="enterTournament('${tournament.id}')" style="margin-top: 10px;">Enter Tournament</button>`;
-    } else if (isParticipating) {
-        actionButton = `<p style="color: #4CAF50; margin: 10px 0;">✓ Participating</p>`;
-    } else if (!canParticipate) {
-        actionButton = `<p style="color: #ff6666; margin: 10px 0;">❌ Not Qualified</p>`;
-    }
-    
-    return `
-        <div style="background-color: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${statusColor};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong>${tournament.name}</strong>
-                <span style="color: ${statusColor};">${statusText}</span>
-            </div>
-            <p style="margin: 5px 0; color: #ccc;">Format: ${tournament.format} • Best of ${tournament.bestOf}</p>
-            <p style="margin: 5px 0; color: #ccc;">Players: ${tournament.players.length}/${tournament.maxPlayers}</p>
-            ${actionButton}
-        </div>
-    `;
-}
-
-function createTournamentSchedule(schedule, daysRemaining) {
-    const dayNames = ["Finals Day", "Semis Day", "Majors Day", "Majors Start", "Regionals Day", "Regionals Start", "Qualifiers Day"];
-    const dayName = dayNames[daysRemaining - 1] || "Tournament Day";
-    
-    let html = `<h3>🗓️ Today's Schedule - Day ${8 - daysRemaining} (${dayName})</h3>`;
-    
-    if (schedule.active.length > 0) {
-        html += `<div style="background-color: #333; padding: 10px; border-radius: 8px; margin: 10px 0;">`;
-        html += `<strong>Active Now:</strong><br>`;
-        schedule.active.forEach(eventId => {
-            const [type, num] = eventId.split('_');
-            html += `• ${type.charAt(0).toUpperCase() + type.slice(1)} ${num}<br>`;
-        });
-        html += `</div>`;
-    }
-    
-    if (schedule.completed.length > 0) {
-        html += `<div style="background-color: #1a4a1a; padding: 10px; border-radius: 8px; margin: 10px 0;">`;
-        html += `<strong>Completed:</strong><br>`;
-        schedule.completed.forEach(eventId => {
-            const [type, num] = eventId.split('_');
-            html += `• ${type.charAt(0).toUpperCase() + type.slice(1)} ${num}<br>`;
-        });
-        html += `</div>`;
-    }
-    
-    return html;
-}
-
-function createHistoryCard(event) {
-    return `
-        <div style="background-color: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 8px;">
-            <strong>${event.tournamentName}</strong> (Season ${event.season})
-            <p style="margin: 5px 0; color: #ccc;">Placement: ${event.placement} • Result: ${event.result}</p>
-            ${event.titleAwarded ? `<p style="color: #ffcc00; margin: 5px 0;">🏆 ${event.titleAwarded}</p>` : ''}
-        </div>
-    `;
-}
-
-function enterTournament(tournamentId) {
-    const tournament = findTournamentById(tournamentId);
-    if (!tournament || !canPlayerParticipate(tournament)) {
-        alert("Cannot enter this tournament");
-        return;
-    }
-    
-    // Add player to tournament
-    tournament.players.push({
-        name: playerData.username,
-        mmr: playerData.mmr,
-        title: playerData.title,
-        isAI: false
-    });
-    
-    // Update player's tournament progress
-    if (tournament.type.includes("qualifier")) {
-        playerData.tournaments.qualifierProgress.push(tournamentId);
-    }
-    
-    console.log(`Player entered tournament: ${tournament.name}`);
-    savePlayerData();
-    
-    // Refresh the popup
-    loadTournamentPopup();
 }
 
 updateMenu();
