@@ -1733,40 +1733,54 @@ function startAISimulation() {
         clearInterval(aiSimulationInterval);
     }
     
-    // Simulate matches every 20 seconds (180 matches per hour)
+    // Simulate matches every 30 seconds instead of 20 (fewer games per hour)
     aiSimulationInterval = setInterval(() => {
         simulateAIBatch();
-    }, 20000);
+    }, 30000); // 30 seconds instead of 20
     
     // Also run once immediately
     simulateAIBatch();
 }
 
 function simulateAIBatch() {
-    // Simulate 3-5 matches per AI per batch
-    const matchesPerAI = 3 + Math.floor(Math.random() * 3);
+    // Select only 30-50% of AIs per batch (random selection)
+    const selectionPercentage = 0.3 + (Math.random() * 0.2); // 30% to 50%
+    const selectedAIs = [...specialAIs.superSlotLegends]
+        .sort(() => 0.5 - Math.random()) // Shuffle array
+        .slice(0, Math.floor(specialAIs.superSlotLegends.length * selectionPercentage));
     
-    specialAIs.superSlotLegends.forEach((ai) => {
-        for (let i = 0; i < matchesPerAI; i++) {
-            const opponent = getRandomOpponent(ai);
-            if (!opponent) continue;
-
-            const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
-            const aiWon = Math.random() < aiWinProbability;
-            const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
-
-            ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
-
-            if (aiWon) {
-                opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
-                saveAIData(opponent);
-            }
+    // Simulate only 10-20 games total (not per AI)
+    const totalGames = 10 + Math.floor(Math.random() * 11); // 10-20 games
+    
+    console.log(`Simulating ${totalGames} games with ${selectedAIs.length} selected AIs`);
+    
+    // Distribute games among selected AIs
+    let gamesSimulated = 0;
+    
+    while (gamesSimulated < totalGames) {
+        // Pick a random AI from the selected ones
+        const ai = selectedAIs[Math.floor(Math.random() * selectedAIs.length)];
+        const opponent = getRandomOpponent(ai);
+        
+        if (!opponent) continue;
+        
+        // Simulate one match
+        const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
+        const aiWon = Math.random() < aiWinProbability;
+        const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
+        
+        ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
+        
+        if (aiWon) {
+            opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
+            saveAIData(opponent);
         }
-
+        
         saveAIData(ai);
-    });
+        gamesSimulated++;
+    }
     
-    console.log(`Simulated batch of ~${matchesPerAI * specialAIs.superSlotLegends.length} matches`);
+    console.log(`Simulated ${gamesSimulated} matches with ${selectedAIs.length} selected AIs`);
 }
 function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
