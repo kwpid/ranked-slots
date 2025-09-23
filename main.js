@@ -1761,9 +1761,8 @@ function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
     document.getElementById("match-screen").classList.remove("hidden");
 
-    // Set player info (unchanged)
-    document.getElementById("player-username").textContent =
-        playerData.username;
+    // Set player info
+    document.getElementById("player-username").textContent = playerData.username;
     const playerTitleElement = document.getElementById("player-title");
     playerTitleElement.textContent = playerData.title;
     const playerTitle = titles.find((t) => t.title === playerData.title);
@@ -1775,55 +1774,48 @@ function startMatch() {
             playerTitleElement.classList.remove("glowing-title");
         }
     }
-    document.getElementById("player-rank").textContent = getRank(
-        playerData.mmr,
-    );
+    document.getElementById("player-rank").textContent = getRank(playerData.mmr);
     document.getElementById("player-mmr").textContent = playerData.mmr;
 
-    // Set AI info based on player's MMR
+    // Set AI info based on player's MMR - FIXED VERSION
     if (playerData.mmr >= 1864) {
         // SuperSlot Legend rank - can face SSL AIs
-        // Filter AIs within a reasonable MMR range (±200) of the player
         const eligibleAIs = specialAIs.superSlotLegends.filter(
-            (ai) => Math.abs(ai.mmr - playerData.mmr) <= 200,
+            (ai) => Math.abs(ai.mmr - playerData.mmr) <= 200
         );
 
-        // If no AIs in range, expand to ±300, then any SSL
         let selectedAI;
         if (eligibleAIs.length > 0) {
-            selectedAI =
-                eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
+            selectedAI = eligibleAIs[Math.floor(Math.random() * eligibleAIs.length)];
         } else {
             const widerPool = specialAIs.superSlotLegends.filter(
-                (ai) => Math.abs(ai.mmr - playerData.mmr) <= 300,
+                (ai) => Math.abs(ai.mmr - playerData.mmr) <= 300
             );
-            selectedAI =
-                widerPool.length > 0
-                    ? widerPool[Math.floor(Math.random() * widerPool.length)]
-                    : specialAIs.superSlotLegends[
-                          Math.floor(
-                              Math.random() *
-                                  specialAIs.superSlotLegends.length,
-                          )
-                      ];
+            selectedAI = widerPool.length > 0
+                ? widerPool[Math.floor(Math.random() * widerPool.length)]
+                : specialAIs.superSlotLegends[Math.floor(Math.random() * specialAIs.superSlotLegends.length)];
         }
 
         aiData = {
             username: selectedAI.name,
             title: selectedAI.title,
-            mmr: selectedAI.mmr,
+            mmr: selectedAI.mmr, // Use the AI's actual MMR, no randomization
         };
     } else {
-        // Regular AI with random grey title
+        // Regular AI - create a new AI with fixed MMR based on player's MMR
         const aiName = aiNames[Math.floor(Math.random() * aiNames.length)];
+
+        // Create AI with MMR close to player's MMR (±50 instead of ±100)
+        const baseMMR = playerData.mmr;
+        const mmrVariation = (Math.random() * 100) - 50; // -50 to +50
         aiData = {
             username: aiName,
-            mmr: playerData.mmr + (Math.random() * 200 - 100),
+            mmr: Math.max(0, baseMMR + mmrVariation), // Ensure MMR doesn't go below 0
             title: getRandomGreyTitle(),
         };
     }
 
-    // Set AI display info (unchanged)
+    // Set AI display info
     document.getElementById("ai-username").textContent = aiData.username;
     const aiTitleElement = document.getElementById("ai-title");
     aiTitleElement.textContent = aiData.title;
@@ -1839,7 +1831,7 @@ function startMatch() {
     document.getElementById("ai-rank").textContent = getRank(aiData.mmr);
     document.getElementById("ai-mmr").textContent = Math.round(aiData.mmr);
 
-    // Start countdown (unchanged)
+    // Start countdown
     let countdown = 5;
     document.getElementById("countdown").textContent = countdown;
 
