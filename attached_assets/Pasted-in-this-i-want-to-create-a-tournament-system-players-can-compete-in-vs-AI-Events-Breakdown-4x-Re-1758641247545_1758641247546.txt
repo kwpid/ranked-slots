@@ -1,0 +1,23 @@
+in this, i want to create a tournament system players can compete in (vs AI)
+
+Events Breakdown 4x Regionals (each with its own open qualifier) 2x Majors (featuring top performers from Regionals) 1x Worlds (season finale & championship)
+
+Formats Open Qualifiers Format: Single Elim Best of 3 matches 2–5 matches per player (depending on progress) Top 32 → Regional Regionals Format: Double Elim Best of 5 matches Top 8 → Major Majors Format: Double Elim Best of 7 matches Top 4 → Worlds Worlds Format: Double Elim Best of 9 matches Winner = Season Champion Advancement Rules Players may enter any open qualifier. Once a player qualifies for a major, they cannot qualify for another regional of that same major. If a player qualifies for a major but does not reach Worlds, they may still attempt in later qualifiers for the next major. Once a player qualifies for Worlds, they can no longer enter future regionals or majors. Extra Incentives (Polish) Regional Champion Bonus: Winning a regional gives the champion a seed advantage at the corresponding major (example: auto-start in Winners Round 2, or a first-round bye). If a Regional Champion doesn’t make Top 4 at the major, they still get a small “Worlds Points” bonus (e.g., tiebreaker priority if needed).
+
+near the end of each season opens up the event (last 7 days), player plays their games, try to qualify for regionals, then majors, then worlds, etc
+
+players / ai can be rewarded titles based off how well they do (all titles are already in the code)
+
+RSCS S# CHALLENGER - top 68 in any qualifier
+RSCS S# CONTENDER - top 32 in any qualifier / qualify for regionals
+RSCS S# REGIONAL CONTENDER - top 16 any regional
+RSCS S# REGIONAL FINALIST - top 6 any regional
+RSCS S# REGIONAL CHAMPION - top 1 any regional
+RSCS S# MAJOR CONTENDER - attend any major
+RSCS S# MAJOR FINALIST - top 6 any major
+RSCS S# MAJOR CHAMPION - top 1 any major
+RSCS S# WORLDS CONTENDER - top 4 in worlds
+RSCS S# WORLD CHAMPION - top 1 in worlds
+RSCS S# ELITE - place top 3 consistnelty through all qualified events
+
+players actually play matches, they do best of against the ai theyre playing
