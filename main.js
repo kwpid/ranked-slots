@@ -74,6 +74,14 @@ let playerData = {
     placementMatches: 0,
     inPlacements: true,
     seasonStats: {},
+    tournaments: {
+        qualifierProgress: [],    // Track which qualifiers completed
+        regionalProgress: [],     // Track regional events
+        majorProgress: [],        // Track major events
+        worldsProgress: null,     // Track worlds participation
+        currentEvent: null,       // Currently active tournament
+        eventHistory: []          // Historical tournament results
+    }
 };
 let aiData = {
     username: "",
@@ -83,6 +91,608 @@ let aiData = {
 // === SEASON SYSTEM ===
 // Season 1 started on Sep 22, 2025
 const SEASON_1_START = new Date("2025-09-22T00:00:00Z");
+
+// === TOURNAMENT SYSTEM ===
+let currentTournaments = {
+    qualifiers: [],    // 4 qualifiers per season
+    regionals: [],     // 4 regionals per season
+    majors: [],        // 2 majors per season  
+    worlds: null       // 1 worlds per season
+};
+
+const TOURNAMENT_CONFIG = {
+    // Tournament formats and settings
+    qualifier: {
+        name: "Open Qualifier",
+        format: "single_elimination",
+        bestOf: 3,
+        maxPlayers: 128,
+        advanceTo: "regional",
+        advanceCount: 32,
+        durationDays: 2
+    },
+    regional: {
+        name: "Regional Championship", 
+        format: "double_elimination",
+        bestOf: 5,
+        maxPlayers: 32,
+        advanceTo: "major",
+        advanceCount: 8,
+        durationDays: 3
+    },
+    major: {
+        name: "Major Championship",
+        format: "double_elimination", 
+        bestOf: 7,
+        maxPlayers: 32, // 8 from each of 4 regionals
+        advanceTo: "worlds",
+        advanceCount: 4,
+        durationDays: 4
+    },
+    worlds: {
+        name: "World Championship",
+        format: "double_elimination",
+        bestOf: 9,
+        maxPlayers: 4,
+        advanceTo: null,
+        advanceCount: 1,
+        durationDays: 3
+    }
+};
+
+function isTournamentPeriod() {
+    // Tournament period is the last 7 days of the season
+    const currentSeason = getCurrentSeason();
+    const seasonEnd = getSeasonEndDate(currentSeason);
+    const now = new Date();
+    const timeDiff = seasonEnd.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    return daysRemaining <= 7 && daysRemaining > 0;
+}
+
+function getTournamentSchedule() {
+    // Returns which tournaments should be active during tournament period
+    const currentSeason = getCurrentSeason();
+    const seasonEnd = getSeasonEndDate(currentSeason);
+    const now = new Date();
+    const timeDiff = seasonEnd.getTime() - now.getTime();
+    const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    
+    const schedule = {
+        active: [],
+        upcoming: [],
+        completed: []
+    };
+    
+    if (daysRemaining === 7) {
+        // Day 1: Start Qualifier 1 & 2
+        schedule.active.push("qualifier_1", "qualifier_2");
+    } else if (daysRemaining === 6) {
+        // Day 2: Continue Q1&Q2, Start Q3&Q4  
+        schedule.active.push("qualifier_1", "qualifier_2", "qualifier_3", "qualifier_4");
+    } else if (daysRemaining === 5) {
+        // Day 3: Complete Qualifiers, Start Regionals 1&2
+        schedule.completed.push("qualifier_1", "qualifier_2", "qualifier_3", "qualifier_4");
+        schedule.active.push("regional_1", "regional_2");
+    } else if (daysRemaining === 4) {
+        // Day 4: Continue R1&R2, Start R3&R4
+        schedule.active.push("regional_1", "regional_2", "regional_3", "regional_4");
+    } else if (daysRemaining === 3) {
+        // Day 5: Complete Regionals, Start Major 1
+        schedule.completed.push("regional_1", "regional_2", "regional_3", "regional_4");
+        schedule.active.push("major_1");
+    } else if (daysRemaining === 2) {
+        // Day 6: Complete Major 1, Start Major 2
+        schedule.completed.push("major_1");
+        schedule.active.push("major_2");
+    } else if (daysRemaining === 1) {
+        // Day 7: Complete Major 2, Start Worlds
+        schedule.completed.push("major_2");
+        schedule.active.push("worlds");
+    }
+    
+    return schedule;
+}
+
+function createTournament(type, id, season) {
+    const config = TOURNAMENT_CONFIG[type.split('_')[0]]; // Get base type (qualifier, regional, etc)
+    
+    return {
+        id: id,
+        type: type,
+        season: season,
+        name: `${config.name} ${id.split('_')[1] || ''}`.trim(),
+        status: "registration", // registration, active, completed
+        format: config.format,
+        bestOf: config.bestOf,
+        maxPlayers: config.maxPlayers,
+        players: [], // Will be populated with AI + player
+        bracket: null,
+        matches: [],
+        results: null,
+        startDate: null,
+        endDate: null,
+        prizes: getTournamentPrizes(type)
+    };
+}
+
+function getTournamentPrizes(tournamentType) {
+    const baseType = tournamentType.split('_')[0];
+    const season = getCurrentSeason();
+    
+    const prizes = {
+        qualifier: {
+            68: `RSCS S${season} CHALLENGER`,    // Top 68
+            32: `RSCS S${season} CONTENDER`      // Top 32 (qualify for regional)
+        },
+        regional: {
+            16: `RSCS S${season} REGIONAL CONTENDER`,  // Top 16
+            6: `RSCS S${season} REGIONAL FINALIST`,    // Top 6  
+            1: `RSCS S${season} REGIONAL CHAMPION`     // Winner
+        },
+        major: {
+            32: `RSCS S${season} MAJOR CONTENDER`,     // All participants
+            6: `RSCS S${season} MAJOR FINALIST`,       // Top 6
+            1: `RSCS S${season} MAJOR CHAMPION`        // Winner
+        },
+        worlds: {
+            4: `RSCS S${season} WORLDS CONTENDER`,     // All participants  
+            1: `RSCS S${season} WORLD CHAMPION`        // Winner
+        }
+    };
+    
+    return prizes[baseType] || {};
+}
+
+function generateBracket(players, format) {
+    if (format === "single_elimination") {
+        return generateSingleElimBracket(players);
+    } else if (format === "double_elimination") {
+        return generateDoubleElimBracket(players);
+    }
+}
+
+function generateSingleElimBracket(players) {
+    // Seed players by MMR (highest first)
+    const seededPlayers = players.slice().sort((a, b) => b.mmr - a.mmr);
+    
+    // Create rounds structure
+    const rounds = [];
+    const totalRounds = Math.ceil(Math.log2(players.length));
+    
+    // First round setup
+    const firstRoundMatches = [];
+    for (let i = 0; i < seededPlayers.length; i += 2) {
+        if (i + 1 < seededPlayers.length) {
+            firstRoundMatches.push({
+                id: `R1_M${Math.floor(i/2) + 1}`,
+                round: 1,
+                player1: seededPlayers[i],
+                player2: seededPlayers[i + 1],
+                winner: null,
+                status: "pending", // pending, active, completed
+                score: { p1: 0, p2: 0 },
+                matches: [] // Individual games in the best-of series
+            });
+        } else {
+            // Bye for odd number of players
+            firstRoundMatches.push({
+                id: `R1_M${Math.floor(i/2) + 1}`,
+                round: 1,
+                player1: seededPlayers[i],
+                player2: null, // Bye
+                winner: seededPlayers[i],
+                status: "completed",
+                score: { p1: 1, p2: 0 },
+                matches: []
+            });
+        }
+    }
+    
+    rounds.push(firstRoundMatches);
+    
+    // Generate subsequent rounds (empty for now, will be filled as matches complete)
+    for (let round = 2; round <= totalRounds; round++) {
+        const prevRoundMatches = rounds[round - 2].length;
+        const thisRoundMatches = Math.ceil(prevRoundMatches / 2);
+        const roundMatches = [];
+        
+        for (let i = 0; i < thisRoundMatches; i++) {
+            roundMatches.push({
+                id: `R${round}_M${i + 1}`,
+                round: round,
+                player1: null, // Will be filled when previous round completes
+                player2: null,
+                winner: null,
+                status: "pending",
+                score: { p1: 0, p2: 0 },
+                matches: []
+            });
+        }
+        rounds.push(roundMatches);
+    }
+    
+    return {
+        format: "single_elimination",
+        rounds: rounds,
+        currentRound: 1
+    };
+}
+
+function generateDoubleElimBracket(players) {
+    // Simplified double elimination - upper and lower brackets
+    const seededPlayers = players.slice().sort((a, b) => b.mmr - a.mmr);
+    
+    return {
+        format: "double_elimination", 
+        upperBracket: generateSingleElimBracket(seededPlayers),
+        lowerBracket: { rounds: [], currentRound: 1 },
+        grandFinal: null,
+        eliminatedPlayers: []
+    };
+}
+
+function simulateMatch(player1, player2, bestOf) {
+    // Simulate a best-of series between two players
+    const gamesNeeded = Math.ceil(bestOf / 2);
+    let p1Wins = 0;
+    let p2Wins = 0;
+    const games = [];
+    
+    while (p1Wins < gamesNeeded && p2Wins < gamesNeeded) {
+        // Calculate win probability based on MMR difference
+        const mmrDiff = player1.mmr - player2.mmr;
+        const winProbability = 0.5 + (mmrDiff / 800) * 0.3; // Max 30% advantage for big MMR gaps
+        const clampedProb = Math.max(0.1, Math.min(0.9, winProbability));
+        
+        const p1Wins_game = Math.random() < clampedProb;
+        
+        if (p1Wins_game) {
+            p1Wins++;
+            games.push({ winner: player1.name, loser: player2.name });
+        } else {
+            p2Wins++;
+            games.push({ winner: player2.name, loser: player1.name });
+        }
+    }
+    
+    return {
+        winner: p1Wins > p2Wins ? player1 : player2,
+        loser: p1Wins > p2Wins ? player2 : player1,
+        score: { p1: p1Wins, p2: p2Wins },
+        games: games
+    };
+}
+
+function playTournamentMatch(tournamentId, matchId) {
+    // Find the tournament and match
+    const tournament = findTournamentById(tournamentId);
+    if (!tournament || !tournament.bracket) return;
+    
+    const match = findMatchInBracket(tournament.bracket, matchId);
+    if (!match || match.status !== "pending" || !match.player1 || !match.player2) return;
+    
+    // Simulate the match
+    const result = simulateMatch(match.player1, match.player2, tournament.bestOf);
+    
+    // Update match with results
+    match.winner = result.winner;
+    match.status = "completed";
+    match.score = result.score;
+    match.matches = result.games;
+    
+    // Advance winner to next round if applicable
+    advanceWinnerToNextRound(tournament, match);
+    
+    console.log(`Tournament match completed: ${result.winner.name} beat ${result.loser.name} ${result.score.p1}-${result.score.p2}`);
+    
+    return result;
+}
+
+function findTournamentById(id) {
+    // Search through all tournament arrays
+    const allTournaments = [
+        ...currentTournaments.qualifiers,
+        ...currentTournaments.regionals,
+        ...currentTournaments.majors
+    ];
+    
+    if (currentTournaments.worlds) {
+        allTournaments.push(currentTournaments.worlds);
+    }
+    
+    return allTournaments.find(t => t.id === id);
+}
+
+function findMatchInBracket(bracket, matchId) {
+    if (bracket.format === "single_elimination") {
+        for (let round of bracket.rounds) {
+            const match = round.find(m => m.id === matchId);
+            if (match) return match;
+        }
+    } else if (bracket.format === "double_elimination") {
+        // Check upper bracket
+        for (let round of bracket.upperBracket.rounds) {
+            const match = round.find(m => m.id === matchId);
+            if (match) return match;
+        }
+        // Check lower bracket
+        for (let round of bracket.lowerBracket.rounds) {
+            const match = round.find(m => m.id === matchId);
+            if (match) return match;
+        }
+    }
+    return null;
+}
+
+function advanceWinnerToNextRound(tournament, completedMatch) {
+    const bracket = tournament.bracket;
+    
+    if (bracket.format === "single_elimination") {
+        const nextRound = completedMatch.round + 1;
+        if (nextRound <= bracket.rounds.length) {
+            const nextRoundMatches = bracket.rounds[nextRound - 1];
+            const matchIndex = Math.floor((parseInt(completedMatch.id.split('_M')[1]) - 1) / 2);
+            
+            if (nextRoundMatches[matchIndex]) {
+                const nextMatch = nextRoundMatches[matchIndex];
+                if (!nextMatch.player1) {
+                    nextMatch.player1 = completedMatch.winner;
+                } else if (!nextMatch.player2) {
+                    nextMatch.player2 = completedMatch.winner;
+                }
+            }
+        }
+    }
+    
+    // Check if tournament is complete
+    checkTournamentCompletion(tournament);
+}
+
+function checkTournamentCompletion(tournament) {
+    const bracket = tournament.bracket;
+    
+    if (bracket.format === "single_elimination") {
+        const finalRound = bracket.rounds[bracket.rounds.length - 1];
+        if (finalRound.length === 1 && finalRound[0].status === "completed") {
+            tournament.status = "completed";
+            tournament.results = {
+                winner: finalRound[0].winner,
+                finalMatch: finalRound[0]
+            };
+            
+            // Award titles
+            awardTournamentTitles(tournament);
+            console.log(`Tournament ${tournament.name} completed! Winner: ${finalRound[0].winner.name}`);
+        }
+    }
+}
+
+function awardTournamentTitles(tournament) {
+    const prizes = tournament.prizes;
+    const participants = tournament.players;
+    
+    // Award titles based on final placement
+    const bracket = tournament.bracket;
+    
+    if (bracket.format === "single_elimination") {
+        // Award winner title
+        if (tournament.results && tournament.results.winner) {
+            const winnerTitle = prizes[1];
+            if (winnerTitle) {
+                awardTitle(tournament.results.winner, winnerTitle);
+            }
+        }
+        
+        // Award placement titles based on tournament type
+        if (tournament.type.includes("qualifier")) {
+            // Top 68 get Challenger, Top 32 get Contender
+            participants.slice(0, Math.min(68, participants.length)).forEach(player => {
+                if (prizes[68]) awardTitle(player, prizes[68]);
+            });
+            
+            participants.slice(0, Math.min(32, participants.length)).forEach(player => {
+                if (prizes[32]) awardTitle(player, prizes[32]);
+            });
+        } else if (tournament.type.includes("regional")) {
+            // Award based on bracket progression  
+            participants.slice(0, Math.min(16, participants.length)).forEach(player => {
+                if (prizes[16]) awardTitle(player, prizes[16]);
+            });
+            
+            participants.slice(0, Math.min(6, participants.length)).forEach(player => {
+                if (prizes[6]) awardTitle(player, prizes[6]);
+            });
+        } else if (tournament.type.includes("major")) {
+            // All participants get MAJOR CONTENDER
+            participants.forEach(player => {
+                if (prizes[32]) awardTitle(player, prizes[32]);
+            });
+            
+            participants.slice(0, Math.min(6, participants.length)).forEach(player => {
+                if (prizes[6]) awardTitle(player, prizes[6]);
+            });
+        } else if (tournament.type.includes("worlds")) {
+            // All 4 participants get WORLDS CONTENDER
+            participants.forEach(player => {
+                if (prizes[4]) awardTitle(player, prizes[4]);
+            });
+        }
+    }
+}
+
+function awardTitle(player, titleName) {
+    // Award title to player (handle both human player and AI)
+    if (player.name === playerData.username) {
+        // Award to human player
+        if (!playerData.ownedTitles.includes(titleName)) {
+            playerData.ownedTitles.push(titleName);
+            
+            // Find title object for notification
+            const titleObj = titles.find(t => t.title === titleName);
+            if (titleObj) {
+                showTitleNotification(titleObj);
+            }
+            
+            console.log(`Tournament title awarded to player: ${titleName}`);
+            savePlayerData();
+        }
+    } else {
+        // Award to AI (update their title display)
+        const aiEntry = specialAIs.superSlotLegends.find(ai => ai.name === player.name);
+        if (aiEntry) {
+            aiEntry.title = titleName;
+            saveAIData(aiEntry);
+            console.log(`Tournament title awarded to AI ${player.name}: ${titleName}`);
+        }
+    }
+}
+
+function updateTournamentSystem() {
+    // Called regularly to manage tournament lifecycle
+    if (!isTournamentPeriod()) {
+        return; // Not in tournament period
+    }
+    
+    const schedule = getTournamentSchedule();
+    const currentSeason = getCurrentSeason();
+    
+    // Create new tournaments that should be active
+    schedule.active.forEach(eventId => {
+        if (!findTournamentById(eventId)) {
+            createAndStartTournament(eventId, currentSeason);
+        }
+    });
+    
+    // Progress active tournaments
+    progressActiveTournaments();
+}
+
+function createAndStartTournament(eventId, season) {
+    const [type, number] = eventId.split('_');
+    const tournament = createTournament(type, eventId, season);
+    
+    // Populate with players (AI + human if qualified)
+    populateTournamentPlayers(tournament);
+    
+    // Generate bracket
+    tournament.bracket = generateBracket(tournament.players, tournament.format);
+    tournament.status = "active";
+    tournament.startDate = new Date();
+    
+    // Add to appropriate tournament array
+    if (type === "qualifier") {
+        currentTournaments.qualifiers.push(tournament);
+    } else if (type === "regional") {
+        currentTournaments.regionals.push(tournament);
+    } else if (type === "major") {
+        currentTournaments.majors.push(tournament);
+    } else if (type === "worlds") {
+        currentTournaments.worlds = tournament;
+    }
+    
+    console.log(`Tournament started: ${tournament.name} with ${tournament.players.length} players`);
+}
+
+function populateTournamentPlayers(tournament) {
+    const players = [];
+    
+    // Add AI players from SSL tier
+    const availableAIs = specialAIs.superSlotLegends.slice();
+    
+    // Shuffle and select AIs based on tournament capacity
+    const shuffledAIs = availableAIs.sort(() => Math.random() - 0.5);
+    
+    let aiCount = tournament.maxPlayers - 1; // Reserve 1 spot for human player
+    
+    // For regionals/majors/worlds, need qualified players only
+    if (tournament.type.includes("regional")) {
+        // Would get qualified players from qualifiers, for now use top AIs
+        aiCount = 31; // 32 total, 1 for human
+    } else if (tournament.type.includes("major")) {
+        aiCount = 31; // 32 total from 4 regionals
+    } else if (tournament.type.includes("worlds")) {
+        aiCount = 3; // 4 total from 2 majors
+    }
+    
+    // Add AIs
+    for (let i = 0; i < Math.min(aiCount, shuffledAIs.length); i++) {
+        const ai = shuffledAIs[i];
+        players.push({
+            name: ai.name,
+            mmr: ai.mmr,
+            title: ai.title,
+            isAI: true
+        });
+    }
+    
+    // Add human player if they can participate
+    if (canPlayerParticipate(tournament)) {
+        players.push({
+            name: playerData.username,
+            mmr: playerData.mmr,
+            title: playerData.title,
+            isAI: false
+        });
+    }
+    
+    tournament.players = players;
+}
+
+function canPlayerParticipate(tournament) {
+    // Check if player meets requirements for tournament
+    if (tournament.type.includes("qualifier")) {
+        return true; // Anyone can enter qualifiers
+    } else if (tournament.type.includes("regional")) {
+        // Check if player qualified from any qualifier
+        return playerData.tournaments.qualifierProgress.length > 0;
+    } else if (tournament.type.includes("major")) {
+        // Check if player advanced from any regional
+        return playerData.tournaments.regionalProgress.length > 0;
+    } else if (tournament.type.includes("worlds")) {
+        // Check if player advanced from any major
+        return playerData.tournaments.majorProgress.length > 0;
+    }
+    
+    return false;
+}
+
+function progressActiveTournaments() {
+    // Simulate tournament progression for active tournaments
+    const allTournaments = [
+        ...currentTournaments.qualifiers,
+        ...currentTournaments.regionals,
+        ...currentTournaments.majors
+    ];
+    
+    if (currentTournaments.worlds) {
+        allTournaments.push(currentTournaments.worlds);
+    }
+    
+    allTournaments.forEach(tournament => {
+        if (tournament.status === "active") {
+            progressTournament(tournament);
+        }
+    });
+}
+
+function progressTournament(tournament) {
+    const bracket = tournament.bracket;
+    
+    if (bracket.format === "single_elimination") {
+        // Find next pending match and simulate it
+        for (let round of bracket.rounds) {
+            for (let match of round) {
+                if (match.status === "pending" && match.player1 && match.player2) {
+                    // Simulate this match
+                    playTournamentMatch(tournament.id, match.id);
+                    return; // Only do one match per update
+                }
+            }
+        }
+    }
+}
 
 function getCurrentSeason() {
     const now = new Date();
@@ -144,13 +754,24 @@ function updateSeasonTimer() {
     if (timerElement) {
         if (timeRemaining > 0) {
             const formattedTime = formatTimeRemaining(timeRemaining);
-            timerElement.textContent = `Season ends in: ${formattedTime}`;
+            const daysRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60 * 24));
+            
+            if (daysRemaining <= 7) {
+                timerElement.textContent = `🏆 TOURNAMENT PERIOD - Season ends in: ${formattedTime}`;
+                timerElement.style.color = "#ff6b35"; // Orange for tournament period
+            } else {
+                timerElement.textContent = `Season ends in: ${formattedTime}`;
+                timerElement.style.color = ""; // Default color
+            }
         } else {
             timerElement.textContent = "Season ending...";
             // Check for season reset
             checkSeasonReset();
         }
     }
+    
+    // Update tournament system
+    updateTournamentSystem();
 }
 
 function startSeasonTimer() {
@@ -215,6 +836,24 @@ function performSeasonReset(newSeason) {
     playerData.inPlacements = true;
     playerData.wins = 0;
     playerData.losses = 0;
+
+    // Reset tournament progress for new season
+    playerData.tournaments = {
+        qualifierProgress: [],
+        regionalProgress: [],
+        majorProgress: [],
+        worldsProgress: null,
+        currentEvent: null,
+        eventHistory: playerData.tournaments.eventHistory || [] // Preserve history
+    };
+
+    // Reset tournament system
+    currentTournaments = {
+        qualifiers: [],
+        regionals: [],
+        majors: [],
+        worlds: null
+    };
 
     // AI also gets reset
     aiData.mmr = Math.round(newMMR * 0.9); // AI starts slightly lower
@@ -810,6 +1449,8 @@ function openPopup(popupId) {
         loadTitlesPopup();
     } else if (popupId === "rank-distribution-popup") {
         loadRankDistribution();
+    } else if (popupId === "tournament-popup") {
+        loadTournamentPopup();
     }
     document.getElementById(popupId).style.display = "block";
 }
@@ -2758,6 +3399,193 @@ function loadTitlesPopup() {
 
         titlesList.appendChild(titleElement);
     });
+}
+
+function loadTournamentPopup() {
+    const statusDiv = document.getElementById("tournament-status");
+    const scheduleDiv = document.getElementById("tournament-schedule");
+    const eventsDiv = document.getElementById("tournament-events");
+    const historyDiv = document.getElementById("tournament-history");
+    
+    // Clear existing content
+    statusDiv.innerHTML = "";
+    scheduleDiv.innerHTML = "";
+    eventsDiv.innerHTML = "";
+    historyDiv.innerHTML = "";
+    
+    const currentSeason = getCurrentSeason();
+    const inTournamentPeriod = isTournamentPeriod();
+    
+    // Tournament Status
+    if (inTournamentPeriod) {
+        const schedule = getTournamentSchedule();
+        const daysRemaining = Math.ceil((getSeasonEndDate(currentSeason).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        
+        statusDiv.innerHTML = `
+            <div style="background-color: #ff6b35; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: white;">🔥 TOURNAMENT PERIOD ACTIVE</h3>
+                <p style="margin: 5px 0 0 0; color: white;">Season ${currentSeason} Championships - Day ${8 - daysRemaining}/7</p>
+            </div>
+        `;
+        
+        // Active tournaments
+        if (schedule.active.length > 0) {
+            eventsDiv.innerHTML = `<h3>🏆 Active Tournaments</h3>`;
+            schedule.active.forEach(eventId => {
+                const tournament = findTournamentById(eventId);
+                if (tournament) {
+                    eventsDiv.innerHTML += createTournamentCard(tournament, "active");
+                } else {
+                    // Tournament should exist but doesn't, create placeholder
+                    const [type, num] = eventId.split('_');
+                    eventsDiv.innerHTML += `
+                        <div style="background-color: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #ffcc00;">
+                            <strong>${type.charAt(0).toUpperCase() + type.slice(1)} ${num}</strong> - Starting soon...
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        // Schedule
+        scheduleDiv.innerHTML = createTournamentSchedule(schedule, daysRemaining);
+        
+    } else {
+        statusDiv.innerHTML = `
+            <div style="background-color: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #ccc;">⏳ Off-Season Period</h3>
+                <p style="margin: 5px 0 0 0; color: #ccc;">Tournaments begin in the final 7 days of each season</p>
+            </div>
+        `;
+        
+        scheduleDiv.innerHTML = `
+            <h3>🗓️ Next Tournament Schedule</h3>
+            <p style="color: #ccc;">Season ${currentSeason} Championships will begin when 7 days remain in the season</p>
+            <div style="background-color: #333; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                <strong>Tournament Format:</strong><br>
+                • Days 1-2: Open Qualifiers (4 events)<br>
+                • Days 3-4: Regional Championships (4 events)<br>  
+                • Days 5-6: Major Championships (2 events)<br>
+                • Day 7: World Championship (1 event)
+            </div>
+        `;
+    }
+    
+    // Tournament History
+    if (playerData.tournaments.eventHistory.length > 0) {
+        historyDiv.innerHTML = `<h3>📊 Your Tournament History</h3>`;
+        playerData.tournaments.eventHistory.slice(-5).reverse().forEach(event => {
+            historyDiv.innerHTML += createHistoryCard(event);
+        });
+    } else {
+        historyDiv.innerHTML = `
+            <h3>📊 Tournament History</h3>
+            <p style="color: #ccc;">No tournament history yet. Compete in tournaments to see your results here!</p>
+        `;
+    }
+}
+
+function createTournamentCard(tournament, status) {
+    const canParticipate = canPlayerParticipate(tournament);
+    const isParticipating = tournament.players.some(p => p.name === playerData.username);
+    
+    let statusColor = "#ffcc00";
+    let statusText = "Active";
+    
+    if (tournament.status === "completed") {
+        statusColor = "#4CAF50";
+        statusText = "Completed";
+    } else if (tournament.status === "registration") {
+        statusColor = "#ff9900";
+        statusText = "Registration";
+    }
+    
+    let actionButton = "";
+    if (tournament.status === "registration" && canParticipate && !isParticipating) {
+        actionButton = `<button class="button" onclick="enterTournament('${tournament.id}')" style="margin-top: 10px;">Enter Tournament</button>`;
+    } else if (isParticipating) {
+        actionButton = `<p style="color: #4CAF50; margin: 10px 0;">✓ Participating</p>`;
+    } else if (!canParticipate) {
+        actionButton = `<p style="color: #ff6666; margin: 10px 0;">❌ Not Qualified</p>`;
+    }
+    
+    return `
+        <div style="background-color: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${statusColor};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>${tournament.name}</strong>
+                <span style="color: ${statusColor};">${statusText}</span>
+            </div>
+            <p style="margin: 5px 0; color: #ccc;">Format: ${tournament.format} • Best of ${tournament.bestOf}</p>
+            <p style="margin: 5px 0; color: #ccc;">Players: ${tournament.players.length}/${tournament.maxPlayers}</p>
+            ${actionButton}
+        </div>
+    `;
+}
+
+function createTournamentSchedule(schedule, daysRemaining) {
+    const dayNames = ["Finals Day", "Semis Day", "Majors Day", "Majors Start", "Regionals Day", "Regionals Start", "Qualifiers Day"];
+    const dayName = dayNames[daysRemaining - 1] || "Tournament Day";
+    
+    let html = `<h3>🗓️ Today's Schedule - Day ${8 - daysRemaining} (${dayName})</h3>`;
+    
+    if (schedule.active.length > 0) {
+        html += `<div style="background-color: #333; padding: 10px; border-radius: 8px; margin: 10px 0;">`;
+        html += `<strong>Active Now:</strong><br>`;
+        schedule.active.forEach(eventId => {
+            const [type, num] = eventId.split('_');
+            html += `• ${type.charAt(0).toUpperCase() + type.slice(1)} ${num}<br>`;
+        });
+        html += `</div>`;
+    }
+    
+    if (schedule.completed.length > 0) {
+        html += `<div style="background-color: #1a4a1a; padding: 10px; border-radius: 8px; margin: 10px 0;">`;
+        html += `<strong>Completed:</strong><br>`;
+        schedule.completed.forEach(eventId => {
+            const [type, num] = eventId.split('_');
+            html += `• ${type.charAt(0).toUpperCase() + type.slice(1)} ${num}<br>`;
+        });
+        html += `</div>`;
+    }
+    
+    return html;
+}
+
+function createHistoryCard(event) {
+    return `
+        <div style="background-color: #2a2a2a; padding: 10px; margin: 10px 0; border-radius: 8px;">
+            <strong>${event.tournamentName}</strong> (Season ${event.season})
+            <p style="margin: 5px 0; color: #ccc;">Placement: ${event.placement} • Result: ${event.result}</p>
+            ${event.titleAwarded ? `<p style="color: #ffcc00; margin: 5px 0;">🏆 ${event.titleAwarded}</p>` : ''}
+        </div>
+    `;
+}
+
+function enterTournament(tournamentId) {
+    const tournament = findTournamentById(tournamentId);
+    if (!tournament || !canPlayerParticipate(tournament)) {
+        alert("Cannot enter this tournament");
+        return;
+    }
+    
+    // Add player to tournament
+    tournament.players.push({
+        name: playerData.username,
+        mmr: playerData.mmr,
+        title: playerData.title,
+        isAI: false
+    });
+    
+    // Update player's tournament progress
+    if (tournament.type.includes("qualifier")) {
+        playerData.tournaments.qualifierProgress.push(tournamentId);
+    }
+    
+    console.log(`Player entered tournament: ${tournament.name}`);
+    savePlayerData();
+    
+    // Refresh the popup
+    loadTournamentPopup();
 }
 
 updateMenu();

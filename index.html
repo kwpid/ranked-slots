@@ -829,6 +829,7 @@
 
     <div class="button-container">
         <button class="button" onclick="openPopup('title-popup'); loadTitlesPopup();">Titles</button>
+        <button id="tournament-button" class="button" onclick="openPopup('tournament-popup'); loadTournamentPopup();">Tournaments</button>
     </div>
 </div>
 
@@ -957,6 +958,26 @@
             <div id="stats-leaderboard-list-saves" class="stats-leaderboard-list" style="display:none;"></div>
         </div>
         <button class="close-button" onclick="closePopup('leaderboard-popup')">Close</button>
+    </div>
+</div>
+
+<!-- Tournament Popup -->
+<div id="tournament-popup" class="popup hidden">
+    <div class="popup-content">
+        <h2>🏆 RSCS Tournaments</h2>
+        <div id="tournament-status">
+            <!-- Tournament status will be populated here -->
+        </div>
+        <div id="tournament-schedule">
+            <!-- Tournament schedule will be populated here -->
+        </div>
+        <div id="tournament-events">
+            <!-- Active tournaments will be populated here -->
+        </div>
+        <div id="tournament-history">
+            <!-- Tournament history will be populated here -->
+        </div>
+        <button class="close-button" onclick="closePopup('tournament-popup')">Close</button>
     </div>
 </div>
     
