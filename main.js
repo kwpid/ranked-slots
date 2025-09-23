@@ -1529,83 +1529,83 @@ function showNotification(title) {}
 
 const specialAIs = {
     superSlotLegends: [
-        { name: "yumi", title: "S1 GRAND CHAMPION", mmr: 1504 },
-        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1559 },
-        { name: "wez", title: "S1 GRAND CHAMPION", mmr: 1522 },
-        { name: "brickbybrick", title: "S1 GRAND CHAMPION", mmr: 1533 },
-        { name: "Rw9", title: "S1 GRAND CHAMPION", mmr: 1568 },
-        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1521 },
-        { name: "mawykzy!", title: "S1 GRAND CHAMPION", mmr: 1514 },
-        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 1570 },
-        { name: ".", title: "S1 GRAND CHAMPION", mmr: 1548 },
-        { name: "koto", title: "S1 GRAND CHAMPION", mmr: 1509 },
-        { name: "dani", title: "S1 GRAND CHAMPION", mmr: 1520 },
-        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 1530 },
-        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1565 },
-        { name: "Void", title: "S1 GRAND CHAMPION", mmr: 1540 },
-        { name: "moon.", title: "S1 GRAND CHAMPION", mmr: 1531 },
-        { name: "Lru", title: "S1 GRAND CHAMPION", mmr: 1511 },
-        { name: "Kha0s", title: "S1 GRAND CHAMPION", mmr: 1549 },
-        { name: "rising.", title: "S1 GRAND CHAMPION", mmr: 1508 },
-        { name: "?", title: "S1 GRAND CHAMPION", mmr: 1528 },
-        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 1573 },
-        { name: "f", title: "S1 GRAND CHAMPION", mmr: 1560 },
-        { name: "Hawk!", title: "S1 GRAND CHAMPION", mmr: 1555 },
-        { name: "zen", title: "S1 GRAND CHAMPION", mmr: 1538 },
-        { name: "v", title: "S1 GRAND CHAMPION", mmr: 1516 },
-        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1542 },
-        { name: "sieko", title: "S1 GRAND CHAMPION", mmr: 1522 },
-        { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1509 },
-        { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1531 },
-        { name: "toxin", title: "S1 GRAND CHAMPION", mmr: 1525 },
-        { name: "Bez", title: "S1 GRAND CHAMPION", mmr: 1542 },
-        { name: "velocity", title: "S1 SUPERSLOT LEGEND", mmr: 1568 },
-        { name: "Chronic", title: "S1 GRAND CHAMPION", mmr: 1522 },
-        { name: "Flinch", title: "S1 GRAND CHAMPION", mmr: 1544 },
-        { name: "vatsi", title: "NONE", mmr: 1517 },
-        { name: "Xyzle", title: "S1 GRAND CHAMPION", mmr: 1520 },
-        { name: "ca$h", title: "S1 GRAND CHAMPION", mmr: 1506 },
-        { name: "Darkmode", title: "S1 GRAND CHAMPION", mmr: 1528 },
-        { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1540 },
-        { name: "LetsG0Brand0n", title: "S1 GRAND CHAMPION", mmr: 1504 },
-        { name: "VAWQK.", title: "S1 GRAND CHAMPION", mmr: 1520 },
-        { name: "helu30", title: "S1 GRAND CHAMPION", mmr: 1519 },
-        { name: "wizz", title: "S1 GRAND CHAMPION", mmr: 1521 },
-        { name: "Sczribbles.", title: "S1 GRAND CHAMPION", mmr: 1527 },
-        { name: "7up", title: "S1 GRAND CHAMPION", mmr: 1538 },
-        { name: "unkown", title: "S1 GRAND CHAMPION", mmr: 1502 },
-        { name: "t0es", title: "S1 GRAND CHAMPION", mmr: 1551 },
-        { name: "Jynx.", title: "S1 GRAND CHAMPION", mmr: 1514 },
-        { name: "Zapz", title: "S1 GRAND CHAMPION", mmr: 1509 },
-        { name: "Aur0", title: "S1 SUPERSLOT LEGEND", mmr: 1546 },
-        { name: "Knight", title: "S1 GRAND CHAMPION", mmr: 1525 },
-        { name: "Cliqz", title: "NONE", mmr: 1512 },
-        { name: "Pyro.", title: "S1 GRAND CHAMPION", mmr: 1507 },
-        { name: "dash!", title: "S1 GRAND CHAMPION", mmr: 1536 },
-        { name: "ven", title: "S1 GRAND CHAMPION", mmr: 1541 },
-        { name: "flow.", title: "S1 GRAND CHAMPION", mmr: 1508 },
-        { name: "zenith", title: "S1 GRAND CHAMPION", mmr: 1532 },
-        { name: "volty", title: "S1 GRAND CHAMPION", mmr: 1507 },
-        { name: "Aqua!", title: "S1 GRAND CHAMPION", mmr: 1549 },
-        { name: "Styx", title: "S1 SUPERSLOT LEGEND", mmr: 1563 },
-        { name: "cheeseboi", title: "S1 SUPERSLOT LEGEND", mmr: 1557 },
-        { name: "Heat.", title: "S1 GRAND CHAMPION", mmr: 1524 },
-        { name: "Slyde", title: "S1 SUPERSLOT LEGEND", mmr: 1543 },
-        { name: "fl1p", title: "S1 GRAND CHAMPION", mmr: 1509 },
-        { name: "Otto", title: "S1 SUPERSLOT LEGEND", mmr: 1566 },
-        { name: "jetz", title: "S1 GRAND CHAMPION", mmr: 1527 },
-        { name: "Crisp", title: "S1 GRAND CHAMPION", mmr: 1511 },
-        { name: "snailracer", title: "S1 GRAND CHAMPION", mmr: 1503 },
-        { name: "Flickz", title: "S1 GRAND CHAMPION", mmr: 1516 },
-        { name: "tempo", title: "S1 SUPERSLOT LEGEND", mmr: 1568 },
-        { name: "Blaze.", title: "S1 GRAND CHAMPION", mmr: 1528 },
-        { name: "skyfall", title: "S1 GRAND CHAMPION", mmr: 1533 },
-        { name: "steam", title: "S1 SUPERSLOT LEGEND", mmr: 1555 },
-        { name: "storm", title: "S1 GRAND CHAMPION", mmr: 1511 },
-        { name: "rek:3", title: "S1 GRAND CHAMPION", mmr: 1518 },
-        { name: "vyna1", title: "S1 GRAND CHAMPION", mmr: 1502 },
-        { name: "deltairlines", title: "S1 GRAND CHAMPION", mmr: 1527 },
-        { name: "ph", title: "S1 SUPERSLOT LEGEND", mmr: 1541 },
+        { name: "yumi", title: "S1 GRAND CHAMPION", mmr: 1504, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "drali", title: "S1 SUPERSLOT LEGEND", mmr: 1559, streakType: "win", streakCount: 3, grindiness: 1.2, personality: "grinder" },
+        { name: "wez", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
+        { name: "brickbybrick", title: "S1 GRAND CHAMPION", mmr: 1533, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
+        { name: "Rw9", title: "S1 GRAND CHAMPION", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.1, personality: "hot_streak" },
+        { name: "dark", title: "S1 GRAND CHAMPION", mmr: 1521, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
+        { name: "mawykzy!", title: "S1 GRAND CHAMPION", mmr: 1514, streakType: "neutral", streakCount: 0, grindiness: 0.7, personality: "casual" },
+        { name: "Speed", title: "S1 SUPERSLOT LEGEND", mmr: 1570, streakType: "win", streakCount: 7, grindiness: 1.3, personality: "grinder" },
+        { name: ".", title: "S1 GRAND CHAMPION", mmr: 1548, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "koto", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
+        { name: "dani", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
+        { name: "Qwert (OG)", title: "S1 GRAND CHAMPION", mmr: 1530, streakType: "win", streakCount: 2, grindiness: 1.0, personality: "comeback" },
+        { name: "dr.k", title: "S1 SUPERSLOT LEGEND", mmr: 1565, streakType: "win", streakCount: 4, grindiness: 1.2, personality: "grinder" },
+        { name: "Void", title: "S1 GRAND CHAMPION", mmr: 1540, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "moon.", title: "S1 GRAND CHAMPION", mmr: 1531, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
+        { name: "Lru", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 5, grindiness: 0.3, personality: "struggling" },
+        { name: "Kha0s", title: "S1 GRAND CHAMPION", mmr: 1549, streakType: "win", streakCount: 6, grindiness: 1.1, personality: "hot_streak" },
+        { name: "rising.", title: "S1 GRAND CHAMPION", mmr: 1508, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
+        { name: "?", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
+        { name: "dynamo", title: "S1 SUPERSLOT LEGEND", mmr: 1573, streakType: "win", streakCount: 8, grindiness: 1.4, personality: "grinder" },
+        { name: "f", title: "S1 GRAND CHAMPION", mmr: 1560, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
+        { name: "Hawk!", title: "S1 GRAND CHAMPION", mmr: 1555, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "zen", title: "S1 GRAND CHAMPION", mmr: 1538, streakType: "win", streakCount: 2, grindiness: 0.9, personality: "comeback" },
+        { name: "v", title: "S1 GRAND CHAMPION", mmr: 1516, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
+        { name: "a7md", title: "S1 SUPERSLOT LEGEND", mmr: 1542, streakType: "neutral", streakCount: 0, grindiness: 1.1, personality: "consistent" },
+        { name: "sieko", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
+        { name: "Mino", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
+        { name: "dyinq", title: "S1 GRAND CHAMPION", mmr: 1531, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "toxin", title: "S1 GRAND CHAMPION", mmr: 1525, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
+        { name: "Bez", title: "S1 GRAND CHAMPION", mmr: 1542, streakType: "win", streakCount: 4, grindiness: 1.0, personality: "comeback" },
+        { name: "velocity", title: "S1 SUPERSLOT LEGEND", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.2, personality: "grinder" },
+        { name: "Chronic", title: "S1 GRAND CHAMPION", mmr: 1522, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
+        { name: "Flinch", title: "S1 GRAND CHAMPION", mmr: 1544, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
+        { name: "vatsi", title: "NONE", mmr: 1517, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
+        { name: "Xyzle", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "ca$h", title: "S1 GRAND CHAMPION", mmr: 1506, streakType: "loss", streakCount: 6, grindiness: 0.3, personality: "struggling" },
+        { name: "Darkmode", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
+        { name: "nu3.", title: "S1 SUPERSLOT LEGEND", mmr: 1540, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
+        { name: "LetsG0Brand0n", title: "S1 GRAND CHAMPION", mmr: 1504, streakType: "loss", streakCount: 5, grindiness: 0.4, personality: "struggling" },
+        { name: "VAWQK.", title: "S1 GRAND CHAMPION", mmr: 1520, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "helu30", title: "S1 GRAND CHAMPION", mmr: 1519, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "wizz", title: "S1 GRAND CHAMPION", mmr: 1521, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
+        { name: "Sczribbles.", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "7up", title: "S1 GRAND CHAMPION", mmr: 1538, streakType: "win", streakCount: 2, grindiness: 1.0, personality: "comeback" },
+        { name: "unkown", title: "S1 GRAND CHAMPION", mmr: 1502, streakType: "loss", streakCount: 7, grindiness: 0.2, personality: "struggling" },
+        { name: "t0es", title: "S1 GRAND CHAMPION", mmr: 1551, streakType: "win", streakCount: 4, grindiness: 1.0, personality: "comeback" },
+        { name: "Jynx.", title: "S1 GRAND CHAMPION", mmr: 1514, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
+        { name: "Zapz", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
+        { name: "Aur0", title: "S1 SUPERSLOT LEGEND", mmr: 1546, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
+        { name: "Knight", title: "S1 GRAND CHAMPION", mmr: 1525, streakType: "neutral", streakCount: 0, grindiness: 0.9, personality: "consistent" },
+        { name: "Cliqz", title: "NONE", mmr: 1512, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
+        { name: "Pyro.", title: "S1 GRAND CHAMPION", mmr: 1507, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
+        { name: "dash!", title: "S1 GRAND CHAMPION", mmr: 1536, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
+        { name: "ven", title: "S1 GRAND CHAMPION", mmr: 1541, streakType: "win", streakCount: 3, grindiness: 1.0, personality: "comeback" },
+        { name: "flow.", title: "S1 GRAND CHAMPION", mmr: 1508, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
+        { name: "zenith", title: "S1 GRAND CHAMPION", mmr: 1532, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "volty", title: "S1 GRAND CHAMPION", mmr: 1507, streakType: "loss", streakCount: 5, grindiness: 0.3, personality: "struggling" },
+        { name: "Aqua!", title: "S1 GRAND CHAMPION", mmr: 1549, streakType: "win", streakCount: 5, grindiness: 1.1, personality: "hot_streak" },
+        { name: "Styx", title: "S1 SUPERSLOT LEGEND", mmr: 1563, streakType: "win", streakCount: 6, grindiness: 1.2, personality: "grinder" },
+        { name: "cheeseboi", title: "S1 SUPERSLOT LEGEND", mmr: 1557, streakType: "win", streakCount: 3, grindiness: 1.1, personality: "comeback" },
+        { name: "Heat.", title: "S1 GRAND CHAMPION", mmr: 1524, streakType: "loss", streakCount: 1, grindiness: 0.7, personality: "casual" },
+        { name: "Slyde", title: "S1 SUPERSLOT LEGEND", mmr: 1543, streakType: "neutral", streakCount: 0, grindiness: 1.0, personality: "consistent" },
+        { name: "fl1p", title: "S1 GRAND CHAMPION", mmr: 1509, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
+        { name: "Otto", title: "S1 SUPERSLOT LEGEND", mmr: 1566, streakType: "win", streakCount: 4, grindiness: 1.2, personality: "grinder" },
+        { name: "jetz", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "Crisp", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 2, grindiness: 0.6, personality: "tilted" },
+        { name: "snailracer", title: "S1 GRAND CHAMPION", mmr: 1503, streakType: "loss", streakCount: 6, grindiness: 0.3, personality: "struggling" },
+        { name: "Flickz", title: "S1 GRAND CHAMPION", mmr: 1516, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "tempo", title: "S1 SUPERSLOT LEGEND", mmr: 1568, streakType: "win", streakCount: 5, grindiness: 1.2, personality: "grinder" },
+        { name: "Blaze.", title: "S1 GRAND CHAMPION", mmr: 1528, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
+        { name: "skyfall", title: "S1 GRAND CHAMPION", mmr: 1533, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "steam", title: "S1 SUPERSLOT LEGEND", mmr: 1555, streakType: "win", streakCount: 2, grindiness: 1.1, personality: "comeback" },
+        { name: "storm", title: "S1 GRAND CHAMPION", mmr: 1511, streakType: "loss", streakCount: 3, grindiness: 0.5, personality: "tilted" },
+        { name: "rek:3", title: "S1 GRAND CHAMPION", mmr: 1518, streakType: "neutral", streakCount: 0, grindiness: 0.8, personality: "consistent" },
+        { name: "vyna1", title: "S1 GRAND CHAMPION", mmr: 1502, streakType: "loss", streakCount: 4, grindiness: 0.4, personality: "struggling" },
+        { name: "deltairlines", title: "S1 GRAND CHAMPION", mmr: 1527, streakType: "win", streakCount: 1, grindiness: 0.9, personality: "comeback" },
+        { name: "ph", title: "S1 SUPERSLOT LEGEND", mmr: 1541, streakType: "neutral", streakCount: 0, grindiness: 1.0, personality: "consistent" },
         { name: "trace", title: "S1 GRAND CHAMPION", mmr: 1516 },
         { name: "avidic", title: "S1 SUPERSLOT LEGEND", mmr: 1567 },
         { name: "tekk!", title: "S1 GRAND CHAMPION", mmr: 1539 },
@@ -1743,45 +1743,229 @@ function startAISimulation() {
 }
 
 function simulateAIBatch() {
-    // Select only 30-50% of AIs per batch (random selection)
-    const selectionPercentage = 0.3 + (Math.random() * 0.2); // 30% to 50%
-    const selectedAIs = [...specialAIs.superSlotLegends]
-        .sort(() => 0.5 - Math.random()) // Shuffle array
-        .slice(0, Math.floor(specialAIs.superSlotLegends.length * selectionPercentage));
+    // Initialize streak properties for AIs that don't have them yet
+    specialAIs.superSlotLegends.forEach(ai => {
+        if (!ai.hasOwnProperty('streakType')) {
+            ai.streakType = Math.random() < 0.3 ? "win" : Math.random() < 0.5 ? "loss" : "neutral";
+            ai.streakCount = ai.streakType === "neutral" ? 0 : Math.floor(Math.random() * 5) + 1;
+            ai.grindiness = 0.4 + Math.random() * 0.8; // 0.4 to 1.2
+            ai.personality = ai.streakType === "win" ? (Math.random() < 0.5 ? "grinder" : "hot_streak") 
+                           : ai.streakType === "loss" ? (Math.random() < 0.5 ? "struggling" : "tilted")
+                           : "consistent";
+        }
+    });
     
-    // Simulate only 10-20 games total (not per AI)
-    const totalGames = 10 + Math.floor(Math.random() * 11); // 10-20 games
+    // Enhanced AI selection based on grindiness (more active AIs play more)
+    const weightedAIs = [];
+    specialAIs.superSlotLegends.forEach(ai => {
+        const weight = Math.max(1, Math.floor(ai.grindiness * 3)); // Grinders get 3x more games
+        for (let i = 0; i < weight; i++) {
+            weightedAIs.push(ai);
+        }
+    });
     
-    console.log(`Simulating ${totalGames} games with ${selectedAIs.length} selected AIs`);
+    // Simulate 20-40 games total (increased from 10-20 to create more movement)
+    const totalGames = 20 + Math.floor(Math.random() * 21); // 20-40 games
     
-    // Distribute games among selected AIs
+    console.log(`Simulating ${totalGames} games with streak-based selection`);
+    
     let gamesSimulated = 0;
+    const gameResults = [];
     
     while (gamesSimulated < totalGames) {
-        // Pick a random AI from the selected ones
-        const ai = selectedAIs[Math.floor(Math.random() * selectedAIs.length)];
+        // Select AI based on grindiness weighting
+        const ai = weightedAIs[Math.floor(Math.random() * weightedAIs.length)];
         const opponent = getRandomOpponent(ai);
         
         if (!opponent) continue;
         
-        // Simulate one match
-        const aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
-        const aiWon = Math.random() < aiWinProbability;
-        const mmrChange = calculateMMRChange(ai.mmr, opponent.mmr, aiWon);
+        // Calculate base win probability
+        let aiWinProbability = 1 / (1 + Math.pow(10, (opponent.mmr - ai.mmr) / 400));
         
-        ai.mmr = Math.max(1864, Math.min(2400, ai.mmr + mmrChange));
+        // Apply streak bias to create realistic patterns
+        aiWinProbability = applyStreakBias(ai, aiWinProbability);
+        
+        const aiWon = Math.random() < aiWinProbability;
+        
+        // Enhanced MMR changes to create bigger gaps
+        let mmrChange = calculateEnhancedMMRChange(ai.mmr, opponent.mmr, aiWon, ai);
+        
+        // Update streaks based on result
+        updateAIStreak(ai, aiWon);
+        if (opponent.hasOwnProperty('streakType')) {
+            updateAIStreak(opponent, !aiWon);
+        }
+        
+        // Apply MMR changes with enhanced bounds for bigger gaps
+        const oldAIMMR = ai.mmr;
+        ai.mmr = Math.max(1400, Math.min(2000, ai.mmr + mmrChange)); // Wider MMR range
         
         if (aiWon) {
-            opponent.mmr = Math.max(1864, Math.min(2400, opponent.mmr - mmrChange));
+            const oldOpponentMMR = opponent.mmr;
+            opponent.mmr = Math.max(1400, Math.min(2000, opponent.mmr - mmrChange));
             saveAIData(opponent);
+            
+            gameResults.push(`${ai.name} beat ${opponent.name} (${oldAIMMR}→${ai.mmr}, ${oldOpponentMMR}→${opponent.mmr})`);
+        } else {
+            gameResults.push(`${opponent.name} beat ${ai.name} (${ai.mmr}→${ai.mmr - mmrChange})`);
         }
         
         saveAIData(ai);
         gamesSimulated++;
     }
     
-    console.log(`Simulated ${gamesSimulated} matches with ${selectedAIs.length} selected AIs`);
+    console.log(`Simulated ${gamesSimulated} matches with enhanced streak system`);
+    
+    // Enhanced observability - log MMR distribution stats
+    if (Math.random() < 0.15) { // Log stats 15% of the time to monitor gaps
+        logMMRDistributionStats();
+    }
+    
+    if (Math.random() < 0.08) { // Log sample results 8% of the time to avoid spam
+        console.log("Sample results:", gameResults.slice(0, 3));
+    }
 }
+
+function applyStreakBias(ai, baseWinProbability) {
+    // Apply streak-based bias to create realistic performance patterns
+    let biasModifier = 0;
+    
+    if (ai.streakType === "win") {
+        // Players on win streaks get momentum bonus
+        biasModifier = Math.min(0.25, ai.streakCount * 0.04); // Up to +25% win rate
+        
+        // Hot streak personalities get even more momentum
+        if (ai.personality === "hot_streak" && ai.streakCount >= 4) {
+            biasModifier += 0.1;
+        }
+        // Grinders maintain consistency during win streaks
+        if (ai.personality === "grinder") {
+            biasModifier += 0.05;
+        }
+    } else if (ai.streakType === "loss") {
+        // Players on loss streaks get penalties (tilt effect)
+        biasModifier = -Math.min(0.3, ai.streakCount * 0.05); // Up to -30% win rate
+        
+        // Struggling players tilt harder
+        if (ai.personality === "struggling" && ai.streakCount >= 3) {
+            biasModifier -= 0.1;
+        }
+        // Tilted players get worse penalties
+        if (ai.personality === "tilted") {
+            biasModifier -= 0.05;
+        }
+    }
+    // Neutral streak players get small random variations
+    else {
+        biasModifier = (Math.random() - 0.5) * 0.1; // ±5% random variation
+    }
+    
+    // Apply the bias and clamp between 0.1 and 0.9
+    return Math.max(0.1, Math.min(0.9, baseWinProbability + biasModifier));
+}
+
+function calculateEnhancedMMRChange(playerMMR, opponentMMR, playerWon, ai) {
+    // Start with base MMR calculation
+    let mmrChange = calculateMMRChange(playerMMR, opponentMMR, playerWon);
+    
+    // Apply personality-based multipliers to create bigger gaps
+    let multiplier = 1.0;
+    
+    if (ai.personality === "grinder") {
+        // Grinders gain/lose more MMR (they're trying harder)
+        multiplier = 1.3;
+    } else if (ai.personality === "hot_streak" && ai.streakType === "win") {
+        // Hot streak players gain more when winning
+        multiplier = playerWon ? 1.5 : 1.0;
+    } else if (ai.personality === "struggling") {
+        // Struggling players lose more MMR when losing
+        multiplier = playerWon ? 1.0 : 1.4;
+    } else if (ai.personality === "tilted") {
+        // Tilted players have volatile MMR swings
+        multiplier = 1.2;
+    }
+    
+    // Streak bonus/penalty for MMR changes
+    if (ai.streakType === "win" && ai.streakCount >= 3) {
+        // Win streaks increase MMR gains
+        multiplier += 0.2;
+    } else if (ai.streakType === "loss" && ai.streakCount >= 3) {
+        // Loss streaks increase MMR losses
+        multiplier += 0.2;
+    }
+    
+    // Apply grindiness factor (more active = more volatile)
+    multiplier *= (0.8 + ai.grindiness * 0.4); // 0.8x to 1.2x based on grindiness
+    
+    // Apply multiplier and ensure minimum change for gaps
+    mmrChange = Math.round(mmrChange * multiplier);
+    
+    // Ensure minimum MMR changes to create gaps (instead of 1-2 point changes)
+    const minChange = 12;
+    const maxChange = 80;
+    
+    if (Math.abs(mmrChange) < minChange) {
+        mmrChange = playerWon ? minChange : -minChange;
+    } else if (Math.abs(mmrChange) > maxChange) {
+        mmrChange = playerWon ? maxChange : -maxChange;
+    }
+    
+    return mmrChange;
+}
+
+function updateAIStreak(ai, won) {
+    if (!ai.hasOwnProperty('streakType')) return;
+    
+    if (won) {
+        if (ai.streakType === "loss") {
+            // Breaking a loss streak
+            ai.streakType = "neutral";
+            ai.streakCount = 0;
+        } else if (ai.streakType === "neutral") {
+            // Starting a win streak
+            ai.streakType = "win";
+            ai.streakCount = 1;
+        } else if (ai.streakType === "win") {
+            // Extending win streak
+            ai.streakCount++;
+            
+            // Cap win streaks at 10 to prevent infinite momentum
+            if (ai.streakCount > 10) {
+                ai.streakType = "neutral";
+                ai.streakCount = 0;
+            }
+        }
+    } else {
+        if (ai.streakType === "win") {
+            // Breaking a win streak
+            ai.streakType = "neutral";
+            ai.streakCount = 0;
+        } else if (ai.streakType === "neutral") {
+            // Starting a loss streak
+            ai.streakType = "loss";
+            ai.streakCount = 1;
+        } else if (ai.streakType === "loss") {
+            // Extending loss streak
+            ai.streakCount++;
+            
+            // Cap loss streaks at 8 to prevent players from completely tanking
+            if (ai.streakCount > 8) {
+                ai.streakType = "neutral";
+                ai.streakCount = 0;
+            }
+        }
+    }
+    
+    // Update personality based on new streak state
+    if (ai.streakType === "win" && ai.streakCount >= 4) {
+        ai.personality = Math.random() < 0.6 ? "hot_streak" : "grinder";
+    } else if (ai.streakType === "loss" && ai.streakCount >= 3) {
+        ai.personality = Math.random() < 0.6 ? "struggling" : "tilted";
+    } else if (ai.streakType === "neutral") {
+        ai.personality = "consistent";
+    }
+}
+
 function startMatch() {
     document.getElementById("queue-screen").classList.add("hidden");
     document.getElementById("match-screen").classList.remove("hidden");
